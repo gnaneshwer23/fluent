@@ -2868,6 +2868,22 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
                   </div>
 
                   <div>
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4 px-1 flex justify-between items-center">
+                      <span>Enrollment & History</span>
+                    </h4>
+                    <div className="grid gap-3 p-4 bg-gray-50 rounded-2xl text-xs">
+                        <div className="flex justify-between">
+                            <span className="text-slate-500">Date Enrolled:</span>
+                            <span className="font-bold">{viewingStudentDetail.enrolledAt ? new Date(viewingStudentDetail.enrolledAt).toLocaleDateString() : 'N/A'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-slate-500">Class History:</span>
+                            <span className="font-bold">{viewingStudentDetail.classHistory || "First Enrollment"}</span>
+                        </div>
+                    </div>
+                  </div>
+
+                  <div>
                     <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4 px-1">Performance Insight</h4>
                     <div className="p-5 bg-fluent-cream/50 rounded-2xl border border-black/5 space-y-4">
                       <div className="text-xs font-medium text-slate-600 leading-relaxed">
