@@ -2504,6 +2504,20 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="p-4 bg-fluent-navy/5 rounded-xl">
+                        <div className="text-[10px] font-bold text-slate-500 uppercase">Class Attendance Rate</div>
+                        <div className="text-xl font-mono font-bold text-fluent-navy">{selectedClassForStudents.attendance || 0}%</div>
+                    </div>
+                    <div className="p-4 bg-fluent-navy/5 rounded-xl">
+                        <div className="text-[10px] font-bold text-slate-500 uppercase">Avg Student Mastery</div>
+                        <div className="text-xl font-mono font-bold text-fluent-teal">{selectedClassForStudents.avgScore || 0}%</div>
+                    </div>
+                    <div className="col-span-2 text-center">
+                        <Btn variant="ghost" size="sm" className="text-xs text-fluent-teal">View Comprehensive Analytics Report →</Btn>
+                    </div>
+                  </div>
+
                   <div className="flex justify-between items-center mb-4">
                     <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Class Roster</div>
                     <Badge color="navy">{classStudents.length} Enrolled</Badge>
