@@ -773,35 +773,66 @@ const EarlyAccessSection = () => {
   );
 };
 
-const OnboardingFlow = ({ onComplete }: { onComplete: (view: string) => void }) => {
+const OnboardingFlow = ({ onComplete }: { onComplete: (view: string, profile: any) => void }) => {
   const [step, setStep] = useState(0);
   const [data, setData] = useState({ role: "", name: "", school: "", grade: "", subjects: [] as string[], goal: "" });
   const [isLoading, setIsLoading] = useState(false);
 
-  const steps = [
-    { title: "Academic Role", subtitle: "We tailor the experience to your specific perspective." },
-    { title: "Verification", subtitle: "Establishing your institutional footprint within Fluent." },
-    { title: "Mastery Focus", subtitle: "Defining current levels and target educational outcomes." },
-    { title: "Strategic Goal", subtitle: "What does success look like for your 2026-27 cycle?" },
-    { title: "Synthesis Complete", subtitle: "Your personalised elite journey begins now." },
-  ];
+  const getSteps = () => {
+    const baseSteps = [
+      { title: "Academic Role", subtitle: "We tailor the experience to your specific perspective." },
+      { title: "Verification", subtitle: "Establishing your institutional footprint within Fluent." },
+    ];
+    
+    if (data.role === "teacher") {
+      return [
+        ...baseSteps,
+        { title: "Department Focus", subtitle: "Alignment with British school subject standards." },
+        { title: "Teaching Goal", subtitle: "What is your primary instructional focus for this cycle?" },
+        { title: "Synthesis Complete", subtitle: "Your personalised faculty hub is ready." },
+      ];
+    }
+
+    if (data.role === "parent") {
+      return [
+        ...baseSteps,
+        { title: "Child's Level", subtitle: "Monitoring mastery for students in your care." },
+        { title: "Consultation Goal", subtitle: "What are your primary milestones for your child's growth?" },
+        { title: "Synthesis Complete", subtitle: "Your parent oversight desk is ready." },
+      ];
+    }
+
+    return [
+      ...baseSteps,
+      { title: "Mastery Focus", subtitle: "Defining current levels and target educational outcomes." },
+      { title: "Strategic Goal", subtitle: "What does success look like for your 2026-27 cycle?" },
+      { title: "Synthesis Complete", subtitle: "Your personalised elite journey begins now." },
+    ];
+  };
+
+  const steps = getSteps();
 
   const roles = [
     { id: "student", label: "Elite Student", icon: GraduationCap, desc: "Mastery tracking and live sessions in core subjects." },
-    { id: "parent", label: "Academic Parent", icon: Users, desc: "Monitor multi-student progress and book British consultations." },
+    { id: "parent", label: "Academic Parent", icon: Users, desc: "Monitor child progress and book British consultations." },
     { id: "teacher", label: "Expert Faculty", icon: BookOpen, desc: "Class cohorts, curriculum delivery and faculty tools." },
-    { id: "admin", label: "Platform Admin", icon: ShieldCheck, desc: "Institutional health, staff management and system audits." },
   ];
 
   const grades = ["Grade 9", "Grade 10", "Grade 11", "Grade 12"];
   const subjectsList = ["Mathematics", "Physics", "Chemistry", "Biology", "English"];
-  const goals = [
-    "Ivy League / Oxbridge Preparation",
-    "Board Exam Elite Performance (95%+)",
-    "STEM Competitive Mastery",
-    "Conceptual Foundation Reinforcement",
-    "Advanced Faculty Collaboration",
-  ];
+  
+  const getGoalList = () => {
+    if (data.role === "teacher") return ["Advanced Curriculum Delivery", "Student Confidence Building", "Board Exam Preparation", "Innovation in Pedagogy"];
+    if (data.role === "parent") return ["Holistic Academic Support", "Ivy League Preparation", "Confidence & Fluency", "Monitoring Stability"];
+    return [
+      "Ivy League / Oxbridge Preparation",
+      "Board Exam Elite Performance (95%+)",
+      "STEM Competitive Mastery",
+      "Conceptual Foundation Reinforcement",
+    ];
+  };
+
+  const goals = getGoalList();
 
   const update = (key: string, val: any) => setData(d => ({ ...d, [key]: val }));
   const toggleSubject = (s: string) => update("subjects", data.subjects.includes(s) ? data.subjects.filter(x => x !== s) : [...data.subjects, s]);
@@ -818,10 +849,10 @@ const OnboardingFlow = ({ onComplete }: { onComplete: (view: string) => void }) 
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      if (data.role === "parent") onComplete("parent-dashboard");
-      else if (data.role === "teacher") onComplete("teacher-dashboard");
-      else if (data.role === "admin") onComplete("admin-dashboard");
-      else onComplete("student-dashboard");
+      if (data.role === "parent") onComplete("parent-dashboard", data);
+      else if (data.role === "teacher") onComplete("teacher-dashboard", data);
+      else if (data.role === "admin") onComplete("admin-dashboard", data);
+      else onComplete("student-dashboard", data);
     }, 1500);
   };
 
@@ -984,7 +1015,13 @@ const OnboardingFlow = ({ onComplete }: { onComplete: (view: string) => void }) 
                   </div>
                   <h2 className="text-4xl font-serif font-bold mb-4 tracking-tight leading-tight">Welcome, {data.name.split(' ')[0]}!</h2>
                   <p className="text-slate-500 leading-relaxed max-w-sm mx-auto mb-12">
-                    Your FLUENT profile has been synthesized. We've matched you with our elite cohort resources for <span className="font-bold text-fluent-navy">{data.subjects.join(", ")}</span>.
+                    {data.role === 'teacher' ? (
+                      <>Your faculty credentials have been verified. Accessing tools for <span className="font-bold text-fluent-navy">{data.subjects.join(", ")}</span> delivery.</>
+                    ) : data.role === 'parent' ? (
+                      <>Your parent oversight desk is active. Monitoring pathways for <span className="font-bold text-fluent-navy">{data.grade}</span> students.</>
+                    ) : (
+                      <>Your FLUENT profile has been synthesized. We've matched you with our elite cohort resources for <span className="font-bold text-fluent-navy">{data.subjects.join(", ")}</span>.</>
+                    )}
                   </p>
                   <Btn 
                     variant="primary" 
@@ -1020,16 +1057,29 @@ const OnboardingFlow = ({ onComplete }: { onComplete: (view: string) => void }) 
   );
 };
 
-const FacultyHub = ({ onBack }: { onBack: () => void }) => {
+const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) => {
   const [activeNav, setActiveNav] = useState("overview");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingClass, setEditingClass] = useState<any>(null);
   const [selectedClassForStudents, setSelectedClassForStudents] = useState<any>(null);
+  const [viewingHistory, setViewingHistory] = useState<any>(null);
+
+  const teacherName = profile?.name || "Dr. Sarah Mills";
+  const department = profile?.subjects?.[0] || "Physics";
 
   const [classes, setClasses] = useState([
-    { id: 1, name: "G10 Physics - Mechanics", grade: "Grade 10", subject: "Physics", students: 24, avgScore: 82, attendance: 98, studentList: ["Arjun Sharma", "Priya K.", "Rohan M."] },
-    { id: 2, name: "G9 Mathematics - Proofs", grade: "Grade 9", subject: "Mathematics", students: 18, avgScore: 76, attendance: 94, studentList: ["Ananya S.", "Ishaan V."] },
-    { id: 3, name: "G11 English - Rhetoric", grade: "Grade 11", subject: "English", students: 12, avgScore: 89, attendance: 100, studentList: ["Sanya R."] },
+    { id: 1, name: "G10 Physics - Mechanics", grade: "Grade 10", subject: "Physics", students: 24, avgScore: 82, attendance: 98, studentList: [
+      { name: "Arjun Sharma", attended: 24, total: 25, status: null as 'present' | 'absent' | null, history: [{ date: '2024-05-01', status: 'present' }, { date: '2024-05-02', status: 'present' }] },
+      { name: "Priya K.", attended: 23, total: 25, status: null as 'present' | 'absent' | null, history: [{ date: '2024-05-01', status: 'present' }, { date: '2024-05-02', status: 'absent' }] },
+      { name: "Rohan M.", attended: 22, total: 25, status: null as 'present' | 'absent' | null, history: [{ date: '2024-05-01', status: 'absent' }, { date: '2024-05-02', status: 'present' }] }
+    ] },
+    { id: 2, name: "G9 Mathematics - Proofs", grade: "Grade 9", subject: "Mathematics", students: 18, avgScore: 76, attendance: 94, studentList: [
+      { name: "Ananya S.", attended: 18, total: 20, status: null as 'present' | 'absent' | null, history: [{ date: '2024-05-01', status: 'present' }] },
+      { name: "Ishaan V.", attended: 17, total: 20, status: null as 'present' | 'absent' | null, history: [{ date: '2024-05-01', status: 'present' }] }
+    ] },
+    { id: 3, name: "G11 English - Rhetoric", grade: "Grade 11", subject: "English", students: 12, avgScore: 89, attendance: 100, studentList: [
+      { name: "Sanya R.", attended: 15, total: 15, status: null as 'present' | 'absent' | null, history: [{ date: '2024-05-01', status: 'present' }] }
+    ] },
   ]);
 
   const navItems = [
@@ -1076,21 +1126,49 @@ const FacultyHub = ({ onBack }: { onBack: () => void }) => {
     setEditingClass(null);
   };
 
+  const addStudent = (classId: number, studentName: string) => {
+    if (!studentName.trim()) return;
+    setClasses(classes.map(c => {
+      if (c.id === classId) {
+        return {
+          ...c,
+          students: c.students + 1,
+          studentList: [...c.studentList, studentName]
+        };
+      }
+      return c;
+    }));
+  };
+
+  const removeStudent = (classId: number, studentName: string) => {
+    setClasses(classes.map(c => {
+      if (c.id === classId) {
+        const newList = c.studentList.filter(name => name !== studentName);
+        return {
+          ...c,
+          students: Math.max(0, c.students - 1),
+          studentList: newList
+        };
+      }
+      return c;
+    }));
+  };
+
   return (
-    <DashboardShell role="teacher" title="Dr. Sarah Mills" navItems={navItems} activeNav={activeNav} setActiveNav={setActiveNav} onBack={onBack}>
+    <DashboardShell role="teacher" title={teacherName} navItems={navItems} activeNav={activeNav} setActiveNav={setActiveNav} onBack={onBack}>
       <div className="p-10 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
         <header className="flex flex-col md:flex-row justify-between items-start gap-8 mb-12">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Badge color="teal">Expert Faculty</Badge>
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-[10px] text-green-600 font-bold uppercase tracking-wider">Live British Scaffolding Active</span>
+              <span className="text-[10px] text-green-600 font-bold uppercase tracking-wider">• {department} Department Access</span>
             </div>
-            <h1 className="text-3xl font-serif font-bold tracking-tight">
-              {activeNav === 'overview' ? 'Faculty Hub' : `Manage ${activeNav}`}
+            <h1 className="text-4xl font-serif font-bold tracking-tight">
+              Welcome, <span className="text-fluent-teal italic font-normal">{teacherName.split(' ')[0]}</span> ✦
             </h1>
             <p className="text-slate-500 mt-1">
-              {activeNav === 'overview' ? 'Orchestrate your cohorts and monitor mastery across Science, Maths and English.' : `Deploy and refine your ${activeNav} strategies.`}
+              Focusing on <span className="font-bold text-fluent-navy">{profile?.goal || "British Scaffolding"}</span> • {classes.length} cohorts active.
             </p>
           </div>
           <div className="flex gap-3">
@@ -1300,34 +1378,156 @@ const FacultyHub = ({ onBack }: { onBack: () => void }) => {
               </div>
 
               <div className="flex-1 overflow-auto pr-2">
-                <div className="flex items-center gap-4 p-4 bg-fluent-teal/5 rounded-xl mb-6">
-                  <Search size={18} className="text-fluent-teal" />
-                  <input placeholder="Search students to assign..." className="flex-1 bg-transparent text-sm focus:outline-none" />
+                <div className="space-y-4 mb-8">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Quick Add Student</div>
+                  <form 
+                    className="flex gap-2"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const form = e.currentTarget;
+                      const input = form.elements.namedItem('studentName') as HTMLInputElement;
+                      const name = input.value;
+                      if (!name.trim()) return;
+                      const updated = classes.map(c => c.id === selectedClassForStudents.id ? {
+                        ...c, 
+                        studentList: [...(c.studentList || []), { name, attended: 1, total: 1, present: true }],
+                        students: (c.studentList?.length || 0) + 1
+                      } : c);
+                      setClasses(updated);
+                      setSelectedClassForStudents(updated.find(x => x.id === selectedClassForStudents.id));
+                      input.value = '';
+                    }}
+                  >
+                    <input name="studentName" placeholder="Type student name..." className="flex-1 p-3 bg-gray-50 border border-black/5 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-fluent-teal" />
+                    <Btn type="submit" variant="primary" size="sm">Enroll</Btn>
+                  </form>
                 </div>
 
                 <div className="space-y-3">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Class Roster ({selectedClassForStudents.studentList?.length})</div>
-                  {selectedClassForStudents.studentList?.map((s: string, i: number) => (
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Class Roster</div>
+                    <Badge color="navy">{selectedClassForStudents.students} Enrolled</Badge>
+                  </div>
+                  {selectedClassForStudents.studentList?.map((s: any, i: number) => (
                     <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                       <div className="flex items-center gap-3">
-                        <Avatar name={s} size={32} />
-                        <span className="font-bold text-sm text-fluent-navy">{s}</span>
+                        <Avatar name={s.name} size={32} />
+                        <div>
+                          <div className="font-bold text-sm text-fluent-navy">{s.name}</div>
+                          <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                            Rate: { (s.total + (s.status ? 1 : 0)) > 0 ? Math.round(((s.attended + (s.status === 'present' ? 1 : 0)) / (s.total + (s.status ? 1 : 0))) * 100) : 0}% ({s.attended + (s.status === 'present' ? 1 : 0)}/{s.total + (s.status ? 1 : 0)})
+                          </div>
+                        </div>
                       </div>
-                      <Btn variant="ghost" size="sm" className="text-red-400 hover:bg-red-50" onClick={() => {
-                        const updated = classes.map(c => c.id === selectedClassForStudents.id ? {
-                           ...c, 
-                           studentList: c.studentList.filter(x => x !== s),
-                           students: c.students - 1
-                        } : c);
-                        setClasses(updated);
-                        setSelectedClassForStudents(updated.find(x => x.id === selectedClassForStudents.id));
-                      }}>Remove</Btn>
+                      <div className="flex items-center gap-2">
+                        <div className="flex bg-gray-100 p-1 rounded-xl gap-1">
+                          <button 
+                            onClick={() => {
+                              const updated = classes.map(c => {
+                                if (c.id === selectedClassForStudents.id) {
+                                  const updatedList = c.studentList.map((st: any) => 
+                                    st.name === s.name ? { ...st, status: st.status === 'present' ? null : 'present' } : st
+                                  );
+                                  // Aggregate Class Rate
+                                  let totalA = 0;
+                                  let totalP = 0;
+                                  updatedList.forEach((st: any) => {
+                                    totalA += st.attended + (st.status === 'present' ? 1 : 0);
+                                    totalP += st.total + (st.status ? 1 : 0);
+                                  });
+                                  return { ...c, studentList: updatedList, attendance: Math.round((totalA / totalP) * 100) };
+                                }
+                                return c;
+                              });
+                              setClasses(updated);
+                              setSelectedClassForStudents(updated.find(x => x.id === selectedClassForStudents.id));
+                            }}
+                            title="Mark Present"
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${s.status === 'present' ? 'bg-fluent-teal text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                          >
+                            P
+                          </button>
+                          <button 
+                            onClick={() => {
+                              const updated = classes.map(c => {
+                                if (c.id === selectedClassForStudents.id) {
+                                  const updatedList = c.studentList.map((st: any) => 
+                                    st.name === s.name ? { ...st, status: st.status === 'absent' ? null : 'absent' } : st
+                                  );
+                                  let totalA = 0;
+                                  let totalP = 0;
+                                  updatedList.forEach((st: any) => {
+                                    totalA += st.attended + (st.status === 'present' ? 1 : 0);
+                                    totalP += st.total + (st.status ? 1 : 0);
+                                  });
+                                  return { ...c, studentList: updatedList, attendance: Math.round((totalA / totalP) * 100) };
+                                }
+                                return c;
+                              });
+                              setClasses(updated);
+                              setSelectedClassForStudents(updated.find(x => x.id === selectedClassForStudents.id));
+                            }}
+                            title="Mark Absent"
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${s.status === 'absent' ? 'bg-red-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                          >
+                            A
+                          </button>
+                        </div>
+                        <Btn variant="ghost" size="sm" className="text-slate-400 hover:text-fluent-navy p-2" onClick={() => setViewingHistory(s)}>
+                          <BarChart3 size={16} />
+                        </Btn>
+                        <Btn variant="ghost" size="sm" className="text-red-400 hover:bg-red-50 p-2" onClick={() => {
+                          const updated = classes.map(c => c.id === selectedClassForStudents.id ? {
+                             ...c, 
+                             studentList: c.studentList.filter((x: any) => x.name !== s.name),
+                             students: Math.max(0, c.students - 1)
+                          } : c);
+                          setClasses(updated);
+                          setSelectedClassForStudents(updated.find(x => x.id === selectedClassForStudents.id));
+                        }}>
+                          <Trash2 size={16} />
+                        </Btn>
+                      </div>
                     </div>
                   ))}
                   
-                  <div className="pt-8 border-t border-black/5">
+                  <div className="mt-8 pt-6 border-t border-black/5">
+                    <Btn 
+                      variant="primary" 
+                      className="w-full py-4 rounded-xl flex items-center justify-center gap-2"
+                      onClick={() => {
+                        const updated = classes.map(c => {
+                          if (c.id === selectedClassForStudents.id) {
+                            return {
+                              ...c,
+                              studentList: c.studentList.map((st: any) => ({
+                                ...st,
+                                total: st.total + (st.status ? 1 : 0),
+                                attended: st.attended + (st.status === 'present' ? 1 : 0),
+                                history: st.status ? [
+                                  ...(st.history || []),
+                                  { date: new Date().toISOString().split('T')[0], status: st.status }
+                                ] : (st.history || []),
+                                status: null // Clear for next session
+                              }))
+                            };
+                          }
+                          return c;
+                        });
+                        
+                        setClasses(updated);
+                        setSelectedClassForStudents(updated.find(x => x.id === selectedClassForStudents.id));
+                      }}
+                    >
+                      <CheckCircle2 size={18} />
+                      Log Session & Commit Records
+                    </Btn>
+                    <p className="text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest mt-4">Finalises today's register and saves the historical data.</p>
+                  </div>
+
+                  <div className="pt-8 border-t border-black/5 mt-8">
                     <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Add or Reassign Students</div>
-                    {["Ishaan V.", "Meera P.", "Kabir J.", "Sanya R."].filter(x => !selectedClassForStudents.studentList?.includes(x)).map((s, i) => (
+                    {["Ishaan V.", "Meera P.", "Kabir J.", "Sanya R."].filter(x => !selectedClassForStudents.studentList?.find((st: any) => st.name === x)).map((s, i) => (
                       <div key={i} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors rounded-xl group">
                          <div className="flex items-center gap-3">
                             <Avatar name={s} size={32} color="#94A3B8" />
@@ -1336,8 +1536,8 @@ const FacultyHub = ({ onBack }: { onBack: () => void }) => {
                           <Btn variant="outline" size="sm" className="opacity-0 group-hover:opacity-100" onClick={() => {
                             const updated = classes.map(c => c.id === selectedClassForStudents.id ? {
                                ...c, 
-                               studentList: [...(c.studentList || []), s],
-                               students: c.students + 1
+                               studentList: [...(c.studentList || []), { name: s, attended: 14, total: 15, status: null, history: [] }],
+                               students: (c.studentList?.length || 0) + 1
                             } : c);
                             setClasses(updated);
                             setSelectedClassForStudents(updated.find(x => x.id === selectedClassForStudents.id));
@@ -1354,15 +1554,75 @@ const FacultyHub = ({ onBack }: { onBack: () => void }) => {
             </motion.div>
           </div>
         )}
+
+        {viewingHistory && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-[40px] w-full max-w-md p-10 shadow-2xl relative"
+            >
+              <button 
+                onClick={() => setViewingHistory(null)}
+                className="absolute top-8 right-8 text-slate-400 hover:text-black transition-colors"
+              >
+                <X size={24} />
+              </button>
+
+              <div className="flex items-center gap-4 mb-10">
+                <Avatar name={viewingHistory.name} size={48} />
+                <div>
+                  <h3 className="text-2xl font-serif font-bold">{viewingHistory.name}</h3>
+                  <div className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Attendance Record</div>
+                </div>
+              </div>
+
+              <div className="space-y-4 max-h-[300px] overflow-auto pr-2 pb-4">
+                {viewingHistory.history && viewingHistory.history.length > 0 ? (
+                  viewingHistory.history.slice().reverse().map((entry: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between p-5 bg-gray-50 rounded-2xl border border-black/5">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-xl bg-white border border-black/5">
+                          <Calendar size={16} className="text-fluent-teal" />
+                        </div>
+                        <div className="text-sm font-bold text-slate-600">{new Date(entry.date).toLocaleDateString()}</div>
+                      </div>
+                      <Badge color={entry.status === 'present' ? 'navy' : 'gold'}>
+                        {entry.status.toUpperCase()}
+                      </Badge>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-slate-400">
+                    <p className="text-sm font-medium">No historical data available yet.</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-8 pt-8 border-t border-black/5 flex justify-between items-center">
+                <div>
+                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Aggregate Rate</div>
+                  <div className="text-2xl font-mono font-bold text-fluent-teal">
+                    {viewingHistory.total > 0 ? Math.round((viewingHistory.attended / viewingHistory.total) * 100) : 0}%
+                  </div>
+                </div>
+                <Btn variant="primary" onClick={() => setViewingHistory(null)}>Done</Btn>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </div>
     </DashboardShell>
   );
 };
 
-const StudentDashboard = ({ onBack }: { onBack: () => void }) => {
+const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => void }) => {
   const [activeNav, setActiveNav] = useState("overview");
   const [showNotification, setShowNotification] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
+
+  const studentName = profile?.name || "Arjun Sharma";
+  const studentGrade = profile?.grade || "Grade 10";
 
   const navItems = [
     { id: "overview", label: "Overview", icon: Home },
@@ -1431,15 +1691,15 @@ const StudentDashboard = ({ onBack }: { onBack: () => void }) => {
   };
 
   return (
-    <DashboardShell role="student" title="Arjun Sharma" navItems={navItems} activeNav={activeNav} setActiveNav={setActiveNav} onBack={onBack}>
+    <DashboardShell role="student" title={studentName} navItems={navItems} activeNav={activeNav} setActiveNav={setActiveNav} onBack={onBack}>
       <div className="p-10 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
         <header className="flex flex-col md:flex-row justify-between items-start gap-8 mb-12">
           <div>
-            <div className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.15em] mb-2">Monday, 5 May 2026</div>
+            <div className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.15em] mb-2">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} • {studentGrade}</div>
             <h1 className="text-4xl font-serif font-bold tracking-tight">
-              Good morning, <span className="text-fluent-teal italic font-normal">Arjun</span> ✦
+              Good morning, <span className="text-fluent-teal italic font-normal">{studentName.split(' ')[0]}</span> ✦
             </h1>
-            <p className="text-slate-500 mt-2">You have 2 sessions today. Keep up the momentum!</p>
+            <p className="text-slate-500 mt-2">Targeting {profile?.goal || "Academic Excellence"} • Momentum looks strong.</p>
           </div>
           <div className="flex gap-3 relative">
             <Btn 
@@ -1659,9 +1919,11 @@ const StudentDashboard = ({ onBack }: { onBack: () => void }) => {
   );
 };
 
-const ParentDashboard = ({ onBack }: { onBack: () => void }) => {
+const ParentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => void }) => {
   const [activeNav, setActiveNav] = useState("overview");
   const [activeChild, setActiveChild] = useState(0);
+
+  const parentName = profile?.name || "Rahul Sharma";
 
   const navItems = [
     { id: "overview", label: "Family Overview", icon: Home },
@@ -1688,12 +1950,12 @@ const ParentDashboard = ({ onBack }: { onBack: () => void }) => {
   ];
 
   return (
-    <DashboardShell role="parent" title="Rahul Sharma" navItems={navItems} activeNav={activeNav} setActiveNav={setActiveNav} onBack={onBack}>
+    <DashboardShell role="parent" title={parentName} navItems={navItems} activeNav={activeNav} setActiveNav={setActiveNav} onBack={onBack}>
       <div className="p-10 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
         <header className="flex flex-col md:flex-row justify-between items-start gap-8 mb-12">
           <div>
-            <h1 className="text-3xl font-serif font-bold tracking-tight">Parent Desk</h1>
-            <p className="text-slate-500 mt-1">Real-time oversight of child academic fluency and British faculty feedback.</p>
+            <h1 className="text-3xl font-serif font-bold tracking-tight">Welcome, {parentName.split(' ')[0]} ✦</h1>
+            <p className="text-slate-500 mt-1">Focusing on {profile?.goal || "Holistic Academic Support"} for your family.</p>
           </div>
           <Btn variant="gold" icon={Calendar} size="sm">Book Faculty Consultation</Btn>
         </header>
@@ -1914,8 +2176,10 @@ const AdminCommand = ({ onBack }: { onBack: () => void }) => {
 
 export default function App() {
   const [view, setView] = useState("landing");
+  const [userProfile, setUserProfile] = useState<any>(null);
 
-  const navigate = (v: string) => {
+  const navigate = (v: string, profile?: any) => {
+    if (profile) setUserProfile(profile);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setView(v);
   };
@@ -1925,9 +2189,9 @@ export default function App() {
       <AnimatePresence mode="wait">
         {view === "landing" && <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><LandingPage onEnter={navigate} /></motion.div>}
         {view === "onboarding" && <motion.div key="onboarding" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><OnboardingFlow onComplete={navigate} /></motion.div>}
-        {view === "student-dashboard" && <motion.div key="std-dash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><StudentDashboard onBack={() => navigate("landing")} /></motion.div>}
-        {view === "teacher-dashboard" && <motion.div key="teach-dash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><FacultyHub onBack={() => navigate("landing")} /></motion.div>}
-        {view === "parent-dashboard" && <motion.div key="par-dash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><ParentDashboard onBack={() => navigate("landing")} /></motion.div>}
+        {view === "student-dashboard" && <motion.div key="std-dash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><StudentDashboard profile={userProfile} onBack={() => navigate("landing")} /></motion.div>}
+        {view === "teacher-dashboard" && <motion.div key="teach-dash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><FacultyHub profile={userProfile} onBack={() => navigate("landing")} /></motion.div>}
+        {view === "parent-dashboard" && <motion.div key="par-dash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><ParentDashboard profile={userProfile} onBack={() => navigate("landing")} /></motion.div>}
         {view === "admin-dashboard" && <motion.div key="admin-dash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><AdminCommand onBack={() => navigate("landing")} /></motion.div>}
       </AnimatePresence>
     </div>
