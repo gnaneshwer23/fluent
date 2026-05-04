@@ -22,12 +22,85 @@
         }
       },
       "required": ["email", "requestedAt"]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Personalized information for registered faculty or students.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["student", "teacher", "parent", "admin"] },
+        "subjects": { "type": "array", "items": { "type": "string" } },
+        "grade": { "type": "string" },
+        "school": { "type": "string" },
+        "goal": { "type": "string" },
+        "onboarded": { "type": "boolean" }
+      },
+      "required": ["name", "role"]
+    },
+    "Class": {
+      "title": "Class Cohort",
+      "description": "A group of students assigned to a specific subject and grade.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "grade": { "type": "string" },
+        "subject": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "avgScore": { "type": "number" },
+        "attendance": { "type": "number" }
+      },
+      "required": ["name", "grade", "subject", "ownerId"]
+    },
+    "Student": {
+      "title": "Student Record",
+      "description": "Attendance and performance data for a single student.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "studentId": { "type": "string" },
+        "enrolledAt": { "type": "string" },
+        "privateFeedback": { "type": "string" },
+        "attended": { "type": "number" },
+        "total": { "type": "number" },
+        "history": { "type": "array", "items": { "type": "object" } },
+        "grade": { "type": "string" }
+      },
+      "required": ["name"]
+    },
+    "PoolStudent": {
+      "title": "Unassigned Student",
+      "description": "Student in the registry but not currently in a class session.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["name", "ownerId"]
     }
   },
   "firestore": {
     "waitlist": {
       "schema": "WaitlistEntry",
       "description": "Collection of waitlist requests."
+    },
+    "users": {
+        "schema": "UserProfile",
+        "description": "User profile data."
+    },
+    "classes": {
+        "schema": "Class",
+        "description": "Class cohorts managed by faculty."
+    },
+    "classes/{classId}/students": {
+        "schema": "Student",
+        "description": "Students enrolled in a specific class."
+    },
+    "studentPool": {
+        "schema": "PoolStudent",
+        "description": "Registry of students available for assignment."
     }
   }
 }

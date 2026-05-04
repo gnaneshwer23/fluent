@@ -6,13 +6,51 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Global Helpers
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    // User Profiles
+    match /users/{userId} {
+      allow read: if isSignedIn(); // Allow reading basic profile info
+      allow write: if isOwner(userId) && isValidUserProfile(request.resource.data);
+    }
+
+    function isValidUserProfile(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.role in ['student', 'teacher', 'parent', 'admin'];
+    }
+
+    // Classes
+    match /classes/{classId} {
+      allow read: if isSignedIn(); // Simplified for now, in production restrict to members
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['students', 'attendance']));
+      allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+
+      match /students/{studentId} {
+        allow read: if isSignedIn();
+        allow write: if isSignedIn(); // Teachers add students. In production, check parent ownerId.
+      }
+    }
+
+    // Collection Group for Students (to find my own records)
+    match /{path=**}/students/{studentId} {
+      allow read: if isSignedIn();
+    }
+
+    // Student Pool
+    match /studentPool/{poolId} {
+      allow read: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow write: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+    }
+
     // Waitlist collection
     match /waitlist/{entryId} {
       allow create: if isValidWaitlistEntry(request.resource.data);
-      allow read, update, delete: if false; // Only allow creation from client
     }
 
-    // Validation helper
     function isValidWaitlistEntry(data) {
       return data.email is string && 
              data.email.size() > 0 && 

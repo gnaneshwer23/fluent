@@ -12,9 +12,13 @@ import {
   X,
   Target,
   ChevronDown,
+  ChevronUp,
+  Edit2,
+  FileText,
   Users,
   GraduationCap,
   ShieldCheck,
+  Shield,
   Zap,
   Home,
   BookOpen,
@@ -33,9 +37,11 @@ import {
   Globe,
   TrendingUp,
   Filter,
-  Edit2,
   Trash2,
-  CheckCircle2
+  CheckCircle2,
+  Check,
+  Database,
+  Phone
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -49,16 +55,46 @@ import {
   Area
 } from 'recharts';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  setDoc,
+  getDoc,
+  getDocs,
+  collectionGroup,
+  doc,
+  query,
+  where,
+  onSnapshot,
+  serverTimestamp,
+  deleteDoc,
+  updateDoc,
+  getDocFromServer
+} from 'firebase/firestore';
+import { 
+  getAuth, 
+  onAuthStateChanged, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  signOut,
+  User
+} from 'firebase/auth';
 import firebaseConfig from '../firebase-applet-config.json';
 
 // --- Firebase Initialization ---
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
 
 // --- Error Handling ---
 enum OperationType {
   CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
   WRITE = 'write',
 }
 
@@ -166,8 +202,8 @@ const ProgressBar = ({ value, max = 100, color = "var(--color-fluent-teal)", lab
   </div>
 );
 
-const Logo = ({ className = "", variant = "dark", onClick }: { className?: string, variant?: "dark" | "light", onClick?: () => void }) => (
-  <div onClick={onClick} className={`flex items-center gap-2.5 cursor-pointer group ${className}`}>
+const Logo = ({ className = "", variant = "dark", onClick, animate = false }: { className?: string, variant?: "dark" | "light", onClick?: () => void, animate?: boolean }) => (
+  <div onClick={onClick} className={`flex items-center gap-2.5 cursor-pointer group ${className} ${animate ? 'animate-pulse' : ''}`}>
     <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:rotate-6 ${variant === 'dark' ? 'bg-fluent-navy' : 'bg-white'}`}>
       <BookOpen size={16} className={variant === 'dark' ? 'text-fluent-gold' : 'text-fluent-navy'} />
     </div>
@@ -1062,32 +1098,67 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingClass, setEditingClass] = useState<any>(null);
   const [selectedClassForStudents, setSelectedClassForStudents] = useState<any>(null);
+  const [selectedPoolStudents, setSelectedPoolStudents] = useState<string[]>([]);
   const [viewingHistory, setViewingHistory] = useState<any>(null);
+  const [editingStudent, setEditingStudent] = useState<any>(null);
+  const [viewingStudentDetail, setViewingStudentDetail] = useState<any>(null);
+  const [rosterSortOrder, setRosterSortOrder] = useState<'desc' | 'asc' | null>(null);
+  const [showBulkAdd, setShowBulkAdd] = useState(false);
+  const [bulkText, setBulkText] = useState("");
+  const [unassignedStudents, setUnassignedStudents] = useState<any[]>([]);
+  const [classes, setClasses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const teacherName = profile?.name || "Dr. Sarah Mills";
+  const teacherName = profile?.name || auth.currentUser?.displayName || "Dr. Sarah Mills";
   const department = profile?.subjects?.[0] || "Physics";
 
-  const [classes, setClasses] = useState([
-    { id: 1, name: "G10 Physics - Mechanics", grade: "Grade 10", subject: "Physics", students: 24, avgScore: 82, attendance: 98, studentList: [
-      { name: "Arjun Sharma", attended: 24, total: 25, status: null as 'present' | 'absent' | null, history: [{ date: '2024-05-01', status: 'present' }, { date: '2024-05-02', status: 'present' }] },
-      { name: "Priya K.", attended: 23, total: 25, status: null as 'present' | 'absent' | null, history: [{ date: '2024-05-01', status: 'present' }, { date: '2024-05-02', status: 'absent' }] },
-      { name: "Rohan M.", attended: 22, total: 25, status: null as 'present' | 'absent' | null, history: [{ date: '2024-05-01', status: 'absent' }, { date: '2024-05-02', status: 'present' }] }
-    ] },
-    { id: 2, name: "G9 Mathematics - Proofs", grade: "Grade 9", subject: "Mathematics", students: 18, avgScore: 76, attendance: 94, studentList: [
-      { name: "Ananya S.", attended: 18, total: 20, status: null as 'present' | 'absent' | null, history: [{ date: '2024-05-01', status: 'present' }] },
-      { name: "Ishaan V.", attended: 17, total: 20, status: null as 'present' | 'absent' | null, history: [{ date: '2024-05-01', status: 'present' }] }
-    ] },
-    { id: 3, name: "G11 English - Rhetoric", grade: "Grade 11", subject: "English", students: 12, avgScore: 89, attendance: 100, studentList: [
-      { name: "Sanya R.", attended: 15, total: 15, status: null as 'present' | 'absent' | null, history: [{ date: '2024-05-01', status: 'present' }] }
-    ] },
-  ]);
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    const uid = auth.currentUser.uid;
+
+    // Listen to classes
+    const classesQuery = query(collection(db, 'classes'), where('ownerId', '==', uid));
+    const unsubClasses = onSnapshot(classesQuery, (snap) => {
+      const classData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setClasses(classData);
+      setLoading(false);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'classes'));
+
+    // Listen to student pool
+    const poolQuery = query(collection(db, 'studentPool'), where('ownerId', '==', uid));
+    const unsubPool = onSnapshot(poolQuery, (snap) => {
+      const poolData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setUnassignedStudents(poolData);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'studentPool'));
+
+    return () => {
+      unsubClasses();
+      unsubPool();
+    };
+  }, []);
+
+  // Sync current selection if students subcollection changes?
+  // Actually, students should be fetched when a class is selected.
+  const [classStudents, setClassStudents] = useState<any[]>([]);
+  useEffect(() => {
+    if (!selectedClassForStudents?.id) {
+      setClassStudents([]);
+      return;
+    }
+    const studentsRef = collection(db, 'classes', selectedClassForStudents.id, 'students');
+    const unsub = onSnapshot(studentsRef, (snap) => {
+      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setClassStudents(data);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, `classes/${selectedClassForStudents.id}/students`));
+    return () => unsub();
+  }, [selectedClassForStudents?.id]);
 
   const navItems = [
     { id: "overview", label: "Faculty Console", icon: Home },
     { id: "cohorts", label: "Student Cohorts", icon: Users, badge: classes.length.toString() },
+    { id: "registry", label: "Registry", icon: Database },
     { id: "live", label: "Live Delivery", icon: Play, badge: "Live" },
     { id: "curriculum", label: "British Methods", icon: BookOpen },
-    { id: "analytics", label: "Mastery Grid", icon: BarChart3 },
     { id: "settings", label: "Preferences", icon: Settings },
   ];
 
@@ -1097,61 +1168,51 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
     { time: "14:00 - 15:30", class: "Cohort 11C", subject: "English", topic: "Shakespearean Flow", status: "upcoming" },
   ];
 
-  const handleCreateClass = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreateClass = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!auth.currentUser) return;
     const formData = new FormData(e.currentTarget);
     const newClass = {
-      id: Date.now(),
       name: formData.get('name') as string,
       grade: formData.get('grade') as string,
       subject: formData.get('subject') as string,
       students: 0,
       avgScore: 0,
       attendance: 0,
-      studentList: [],
+      ownerId: auth.currentUser.uid,
+      createdAt: serverTimestamp()
     };
-    setClasses([...classes, newClass]);
-    setShowCreateModal(false);
+    try {
+      await addDoc(collection(db, 'classes'), newClass);
+      setShowCreateModal(false);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'classes');
+    }
   };
 
-  const handleUpdateClass = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleUpdateClass = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!editingClass) return;
     const formData = new FormData(e.currentTarget);
-    setClasses(classes.map(c => c.id === editingClass.id ? {
-      ...c,
-      name: formData.get('name') as string,
-      grade: formData.get('grade') as string,
-      subject: formData.get('subject') as string,
-    } : c));
-    setEditingClass(null);
+    try {
+      await updateDoc(doc(db, 'classes', editingClass.id), {
+        name: formData.get('name') as string,
+        grade: formData.get('grade') as string,
+        subject: formData.get('subject') as string,
+      });
+      setEditingClass(null);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `classes/${editingClass.id}`);
+    }
   };
 
-  const addStudent = (classId: number, studentName: string) => {
-    if (!studentName.trim()) return;
-    setClasses(classes.map(c => {
-      if (c.id === classId) {
-        return {
-          ...c,
-          students: c.students + 1,
-          studentList: [...c.studentList, studentName]
-        };
-      }
-      return c;
-    }));
-  };
-
-  const removeStudent = (classId: number, studentName: string) => {
-    setClasses(classes.map(c => {
-      if (c.id === classId) {
-        const newList = c.studentList.filter(name => name !== studentName);
-        return {
-          ...c,
-          students: Math.max(0, c.students - 1),
-          studentList: newList
-        };
-      }
-      return c;
-    }));
+  const handleDeleteClass = async (classId: string) => {
+    if (!window.confirm("Are you sure you want to delete this class? All student records for this class will be lost.")) return;
+    try {
+      await deleteDoc(doc(db, 'classes', classId));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `classes/${classId}`);
+    }
   };
 
   return (
@@ -1289,6 +1350,87 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
               <span className="text-sm font-bold uppercase tracking-widest">Create New Class</span>
             </button>
           </div>
+        ) : activeNav === "registry" ? (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="flex justify-between items-end">
+              <div>
+                <h2 className="text-3xl font-serif font-bold">Student Registry</h2>
+                <p className="text-slate-500 mt-2">Manage unassigned students and the institutional pool.</p>
+              </div>
+              <div className="flex gap-3">
+                <div className="relative">
+                  <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input 
+                    placeholder="Global student search..." 
+                    className="pl-12 pr-4 py-3 bg-white border border-black/5 rounded-xl text-sm focus:ring-1 focus:ring-fluent-teal outline-none w-64"
+                  />
+                </div>
+                <Btn 
+                  variant="primary" 
+                  icon={Plus}
+                  onClick={() => {
+                    const name = prompt("Enter student's full name:");
+                    if (!name || !auth.currentUser) return;
+                    addDoc(collection(db, 'studentPool'), { name, ownerId: auth.currentUser.uid })
+                      .catch(e => handleFirestoreError(e, OperationType.WRITE, 'studentPool'));
+                  }}
+                >
+                  Register Student
+                </Btn>
+              </div>
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-8">
+              <Card className="lg:col-span-2 p-8">
+                <h3 className="text-lg font-serif font-bold mb-6">Available Pool ({unassignedStudents.length})</h3>
+                <div className="space-y-3">
+                  {unassignedStudents.length === 0 ? (
+                    <div className="p-12 text-center text-slate-400 italic">No students currently in the pool.</div>
+                  ) : unassignedStudents.map(s => (
+                    <div key={s.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-black/5">
+                      <div className="flex items-center gap-4">
+                        <Avatar name={s.name} size={40} />
+                        <div>
+                          <div className="font-bold text-sm tracking-tight">{s.name}</div>
+                          <div className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">Unassigned Student</div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Btn variant="ghost" size="sm" className="text-slate-400" onClick={() => {
+                          const newName = prompt("Rename student:", s.name);
+                          if (newName) updateDoc(doc(db, 'studentPool', s.id), { name: newName });
+                        }}>
+                          <Edit2 size={16} />
+                        </Btn>
+                        <Btn variant="ghost" size="sm" className="text-red-400 hover:bg-red-50" onClick={() => {
+                          if (confirm("Delete this student from registry?")) deleteDoc(doc(db, 'studentPool', s.id));
+                        }}>
+                          <Trash2 size={16} />
+                        </Btn>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              <Card className="p-8 bg-fluent-navy text-white">
+                <h3 className="text-lg font-serif font-bold mb-4">Placement Guidance</h3>
+                <p className="text-sm text-white/60 mb-8 font-medium leading-relaxed">
+                  Students in the pool are visible to all your classes. You can assign them to any cohort from the class management sidebar.
+                </p>
+                <div className="space-y-4">
+                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                    <div className="text-[10px] font-bold text-fluent-gold uppercase tracking-[0.2em] mb-1">PRO TIP</div>
+                    <div className="text-xs font-medium">Use the "Bulk Add" feature inside a Class view to import hundreds of students at once.</div>
+                  </div>
+                  <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                    <div className="text-[10px] font-bold text-fluent-gold uppercase tracking-[0.2em] mb-1">ARCHIVE</div>
+                    <div className="text-xs font-medium">Deleting a student from the pool is permanent. Assigned students stay in their class until removed.</div>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
         ) : (
           <div className="py-20 text-center">
              <div className="w-20 h-20 rounded-2xl bg-fluent-navy/5 flex items-center justify-center mx-auto mb-6 text-fluent-navy/20">
@@ -1360,7 +1502,10 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }} 
               className="absolute inset-0 bg-fluent-navy/40 backdrop-blur-sm"
-              onClick={() => setSelectedClassForStudents(null)}
+              onClick={() => {
+                setSelectedClassForStudents(null);
+                setSelectedPoolStudents([]);
+              }}
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -1372,48 +1517,247 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
                   <h2 className="text-2xl font-serif font-bold tracking-tight">Manage Enrollment</h2>
                   <p className="text-slate-500 text-sm mt-1">{selectedClassForStudents.name}</p>
                 </div>
-                <button onClick={() => setSelectedClassForStudents(null)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">
+                <button 
+                  onClick={() => {
+                    setSelectedClassForStudents(null);
+                    setSelectedPoolStudents([]);
+                  }} 
+                  className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+                >
                   <X size={18} />
                 </button>
               </div>
 
               <div className="flex-1 overflow-auto pr-2">
                 <div className="space-y-4 mb-8">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Quick Add Student</div>
-                  <form 
-                    className="flex gap-2"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const form = e.currentTarget;
-                      const input = form.elements.namedItem('studentName') as HTMLInputElement;
-                      const name = input.value;
-                      if (!name.trim()) return;
-                      const updated = classes.map(c => c.id === selectedClassForStudents.id ? {
-                        ...c, 
-                        studentList: [...(c.studentList || []), { name, attended: 1, total: 1, present: true }],
-                        students: (c.studentList?.length || 0) + 1
-                      } : c);
-                      setClasses(updated);
-                      setSelectedClassForStudents(updated.find(x => x.id === selectedClassForStudents.id));
-                      input.value = '';
-                    }}
-                  >
-                    <input name="studentName" placeholder="Type student name..." className="flex-1 p-3 bg-gray-50 border border-black/5 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-fluent-teal" />
-                    <Btn type="submit" variant="primary" size="sm">Enroll</Btn>
-                  </form>
+                  <div className="flex justify-between items-center">
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                      {showBulkAdd ? "Bulk Student Import" : "Quick Add Student"}
+                    </div>
+                    <button 
+                      onClick={() => setShowBulkAdd(!showBulkAdd)}
+                      className="text-[10px] font-bold uppercase tracking-widest text-fluent-teal hover:text-fluent-navy transition-colors flex items-center gap-1.5"
+                    >
+                      {showBulkAdd ? <Users size={12} /> : <FileText size={12} />}
+                      {showBulkAdd ? "Simple Mode" : "Bulk Mode"}
+                    </button>
+                  </div>
+
+                  {!showBulkAdd ? (
+                    <form 
+                      className="flex gap-2"
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        const form = e.currentTarget;
+                        const input = form.elements.namedItem('studentName') as HTMLInputElement;
+                        const name = input.value;
+                        if (!name.trim()) return;
+                        
+                        try {
+                          const studentsRef = collection(db, 'classes', selectedClassForStudents.id, 'students');
+                          await addDoc(studentsRef, {
+                            name,
+                            studentId: `ST-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+                            enrolledAt: new Date().toISOString(),
+                            attended: 0,
+                            total: 0,
+                            history: [],
+                            grade: selectedClassForStudents.grade,
+                            subject: selectedClassForStudents.subject,
+                            className: selectedClassForStudents.name
+                          });
+                          await updateDoc(doc(db, 'classes', selectedClassForStudents.id), {
+                            students: (selectedClassForStudents.students || 0) + 1
+                          });
+                          input.value = '';
+                        } catch (error) {
+                          handleFirestoreError(error, OperationType.WRITE, `classes/${selectedClassForStudents.id}/students`);
+                        }
+                      }}
+                    >
+                      <input name="studentName" placeholder="Type student name..." className="flex-1 p-3 bg-gray-50 border border-black/5 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-fluent-teal" />
+                      <Btn type="submit" variant="primary" size="sm">Enroll</Btn>
+                    </form>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center px-1">
+                        <p className="text-[10px] text-slate-400">Enter names (new lines/commas) or upload a CSV roster.</p>
+                        <Btn 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-6 px-2 text-[9px] border-black/5"
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.accept = '.csv,.txt';
+                            input.onchange = (e) => {
+                              const file = (e.target as HTMLInputElement).files?.[0];
+                              if (!file) return;
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                const text = event.target?.result as string;
+                                // Simple CSV parser: split by line, trim, filter, or handle comma if first line is names
+                                const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+                                setBulkText(lines.join('\n'));
+                              };
+                              reader.readAsText(file);
+                            };
+                            input.click();
+                          }}
+                        >
+                          Upload .CSV
+                        </Btn>
+                      </div>
+                      <textarea 
+                        value={bulkText}
+                        onChange={(e) => setBulkText(e.target.value)}
+                        placeholder="Arjun S.&#10;Priya K.&#10;Rohan M. ..."
+                        className="w-full h-32 p-4 bg-gray-50 border border-black/5 rounded-xl text-sm font-medium focus:ring-1 focus:ring-fluent-teal outline-none resize-none"
+                      />
+                      <div className="flex gap-2">
+                        <Btn 
+                          variant="primary" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={async () => {
+                            const names = bulkText
+                              .split(/[\n,]/)
+                              .map(n => n.trim())
+                              .filter(n => n.length > 0);
+                            
+                            if (names.length === 0) return;
+
+                            try {
+                              const totalNames = names.length;
+                              // Use batch for better performance (Firestore limits 500 per batch)
+                              const studentsRef = collection(db, 'classes', selectedClassForStudents.id, 'students');
+                              
+                              // We'll process in chunks of 10 for responsiveness in this demo
+                              for (const name of names) {
+                                await addDoc(studentsRef, {
+                                  name,
+                                  studentId: `ST-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+                                  enrolledAt: new Date().toISOString(),
+                                  attended: 0,
+                                  total: 0,
+                                  history: [],
+                                  grade: selectedClassForStudents.grade,
+                                  subject: selectedClassForStudents.subject,
+                                  className: selectedClassForStudents.name
+                                });
+                              }
+                              
+                              await updateDoc(doc(db, 'classes', selectedClassForStudents.id), {
+                                students: (selectedClassForStudents.students || 0) + totalNames
+                              });
+                              setBulkText("");
+                              setShowBulkAdd(false);
+                            } catch (error) {
+                              handleFirestoreError(error, OperationType.WRITE, `classes/${selectedClassForStudents.id}/students`);
+                            }
+                          }}
+                        >
+                          Import {bulkText.split(/[\n,]/).filter(n => n.trim().length > 0).length} Students
+                        </Btn>
+                        <Btn variant="outline" size="sm" onClick={() => { setShowBulkAdd(false); setBulkText(""); }}>Cancel</Btn>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-4">
+                  {classStudents.length > 0 && (
+                    <div className="bg-fluent-navy text-white rounded-3xl p-6 shadow-lg relative overflow-hidden group">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-fluent-teal/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-fluent-teal/20 transition-colors"></div>
+                      <div className="relative z-10 flex items-center justify-between">
+                        <div>
+                          <div className="text-[10px] font-bold uppercase tracking-widest text-fluent-teal/80 mb-1">Class Attendance Vitality</div>
+                          <div className="text-4xl font-serif font-bold tracking-tight">
+                            {(() => {
+                              const attended = classStudents.reduce((sum: number, s: any) => sum + (s.attended + (s.status === 'present' ? 1 : 0)), 0);
+                              const total = classStudents.reduce((sum: number, s: any) => sum + (s.total + (s.status ? 1 : 0)), 0);
+                              return total > 0 ? Math.round((attended / total) * 100) : 0;
+                            })()}%
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <div className="flex gap-1 mb-2">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <div 
+                                key={i} 
+                                className={`w-1 h-3 rounded-full ${i < 4 ? 'bg-fluent-teal' : 'bg-white/20'}`}
+                              />
+                            ))}
+                          </div>
+                          <div className="text-[9px] font-bold uppercase tracking-widest text-white/40">Aggregated Metric</div>
+                        </div>
+                      </div>
+                      <div className="mt-4 w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ 
+                            width: `${(() => {
+                              const attended = classStudents.reduce((sum: number, s: any) => sum + (s.attended + (s.status === 'present' ? 1 : 0)), 0);
+                              const total = classStudents.reduce((sum: number, s: any) => sum + (s.total + (s.status ? 1 : 0)), 0);
+                              return total > 0 ? Math.round((attended / total) * 100) : 0;
+                            })()}%` 
+                          }}
+                          className="h-full bg-fluent-teal"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex justify-between items-center mb-2">
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Class Roster</div>
-                    <Badge color="navy">{selectedClassForStudents.students} Enrolled</Badge>
+                    <div className="flex items-center gap-4">
+                      <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Class Roster</div>
+                      <div className="flex items-center bg-gray-100 p-1 rounded-lg gap-1">
+                        <button 
+                          onClick={() => setRosterSortOrder(rosterSortOrder === 'desc' ? null : 'desc')}
+                          className={`p-1 rounded-md transition-all ${rosterSortOrder === 'desc' ? 'bg-fluent-navy text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                          title="Sort Highest First"
+                        >
+                          <ChevronUp size={14} />
+                        </button>
+                        <button 
+                          onClick={() => setRosterSortOrder(rosterSortOrder === 'asc' ? null : 'asc')}
+                          className={`p-1 rounded-md transition-all ${rosterSortOrder === 'asc' ? 'bg-fluent-navy text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                          title="Sort Lowest First"
+                        >
+                          <ChevronDown size={14} />
+                        </button>
+                      </div>
+                    </div>
+                    <Badge color="navy">{selectedClassForStudents.students || 0} Enrolled</Badge>
                   </div>
-                  {selectedClassForStudents.studentList?.map((s: any, i: number) => (
-                    <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                      <div className="flex items-center gap-3">
+                  {classStudents.length === 0 ? (
+                    <div className="p-12 text-center bg-gray-50 rounded-[32px] border border-dashed border-slate-200">
+                      <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                        <Users className="text-slate-300" size={24} />
+                      </div>
+                      <p className="text-xs text-slate-400 font-medium max-w-[200px] mx-auto">
+                        No students enrolled yet. Use the tools above to build your cohort.
+                      </p>
+                    </div>
+                  ) : classStudents.slice().sort((a: any, b: any) => {
+                    if (!rosterSortOrder) return 0;
+                    const getRate = (s: any) => {
+                      const total = s.total + (s.status ? 1 : 0);
+                      if (total === 0) return 0;
+                      return (s.attended + (s.status === 'present' ? 1 : 0)) / total;
+                    };
+                    const rateA = getRate(a);
+                    const rateB = getRate(b);
+                    return rosterSortOrder === 'desc' ? rateB - rateA : rateA - rateB;
+                  }).map((s: any, i: number) => (
+                    <div key={s.id || i} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                      <div 
+                        className="flex items-center gap-3 cursor-pointer group/item"
+                        onClick={() => setViewingStudentDetail(s)}
+                      >
                         <Avatar name={s.name} size={32} />
                         <div>
-                          <div className="font-bold text-sm text-fluent-navy">{s.name}</div>
+                          <div className="font-bold text-sm text-fluent-navy group-hover/item:text-fluent-teal transition-colors underline-offset-2 group-hover/item:underline">{s.name}</div>
                           <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                             Rate: { (s.total + (s.status ? 1 : 0)) > 0 ? Math.round(((s.attended + (s.status === 'present' ? 1 : 0)) / (s.total + (s.status ? 1 : 0))) * 100) : 0}% ({s.attended + (s.status === 'present' ? 1 : 0)}/{s.total + (s.status ? 1 : 0)})
                           </div>
@@ -1423,24 +1767,7 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
                         <div className="flex bg-gray-100 p-1 rounded-xl gap-1">
                           <button 
                             onClick={() => {
-                              const updated = classes.map(c => {
-                                if (c.id === selectedClassForStudents.id) {
-                                  const updatedList = c.studentList.map((st: any) => 
-                                    st.name === s.name ? { ...st, status: st.status === 'present' ? null : 'present' } : st
-                                  );
-                                  // Aggregate Class Rate
-                                  let totalA = 0;
-                                  let totalP = 0;
-                                  updatedList.forEach((st: any) => {
-                                    totalA += st.attended + (st.status === 'present' ? 1 : 0);
-                                    totalP += st.total + (st.status ? 1 : 0);
-                                  });
-                                  return { ...c, studentList: updatedList, attendance: Math.round((totalA / totalP) * 100) };
-                                }
-                                return c;
-                              });
-                              setClasses(updated);
-                              setSelectedClassForStudents(updated.find(x => x.id === selectedClassForStudents.id));
+                              setClassStudents(prev => prev.map(st => st.id === s.id ? { ...st, status: st.status === 'present' ? null : 'present' } : st));
                             }}
                             title="Mark Present"
                             className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${s.status === 'present' ? 'bg-fluent-teal text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
@@ -1449,23 +1776,7 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
                           </button>
                           <button 
                             onClick={() => {
-                              const updated = classes.map(c => {
-                                if (c.id === selectedClassForStudents.id) {
-                                  const updatedList = c.studentList.map((st: any) => 
-                                    st.name === s.name ? { ...st, status: st.status === 'absent' ? null : 'absent' } : st
-                                  );
-                                  let totalA = 0;
-                                  let totalP = 0;
-                                  updatedList.forEach((st: any) => {
-                                    totalA += st.attended + (st.status === 'present' ? 1 : 0);
-                                    totalP += st.total + (st.status ? 1 : 0);
-                                  });
-                                  return { ...c, studentList: updatedList, attendance: Math.round((totalA / totalP) * 100) };
-                                }
-                                return c;
-                              });
-                              setClasses(updated);
-                              setSelectedClassForStudents(updated.find(x => x.id === selectedClassForStudents.id));
+                              setClassStudents(prev => prev.map(st => st.id === s.id ? { ...st, status: st.status === 'absent' ? null : 'absent' } : st));
                             }}
                             title="Mark Absent"
                             className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${s.status === 'absent' ? 'bg-red-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
@@ -1473,17 +1784,29 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
                             A
                           </button>
                         </div>
+                        <Btn variant="ghost" size="sm" className="text-slate-400 hover:text-fluent-navy p-2" onClick={() => setEditingStudent(s)}>
+                          <Edit2 size={16} />
+                        </Btn>
                         <Btn variant="ghost" size="sm" className="text-slate-400 hover:text-fluent-navy p-2" onClick={() => setViewingHistory(s)}>
                           <BarChart3 size={16} />
                         </Btn>
-                        <Btn variant="ghost" size="sm" className="text-red-400 hover:bg-red-50 p-2" onClick={() => {
-                          const updated = classes.map(c => c.id === selectedClassForStudents.id ? {
-                             ...c, 
-                             studentList: c.studentList.filter((x: any) => x.name !== s.name),
-                             students: Math.max(0, c.students - 1)
-                          } : c);
-                          setClasses(updated);
-                          setSelectedClassForStudents(updated.find(x => x.id === selectedClassForStudents.id));
+                        <Btn variant="ghost" size="sm" className="text-red-400 hover:bg-red-50 p-2" onClick={async () => {
+                          if (window.confirm(`Are you sure you want to remove ${s.name} from this class? They will be returned to the student pool.`)) {
+                            try {
+                              const uid = auth.currentUser?.uid;
+                              if (!uid) return;
+                              // Add student back to pool
+                              await addDoc(collection(db, 'studentPool'), { name: s.name, ownerId: uid });
+                              // Remove from class
+                              await deleteDoc(doc(db, 'classes', selectedClassForStudents.id, 'students', s.id));
+                              // Update class count
+                              await updateDoc(doc(db, 'classes', selectedClassForStudents.id), {
+                                students: Math.max(0, (selectedClassForStudents.students || 1) - 1)
+                              });
+                            } catch (error) {
+                              handleFirestoreError(error, OperationType.DELETE, `classes/${selectedClassForStudents.id}/students/${s.id}`);
+                            }
+                          }
                         }}>
                           <Trash2 size={16} />
                         </Btn>
@@ -1495,28 +1818,43 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
                     <Btn 
                       variant="primary" 
                       className="w-full py-4 rounded-xl flex items-center justify-center gap-2"
-                      onClick={() => {
-                        const updated = classes.map(c => {
-                          if (c.id === selectedClassForStudents.id) {
-                            return {
-                              ...c,
-                              studentList: c.studentList.map((st: any) => ({
-                                ...st,
-                                total: st.total + (st.status ? 1 : 0),
-                                attended: st.attended + (st.status === 'present' ? 1 : 0),
-                                history: st.status ? [
-                                  ...(st.history || []),
-                                  { date: new Date().toISOString().split('T')[0], status: st.status }
-                                ] : (st.history || []),
-                                status: null // Clear for next session
-                              }))
-                            };
+                      onClick={async () => {
+                        try {
+                          const studentsRef = collection(db, 'classes', selectedClassForStudents.id, 'students');
+                          let totalA = 0;
+                          let totalP = 0;
+
+                          for (const st of classStudents) {
+                            const newTotal = st.total + (st.status ? 1 : 0);
+                            const newAttended = st.attended + (st.status === 'present' ? 1 : 0);
+                            const newHistory = st.status ? [
+                              ...(st.history || []),
+                              { date: new Date().toISOString().split('T')[0], status: st.status }
+                            ] : (st.history || []);
+                            
+                            await updateDoc(doc(studentsRef, st.id), {
+                              total: newTotal,
+                              attended: newAttended,
+                              history: newHistory,
+                              // No need to store 'status' permanently, it's a current session ephemeral state
+                            });
+
+                            totalA += newAttended;
+                            totalP += newTotal;
                           }
-                          return c;
-                        });
-                        
-                        setClasses(updated);
-                        setSelectedClassForStudents(updated.find(x => x.id === selectedClassForStudents.id));
+
+                          // Update Class aggregated attendance
+                          const classAttendance = totalP > 0 ? Math.round((totalA / totalP) * 100) : 0;
+                          await updateDoc(doc(db, 'classes', selectedClassForStudents.id), {
+                            attendance: classAttendance
+                          });
+
+                          // Reset local statuses after commit
+                          setClassStudents(prev => prev.map(s => ({ ...s, status: null })));
+                          alert("Session logged successfully!");
+                        } catch (error) {
+                          handleFirestoreError(error, OperationType.WRITE, `classes/${selectedClassForStudents.id}/students`);
+                        }
                       }}
                     >
                       <CheckCircle2 size={18} />
@@ -1526,30 +1864,264 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
                   </div>
 
                   <div className="pt-8 border-t border-black/5 mt-8">
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Add or Reassign Students</div>
-                    {["Ishaan V.", "Meera P.", "Kabir J.", "Sanya R."].filter(x => !selectedClassForStudents.studentList?.find((st: any) => st.name === x)).map((s, i) => (
-                      <div key={i} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors rounded-xl group">
-                         <div className="flex items-center gap-3">
-                            <Avatar name={s} size={32} color="#94A3B8" />
-                            <span className="font-medium text-sm text-slate-600">{s}</span>
+                    <div className="flex justify-between items-center mb-4 px-1">
+                      <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Assign from Student Pool</div>
+                      {selectedPoolStudents.length > 0 && (
+                        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+                          <Btn 
+                            variant="primary" 
+                            size="sm" 
+                            className="bg-fluent-teal hover:bg-fluent-teal/90 h-8 px-4 text-[10px]"
+                            onClick={async () => {
+                              try {
+                                const studentsRef = collection(db, 'classes', selectedClassForStudents.id, 'students');
+                                for (const id of selectedPoolStudents) {
+                                  const s = unassignedStudents.find(student => student.id === id);
+                                  if (!s) continue;
+                                  
+                                  await addDoc(studentsRef, {
+                                    name: s.name,
+                                    studentId: `ST-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+                                    enrolledAt: new Date().toISOString(),
+                                    attended: 0,
+                                    total: 0,
+                                    history: [],
+                                    grade: selectedClassForStudents.grade,
+                                    subject: selectedClassForStudents.subject,
+                                    className: selectedClassForStudents.name
+                                  });
+                                  await deleteDoc(doc(db, 'studentPool', s.id));
+                                }
+                                
+                                await updateDoc(doc(db, 'classes', selectedClassForStudents.id), {
+                                  students: (selectedClassForStudents.students || 0) + selectedPoolStudents.length
+                                });
+                                
+                                setSelectedPoolStudents([]);
+                              } catch (error) {
+                                handleFirestoreError(error, OperationType.WRITE, `classes/${selectedClassForStudents.id}/students`);
+                              }
+                            }}
+                          >
+                            Assign {selectedPoolStudents.length} Selected
+                          </Btn>
+                        </motion.div>
+                      )}
+                    </div>
+                    <div className="space-y-1 mb-6">
+                      {unassignedStudents.length > 0 ? unassignedStudents.map((s, i) => {
+                        const isSelected = selectedPoolStudents.includes(s.id);
+                        return (
+                          <div 
+                            key={s.id || i} 
+                            onClick={() => {
+                              setSelectedPoolStudents(prev => 
+                                prev.includes(s.id) ? prev.filter(id => id !== s.id) : [...prev, s.id]
+                              );
+                            }}
+                            className={`flex items-center justify-between p-4 cursor-pointer transition-all rounded-xl group border ${isSelected ? 'bg-fluent-teal/5 border-fluent-teal/20 shadow-sm' : 'hover:bg-gray-50 border-transparent hover:border-black/5'}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-4 h-4 rounded border transition-colors flex items-center justify-center ${isSelected ? 'bg-fluent-teal border-fluent-teal' : 'border-slate-300'}`}>
+                                {isSelected && <Check size={10} className="text-white" />}
+                              </div>
+                              <Avatar name={s.name} size={32} />
+                              <span className={`font-medium text-sm transition-colors ${isSelected ? 'text-fluent-teal' : 'text-slate-600'}`}>{s.name}</span>
+                            </div>
+                            {!isSelected && (
+                              <div className="text-[9px] font-bold text-slate-300 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Select</div>
+                            )}
                           </div>
-                          <Btn variant="outline" size="sm" className="opacity-0 group-hover:opacity-100" onClick={() => {
-                            const updated = classes.map(c => c.id === selectedClassForStudents.id ? {
-                               ...c, 
-                               studentList: [...(c.studentList || []), { name: s, attended: 14, total: 15, status: null, history: [] }],
-                               students: (c.studentList?.length || 0) + 1
-                            } : c);
-                            setClasses(updated);
-                            setSelectedClassForStudents(updated.find(x => x.id === selectedClassForStudents.id));
-                          }}>Assign to Class</Btn>
-                      </div>
-                    ))}
+                        );
+                      }) : (
+                        <div className="p-8 text-center bg-gray-50 rounded-2xl border border-dashed border-slate-200">
+                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Pool exhausted</p>
+                          <p className="text-xs text-slate-400 mt-1">All registered students are currently assigned.</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
               
               <div className="mt-8 pt-6 border-t border-black/5">
-                <Btn variant="primary" className="w-full" onClick={() => setSelectedClassForStudents(null)}>Confirm Changes</Btn>
+                <Btn variant="primary" className="w-full" onClick={() => {
+                  setSelectedClassForStudents(null);
+                  setSelectedPoolStudents([]);
+                }}>Confirm Changes</Btn>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {viewingStudentDetail && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-[40px] w-full max-w-xl p-10 shadow-2xl relative overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-24 bg-fluent-navy"></div>
+              
+              <button 
+                onClick={() => setViewingStudentDetail(null)}
+                className="absolute top-6 right-6 text-white/60 hover:text-white transition-colors z-10"
+              >
+                <X size={24} />
+              </button>
+
+              <div className="relative mt-4">
+                <div className="flex items-end gap-6 mb-8">
+                  <div className="w-24 h-24 rounded-[32px] bg-white p-2 shadow-lg relative">
+                    <Avatar name={viewingStudentDetail.name} size={80} />
+                    <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-fluent-teal flex items-center justify-center text-white border-4 border-white">
+                      <ShieldCheck size={16} />
+                    </div>
+                  </div>
+                  <div className="pb-2">
+                    <h3 className="text-3xl font-serif font-bold text-fluent-navy">{viewingStudentDetail.name}</h3>
+                    <div className="flex items-center gap-3 mt-1">
+                      <Badge color="navy">{viewingStudentDetail.grade || "Unassigned Grade"}</Badge>
+                      <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                        ID: {viewingStudentDetail.studentId || "PENDING"}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                       <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Enrolled: {viewingStudentDetail.enrolledAt ? new Date(viewingStudentDetail.enrolledAt).toLocaleDateString() : 'N/A'}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mb-8">
+                  <Card className="p-5 border-none bg-gray-50">
+                    <div className="flex items-center gap-4 mb-3">
+                      <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-fluent-teal border border-black/5 shadow-sm">
+                        <Award size={20} />
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mastery Level</div>
+                        <div className="text-lg font-bold text-fluent-navy">
+                          { (viewingStudentDetail.total) > 0 ? Math.round((viewingStudentDetail.attended / viewingStudentDetail.total) * 100) : 0}%
+                        </div>
+                      </div>
+                    </div>
+                    <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-fluent-teal transition-all duration-1000" 
+                        style={{ width: `${(viewingStudentDetail.total) > 0 ? Math.round((viewingStudentDetail.attended / viewingStudentDetail.total) * 100) : 0}%` }}
+                      />
+                    </div>
+                  </Card>
+                  <Card className="p-5 flex items-center gap-4 border-none bg-gray-50">
+                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-fluent-gold border border-black/5 shadow-sm">
+                      <TrendingUp size={20} />
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Attendance Rate</div>
+                      <div className="text-lg font-bold text-fluent-navy">{viewingStudentDetail.attended}/{viewingStudentDetail.total}</div>
+                    </div>
+                  </Card>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4 px-1 flex justify-between items-center">
+                      <span>Contact Intelligence</span>
+                      <span className="text-[8px] opacity-60">Editable</span>
+                    </h4>
+                    <div className="grid gap-3">
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl group border border-transparent hover:border-black/5">
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-slate-400 shrink-0">
+                            <Mail size={16} />
+                          </div>
+                          <div className="flex-1">
+                            <input 
+                              id="edit-student-email"
+                              defaultValue={viewingStudentDetail.email || `${viewingStudentDetail.name.toLowerCase().replace(' ', '.')}@st.edu`}
+                              className="w-full bg-transparent text-xs font-bold text-slate-600 focus:outline-none focus:ring-1 focus:ring-fluent-teal/20 rounded px-1"
+                              placeholder="Enter student email"
+                            />
+                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider text-left">Primary Email</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl group border border-transparent hover:border-black/5">
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-slate-400 shrink-0">
+                            <Phone size={16} />
+                          </div>
+                          <div className="flex-1">
+                            <input 
+                              id="edit-student-phone"
+                              defaultValue={viewingStudentDetail.phone || "+91 (555) 000-1234"}
+                              className="w-full bg-transparent text-xs font-bold text-slate-600 focus:outline-none focus:ring-1 focus:ring-fluent-teal/20 rounded px-1"
+                              placeholder="Enter parent contact"
+                            />
+                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider text-left">Emergency Contact</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4 px-1">Performance Insight</h4>
+                    <div className="p-5 bg-fluent-cream/50 rounded-2xl border border-black/5 space-y-4">
+                      <div className="text-xs font-medium text-slate-600 leading-relaxed">
+                        <span className="text-fluent-navy font-bold">Faculty Assessment:</span> "Student demonstrates consistent engagement in {selectedClassForStudents?.name || 'enrolled subjects'}. Academic trajectory shows a { (viewingStudentDetail.attended > (viewingStudentDetail.total / 2)) ? 'positive' : 'stable' } upward trend with strong emphasis on class participation."
+                      </div>
+                      <div className="flex gap-4">
+                        <div className="flex-1 p-3 bg-white rounded-xl border border-black/5">
+                          <div className="text-[8px] font-bold text-slate-400 uppercase mb-1">Consistency</div>
+                          <div className="text-xs font-bold text-fluent-teal">High Reliability</div>
+                        </div>
+                        <div className="flex-1 p-3 bg-white rounded-xl border border-black/5">
+                          <div className="text-[8px] font-bold text-slate-400 uppercase mb-1">Risk Profile</div>
+                          <div className="text-xs font-bold text-green-500">Low Attrition</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4 px-1 flex justify-between items-center text-red-500">
+                      <span>Private Faculty Feedback</span>
+                      <Shield size={10} className="ml-1" />
+                    </h4>
+                    <div className="relative">
+                      <textarea
+                        id="edit-student-feedback"
+                        defaultValue={viewingStudentDetail.privateFeedback || ""}
+                        className="w-full bg-red-50/30 border border-red-100 rounded-2xl p-5 text-xs text-slate-700 min-h-[120px] focus:outline-none focus:ring-1 focus:ring-red-200 transition-all placeholder:text-slate-300"
+                        placeholder="Internal notes only visible to faculty members..."
+                      />
+                      <div className="absolute top-4 right-4 pointer-events-none">
+                        <Lock size={12} className="text-red-200" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-10 pt-6 border-t border-black/5 flex gap-3">
+                  <Btn variant="primary" className="flex-1" onClick={async () => {
+                    const email = (document.getElementById('edit-student-email') as HTMLInputElement).value;
+                    const phone = (document.getElementById('edit-student-phone') as HTMLInputElement).value;
+                    const privateFeedback = (document.getElementById('edit-student-feedback') as HTMLTextAreaElement).value;
+                    try {
+                      const studentRef = doc(db, 'classes', selectedClassForStudents.id, 'students', viewingStudentDetail.id);
+                      await updateDoc(studentRef, { email, phone, privateFeedback });
+                      // Update the selected student in classStudents if possible, but easier to just close
+                      setViewingStudentDetail(null);
+                    } catch (error) {
+                      handleFirestoreError(error, OperationType.UPDATE, `classes/${selectedClassForStudents.id}/students/${viewingStudentDetail.id}`);
+                    }
+                  }}>Sync Profile Data</Btn>
+                  <Btn variant="outline" className="flex-1" onClick={() => {
+                    setViewingStudentDetail(null);
+                    setViewingHistory(viewingStudentDetail);
+                  }}>Attendance Logs</Btn>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -1611,6 +2183,81 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
             </motion.div>
           </div>
         )}
+
+        {editingStudent && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-[40px] w-full max-w-sm p-10 shadow-2xl relative"
+            >
+              <button 
+                onClick={() => setEditingStudent(null)}
+                className="absolute top-8 right-8 text-slate-400 hover:text-black transition-colors"
+              >
+                <X size={24} />
+              </button>
+
+              <div className="mb-8">
+                <h3 className="text-2xl font-serif font-bold">Edit Student</h3>
+                <p className="text-sm text-slate-400 mt-1">Update profile information for {editingStudent.name}.</p>
+              </div>
+
+              <div className="space-y-6">
+                <div className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl border border-black/5">
+                  <div>
+                    <div className="text-[9px] font-bold uppercase tracking-widest text-slate-400">System ID</div>
+                    <div className="text-xs font-mono font-bold text-fluent-navy">{editingStudent.studentId || "PENDING"}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Enrolled On</div>
+                    <div className="text-xs font-bold text-slate-600">{editingStudent.enrolledAt ? new Date(editingStudent.enrolledAt).toLocaleDateString() : 'N/A'}</div>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 block">Full Name</label>
+                  <input 
+                    type="text" 
+                    defaultValue={editingStudent.name}
+                    id="edit-student-name"
+                    className="w-full px-4 py-3 bg-gray-50 border border-black/5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-fluent-teal/20 transition-all font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 block">Assigned Grade</label>
+                  <select 
+                    id="edit-student-grade"
+                    defaultValue={editingStudent.grade || selectedClassForStudents?.grade || "Grade 10"}
+                    className="w-full px-4 py-3 bg-gray-50 border border-black/5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-fluent-teal/20 transition-all font-medium"
+                  >
+                    <option>Grade 9</option>
+                    <option>Grade 10</option>
+                    <option>Grade 11</option>
+                    <option>Grade 12</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="mt-10 flex gap-3">
+                <Btn variant="outline" className="flex-1" onClick={() => setEditingStudent(null)}>Cancel</Btn>
+                <Btn variant="primary" className="flex-1" onClick={async () => {
+                  const newName = (document.getElementById('edit-student-name') as HTMLInputElement).value;
+                  const newGrade = (document.getElementById('edit-student-grade') as HTMLSelectElement).value;
+                  
+                  if (!newName.trim()) return;
+
+                  try {
+                    const studentRef = doc(db, 'classes', selectedClassForStudents.id, 'students', editingStudent.id);
+                    await updateDoc(studentRef, { name: newName, grade: newGrade });
+                    setEditingStudent(null);
+                  } catch (error) {
+                    handleFirestoreError(error, OperationType.UPDATE, `classes/${selectedClassForStudents.id}/students/${editingStudent.id}`);
+                  }
+                }}>Save Changes</Btn>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </div>
     </DashboardShell>
   );
@@ -1620,9 +2267,22 @@ const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => vo
   const [activeNav, setActiveNav] = useState("overview");
   const [showNotification, setShowNotification] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
+  const [myRecords, setMyRecords] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const studentName = profile?.name || "Arjun Sharma";
+  const studentName = profile?.name || auth.currentUser?.displayName || "Arjun Sharma";
   const studentGrade = profile?.grade || "Grade 10";
+
+  useEffect(() => {
+    if (!studentName) return;
+    const q = query(collectionGroup(db, 'students'), where('name', '==', studentName));
+    const unsub = onSnapshot(q, (snap) => {
+      const records = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setMyRecords(records);
+      setLoading(false);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'collectionGroup/students'));
+    return () => unsub();
+  }, [studentName]);
 
   const navItems = [
     { id: "overview", label: "Overview", icon: Home },
@@ -1633,53 +2293,42 @@ const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => vo
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
+  // Map myRecords to subjectProgress format
+  const subjectProgress = myRecords.map(r => {
+    const score = r.total > 0 ? Math.round((r.attended / r.total) * 100) : 0;
+    // Calculate trend from history
+    const lastScores = (r.history || []).slice(-4);
+    const trend = lastScores.length > 1 ? (score - (lastScores[0].status === 'present' ? 50 : 0)) : 0; // Simple mock trend
+
+    const colors: any = {
+      "Mathematics": "#1B4F5E",
+      "Physics": "#0D1B2A",
+      "Chemistry": "#7C3AED",
+      "Biology": "#10B981",
+      "English": "#C9A84C"
+    };
+
+    return {
+      name: r.subject || "General",
+      className: r.className || "Class",
+      score,
+      sessions: r.total,
+      trend: trend >= 0 ? `+${trend}%` : `${trend}%`,
+      color: colors[r.subject] || "#1B4F5E",
+      history: (r.history || []).map((h: any, idx: number) => ({ week: `S${idx + 1}`, score: h.status === 'present' ? 100 : 0 }))
+    };
+  });
+
+  const overallMastery = subjectProgress.length > 0 
+    ? Math.round(subjectProgress.reduce((acc, curr) => acc + curr.score, 0) / subjectProgress.length) 
+    : 0;
+  
+  const totalSessions = myRecords.reduce((acc, curr) => acc + (curr.total || 0), 0);
+
   const upcomingSessions = [
     { subject: "Mathematics", topic: "Quadratic Equations", time: "Today, 4:00 PM", teacher: "Dr. Sarah Mills", color: "#1B4F5E" },
     { subject: "English", topic: "Academic Writing Techniques", time: "Tomorrow, 10:00 AM", teacher: "Mr. James Harrow", color: "#C9A84C" },
     { subject: "Physics", topic: "Laws of Motion", time: "Wed, 3:00 PM", teacher: "Dr. Priya Mehta", color: "#0D1B2A" },
-  ];
-
-  const subjectProgress = [
-    { 
-      name: "Mathematics", 
-      score: 82, 
-      sessions: 24, 
-      trend: "+8%", 
-      color: "#1B4F5E",
-      history: [{ week: "W1", score: 65 }, { week: "W2", score: 72 }, { week: "W3", score: 78 }, { week: "W4", score: 82 }]
-    },
-    { 
-      name: "Physics", 
-      score: 74, 
-      sessions: 18, 
-      trend: "+12%", 
-      color: "#0D1B2A",
-      history: [{ week: "W1", score: 58 }, { week: "W2", score: 64 }, { week: "W3", score: 70 }, { week: "W4", score: 74 }]
-    },
-    { 
-      name: "Chemistry", 
-      score: 68, 
-      sessions: 15, 
-      trend: "+15%", 
-      color: "#7C3AED",
-      history: [{ week: "W1", score: 45 }, { week: "W2", score: 55 }, { week: "W3", score: 62 }, { week: "W4", score: 68 }]
-    },
-    { 
-      name: "Biology", 
-      score: 89, 
-      sessions: 20, 
-      trend: "+5%", 
-      color: "#10B981",
-      history: [{ week: "W1", score: 75 }, { week: "W2", score: 82 }, { week: "W3", score: 85 }, { week: "W4", score: 89 }]
-    },
-    { 
-      name: "English (Academic)", 
-      score: 94, 
-      sessions: 22, 
-      trend: "+3%", 
-      color: "#C9A84C",
-      history: [{ week: "W1", score: 88 }, { week: "W2", score: 90 }, { week: "W3", score: 92 }, { week: "W4", score: 94 }]
-    },
   ];
 
   const handleJoin = () => {
@@ -1838,10 +2487,10 @@ const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => vo
         ) : activeNav === "overview" ? (
           <>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-              <MetricTile label="Overall Mastery" value="82%" delta="+6%" icon={BarChart3} color="#1B4F5E" />
-              <MetricTile label="Sessions Attend" value="79" delta="+4" icon={Calendar} color="#0D1B2A" />
-              <MetricTile label="Learning Streak" value="12" delta="+3" icon={Zap} color="#7C3AED" />
-              <MetricTile label="Assignments" value="34" delta="+7" icon={CheckCircle2} color="#C9A84C" />
+              <MetricTile label="Overall Mastery" value={`${overallMastery}%`} delta={overallMastery > 70 ? "+2%" : "-1%"} icon={BarChart3} color="#1B4F5E" />
+              <MetricTile label="Sessions Attend" value={`${totalSessions}`} delta="+0" icon={Calendar} color="#0D1B2A" />
+              <MetricTile label="Learning Streak" value="0" delta="+0" icon={Zap} color="#7C3AED" />
+              <MetricTile label="Assignments" value="0" delta="+0" icon={CheckCircle2} color="#C9A84C" />
             </div>
 
             <div className="grid lg:grid-cols-3 gap-8 items-start">
@@ -1922,8 +2571,49 @@ const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => vo
 const ParentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => void }) => {
   const [activeNav, setActiveNav] = useState("overview");
   const [activeChild, setActiveChild] = useState(0);
+  const [monitoredStudents, setMonitoredStudents] = useState<any[]>([]);
+  const [showAddChild, setShowAddChild] = useState(false);
+  const [searchName, setSearchName] = useState("");
+  const [allStudentRecords, setAllStudentRecords] = useState<any[]>([]);
 
-  const parentName = profile?.name || "Rahul Sharma";
+  const parentName = profile?.name || auth.currentUser?.displayName || "Rahul Sharma";
+
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    const unsub = onSnapshot(collection(db, 'users', auth.currentUser.uid, 'monitoredStudents'), (snap) => {
+      setMonitoredStudents(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+    return () => unsub();
+  }, []);
+
+  // Fetch all records for the selected child
+  const [childRecords, setChildRecords] = useState<any[]>([]);
+  useEffect(() => {
+    if (monitoredStudents.length === 0 || activeChild >= monitoredStudents.length) {
+      setChildRecords([]);
+      return;
+    }
+    const childName = monitoredStudents[activeChild].name;
+    const q = query(collectionGroup(db, 'students'), where('name', '==', childName));
+    const unsub = onSnapshot(q, (snap) => {
+      setChildRecords(snap.docs.map(doc => doc.data()));
+    });
+    return () => unsub();
+  }, [monitoredStudents, activeChild]);
+
+  const handleAddChild = async () => {
+    if (!searchName.trim() || !auth.currentUser) return;
+    try {
+      await addDoc(collection(db, 'users', auth.currentUser.uid, 'monitoredStudents'), {
+        name: searchName.trim(),
+        linkedAt: serverTimestamp()
+      });
+      setSearchName("");
+      setShowAddChild(false);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'monitoredStudents');
+    }
+  };
 
   const navItems = [
     { id: "overview", label: "Family Overview", icon: Home },
@@ -1934,20 +2624,12 @@ const ParentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => voi
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
-  const children = [
-    { name: "Arjun Sharma", grade: "Grade 10", school: "DPS Bangalore" },
-    { name: "Priya Sharma", grade: "Grade 11", school: "DPS Bangalore" },
-  ];
-
-  const child = children[activeChild];
-
-  const subjectData = [
-    { subject: "Mathematics", score: 82, lastWeek: 76, teacher: "Dr. Sarah Mills" },
-    { subject: "Physics", score: 74, lastWeek: 62, teacher: "Mr. Alex Wright" },
-    { subject: "Chemistry", score: 68, lastWeek: 65, teacher: "Dr. Elena Rossi" },
-    { subject: "Biology", score: 89, lastWeek: 87, teacher: "Dr. S. Venkatesh" },
-    { subject: "Academic English", score: 94, lastWeek: 89, teacher: "Ms. Jane Cooper" },
-  ];
+  const subjectData = childRecords.map(r => ({
+    subject: r.subject || "General",
+    score: r.total > 0 ? Math.round((r.attended / r.total) * 100) : 0,
+    lastWeek: 0,
+    teacher: "Faculty"
+  }));
 
   return (
     <DashboardShell role="parent" title={parentName} navItems={navItems} activeNav={activeNav} setActiveNav={setActiveNav} onBack={onBack}>
@@ -1962,7 +2644,7 @@ const ParentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => voi
 
         {/* Child Selector */}
         <div className="flex gap-4 mb-10 overflow-x-auto pb-2 -mx-2 px-2">
-          {children.map((c, i) => (
+          {monitoredStudents.map((c, i) => (
             <div 
               key={i} 
               onClick={() => setActiveChild(i)}
@@ -1973,29 +2655,64 @@ const ParentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => voi
               <Avatar name={c.name} size={40} color={activeChild === i ? "var(--color-fluent-gold)" : "var(--color-fluent-teal)"} />
               <div>
                 <div className="font-bold text-sm">{c.name}</div>
-                <div className={`text-[10px] font-bold uppercase tracking-wider ${activeChild === i ? "text-white/40" : "text-gray-400"}`}>{c.grade}</div>
+                <div className={`text-[10px] font-bold uppercase tracking-wider ${activeChild === i ? "text-white/40" : "text-gray-400"}`}>Account Active</div>
               </div>
             </div>
           ))}
+          <div 
+            onClick={() => setShowAddChild(true)}
+            className="flex items-center gap-4 px-6 py-4 rounded-xl cursor-pointer transition-all border-2 border-dashed border-slate-300 text-slate-400 hover:border-fluent-teal hover:text-fluent-teal group shrink-0"
+          >
+            <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:bg-fluent-teal group-hover:text-white transition-colors">
+              <Plus size={20} />
+            </div>
+            <div className="font-bold text-sm">Link Another Student</div>
+          </div>
         </div>
 
-        {activeNav === "overview" ? (
+        {showAddChild && (
+           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-fluent-navy/20 backdrop-blur-sm">
+             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-[40px] p-10 max-w-md w-full shadow-2xl">
+                <h3 className="text-2xl font-serif font-bold mb-4">Link Student Profile</h3>
+                <p className="text-sm text-slate-500 mb-8">Enter your child's full name as registered in their student portal to begin monitoring.</p>
+                <input 
+                  type="text" 
+                  value={searchName}
+                  onChange={(e) => setSearchName(e.target.value)}
+                  placeholder="Student Full Name..." 
+                  className="w-full p-4 bg-gray-50 border border-black/10 rounded-2xl mb-6 focus:outline-none focus:ring-2 focus:ring-fluent-teal/20"
+                />
+                <div className="flex gap-4">
+                  <Btn variant="outline" className="flex-1" onClick={() => setShowAddChild(false)}>Cancel</Btn>
+                  <Btn variant="primary" className="flex-1" onClick={handleAddChild}>Verify & Link</Btn>
+                </div>
+             </motion.div>
+           </div>
+        )}
+
+        {monitoredStudents.length === 0 ? (
+          <div className="py-24 text-center bg-white rounded-[48px] border border-dashed border-slate-200">
+             <Users className="mx-auto text-slate-200 mb-4" size={64} />
+             <h3 className="text-2xl font-serif font-bold">No Students Linked</h3>
+             <p className="text-slate-400 mt-2">Use the button above to link your child's academic profile.</p>
+          </div>
+        ) : activeNav === "overview" ? (
           <>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-              <MetricTile label="Family Mastery" value="83%" delta="+9%" icon={TrendingUp} color="var(--color-fluent-teal)" />
-              <MetricTile label="Live Sessions" value="18" delta="+3" icon={Calendar} color="var(--color-fluent-navy)" />
-              <MetricTile label="Assignment Quality" value="95%" delta="+5%" icon={CheckCircle2} color="var(--color-fluent-gold)" />
-              <MetricTile label="Attendance Rate" value="100%" icon={ShieldCheck} color="var(--color-fluent-gold)" />
+              <MetricTile label="Family Mastery" value={`${Math.round(subjectData.reduce((acc, curr) => acc + curr.score, 0) / (subjectData.length || 1))}%`} delta="+0%" icon={TrendingUp} color="var(--color-fluent-teal)" />
+              <MetricTile label="Live Sessions" value={`${childRecords.length}`} delta="+0" icon={Calendar} color="var(--color-fluent-navy)" />
+              <MetricTile label="Assignment Quality" value="Pending" delta="+0%" icon={CheckCircle2} color="var(--color-fluent-gold)" />
+              <MetricTile label="Attendance Rate" value="98%" icon={ShieldCheck} color="var(--color-fluent-gold)" />
             </div>
 
             <div className="grid lg:grid-cols-3 gap-8 items-start">
               <Card className="lg:col-span-2 p-8">
                 <div className="flex justify-between items-center mb-8">
-                  <h3 className="text-xl font-serif font-bold">{child.name}'s Subject Mastery</h3>
-                  <Badge color="navy">{child.grade} Curriculum</Badge>
+                  <h3 className="text-xl font-serif font-bold">{monitoredStudents[activeChild].name}'s Subject Mastery</h3>
+                  <Badge color="navy">Active Curriculum</Badge>
                 </div>
                 <div className="space-y-6">
-                  {subjectData.map(s => (
+                  {subjectData.length > 0 ? subjectData.map(s => (
                     <div key={s.subject} className="p-5 bg-gray-50 rounded-xl hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-black/5">
                       <div className="flex justify-between items-center mb-4">
                         <div>
@@ -2005,13 +2722,17 @@ const ParentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => voi
                         <div className="text-right">
                           <div className="font-mono font-bold text-xl leading-none">{s.score}%</div>
                           <div className={`text-[10px] font-bold mt-1 ${s.score > s.lastWeek ? 'text-green-600' : 'text-red-500'}`}>
-                            {s.score > s.lastWeek ? "↑" : "↓"} {Math.abs(s.score - s.lastWeek)}% from assessment {child.name.split(' ')[0] === 'Priya' ? '12' : '15'}
+                            {s.score > s.lastWeek ? "↑" : "↓"} {Math.abs(s.score - s.lastWeek)}% from assessment {monitoredStudents[activeChild].name.split(' ')[0] === 'Priya' ? '12' : '15'}
                           </div>
                         </div>
                       </div>
                       <ProgressBar value={s.score} color={s.subject.includes('English') ? 'var(--color-fluent-gold)' : 'var(--color-fluent-teal)'} showPct={false} />
                     </div>
-                  ))}
+                  )) : (
+                    <div className="p-12 text-center bg-gray-50 rounded-[32px] border border-dashed border-slate-200">
+                      <p className="text-slate-400 text-sm">No academic records found for this student yet.</p>
+                    </div>
+                  )}
                 </div>
               </Card>
 
@@ -2078,6 +2799,24 @@ const ParentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => voi
 };
 
 const AdminCommand = ({ onBack }: { onBack: () => void }) => {
+  const [waitlist, setWaitlist] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'waitlist'), (snap) => {
+      setWaitlist(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoading(false);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'waitlist'));
+    return () => unsub();
+  }, []);
+
+  const handleResolve = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'waitlist', id));
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, `waitlist/${id}`);
+    }
+  };
   const [activeNav, setActiveNav] = useState("overview");
 
   const navItems = [
@@ -2121,11 +2860,89 @@ const AdminCommand = ({ onBack }: { onBack: () => void }) => {
           <MetricTile label="System Efficiency" value="99.9%" icon={Zap} color="#7C3AED" />
         </div>
 
+        <Card className="p-8 mb-10">
+          <div className="flex justify-between items-center mb-8">
+            <h3 className="text-xl font-serif font-bold">Waitlist Applications</h3>
+            <Badge color="gold">{waitlist.length} Pending</Badge>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-black/5">
+                  <th className="text-left py-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Email Address</th>
+                  <th className="text-left py-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Requested On</th>
+                  <th className="text-center py-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {waitlist.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="py-12 text-center text-slate-400 italic">No pending waitlist applications.</td>
+                  </tr>
+                ) : waitlist.map((entry, i) => (
+                  <tr key={entry.id || i} className="border-b border-black/5 hover:bg-gray-50 transition-colors">
+                    <td className="py-5 px-4 font-bold text-sm text-fluent-navy">{entry.email}</td>
+                    <td className="py-5 px-4 text-sm text-slate-500 font-medium font-mono">
+                      {entry.requestedAt?.toDate ? entry.requestedAt.toDate().toLocaleDateString() : 'Recent'}
+                    </td>
+                    <td className="py-5 px-4 text-center">
+                      <Btn variant="outline" size="sm" onClick={() => handleResolve(entry.id)}>Resolve</Btn>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
         <Card className="p-8">
           <div className="flex justify-between items-center mb-8">
             <h3 className="text-xl font-serif font-bold">Partner Institutions</h3>
-            <div className="flex gap-4">
-              <div className="relative">
+                <div className="flex gap-4">
+                  <Btn 
+                    variant="outline" 
+                    size="sm" 
+                    icon={Database} 
+                    onClick={async () => {
+                      if (!confirm("Seed database with sample classes and students?")) return;
+                      try {
+                        const uid = auth.currentUser?.uid;
+                        if (!uid) return;
+                        
+                        // Seed Classes
+                        const sampleClasses = [
+                          { name: "G10 Physics - Advanced", grade: "Grade 10", subject: "Physics", students: 5, avgScore: 88, attendance: 95, ownerId: uid, createdAt: serverTimestamp() },
+                          { name: "G9 Maths - Logic", grade: "Grade 9", subject: "Mathematics", students: 3, avgScore: 72, attendance: 90, ownerId: uid, createdAt: serverTimestamp() }
+                        ];
+
+                        for (const c of sampleClasses) {
+                          const classRef = await addDoc(collection(db, 'classes'), c);
+                          // Add some students
+                          const students = [
+                            { name: "Akshay P.", attended: 10, total: 10, history: [], grade: c.grade },
+                            { name: "Zoya K.", attended: 9, total: 10, history: [], grade: c.grade }
+                          ];
+                          for (const s of students) {
+                            await addDoc(collection(db, 'classes', classRef.id, 'students'), s);
+                          }
+                        }
+
+                        // Seed Student Pool
+                        const pool = ["Vikram S.", "Leila O.", "Marcus T."];
+                        for (const name of pool) {
+                          await addDoc(collection(db, 'studentPool'), { name, ownerId: uid });
+                        }
+
+                        alert("Database seeded successfully!");
+                      } catch (e) {
+                        console.error(e);
+                        alert("Seeding failed: " + e);
+                      }
+                    }}
+                  >
+                    Seed Sample Data
+                  </Btn>
+                  <div className="relative">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input placeholder="Search schools..." className="pl-10 pr-4 py-2 bg-gray-50 border border-black/5 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-fluent-navy/5" />
               </div>
@@ -2177,22 +2994,108 @@ const AdminCommand = ({ onBack }: { onBack: () => void }) => {
 export default function App() {
   const [view, setView] = useState("landing");
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    async function testConnection() {
+      try {
+        await getDocFromServer(doc(db, 'test', 'connection'));
+      } catch (error) {
+        if(error instanceof Error && error.message.includes('the client is offline')) {
+          console.error("Please check your Firebase configuration.");
+        }
+      }
+    }
+    testConnection();
+
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setAuthReady(true);
+      if (u) {
+        // Load profile
+        const profileRef = doc(db, 'users', u.uid);
+        onSnapshot(profileRef, (snap) => {
+          if (snap.exists()) {
+            const data = snap.data();
+            setUserProfile(data);
+            // Automatic navigation if onboarded
+            if (data.onboarded) {
+              if (data.role === 'teacher') setView("teacher-dashboard");
+              else if (data.role === 'student') setView("student-dashboard");
+              else if (data.role === 'parent') setView("parent-dashboard");
+              else if (data.role === 'admin') setView("admin-dashboard");
+            } else {
+              setView("onboarding");
+            }
+          } else {
+            setView("onboarding");
+          }
+        });
+      } else {
+        setUserProfile(null);
+        setView("landing");
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   const navigate = (v: string, profile?: any) => {
-    if (profile) setUserProfile(profile);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    setView(v);
+    if (profile) {
+      setUserProfile(profile);
+      // Persist profile to Firestore if user exists
+      if (user) {
+        const profileRef = doc(db, 'users', user.uid);
+        setDoc(profileRef, { ...profile, onboarded: true }, { merge: true })
+          .then(() => {
+            // After saving, the onSnapshot in useEffect will handle navigation
+          })
+          .catch(e => handleFirestoreError(e, OperationType.WRITE, 'users'));
+      }
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setView(v);
+    }
   };
+
+  const handleLogin = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      console.error("Login failed", error);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setView("landing");
+    } catch (error) {
+      console.error("Logout failed", error);
+    }
+  };
+
+  if (!authReady) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-fluent-cream">
+        <Logo animate={true} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
       <AnimatePresence mode="wait">
-        {view === "landing" && <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><LandingPage onEnter={navigate} /></motion.div>}
+        {view === "landing" && (
+          <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <LandingPage onEnter={(v) => v === 'onboarding' ? handleLogin() : navigate(v)} />
+          </motion.div>
+        )}
         {view === "onboarding" && <motion.div key="onboarding" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><OnboardingFlow onComplete={navigate} /></motion.div>}
-        {view === "student-dashboard" && <motion.div key="std-dash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><StudentDashboard profile={userProfile} onBack={() => navigate("landing")} /></motion.div>}
-        {view === "teacher-dashboard" && <motion.div key="teach-dash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><FacultyHub profile={userProfile} onBack={() => navigate("landing")} /></motion.div>}
-        {view === "parent-dashboard" && <motion.div key="par-dash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><ParentDashboard profile={userProfile} onBack={() => navigate("landing")} /></motion.div>}
-        {view === "admin-dashboard" && <motion.div key="admin-dash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><AdminCommand onBack={() => navigate("landing")} /></motion.div>}
+        {view === "student-dashboard" && <motion.div key="std-dash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><StudentDashboard profile={userProfile} onBack={handleLogout} /></motion.div>}
+        {view === "teacher-dashboard" && <motion.div key="teach-dash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><FacultyHub profile={userProfile} onBack={handleLogout} /></motion.div>}
+        {view === "parent-dashboard" && <motion.div key="par-dash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><ParentDashboard profile={userProfile} onBack={handleLogout} /></motion.div>}
+        {view === "admin-dashboard" && <motion.div key="admin-dash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><AdminCommand onBack={handleLogout} /></motion.div>}
       </AnimatePresence>
     </div>
   );
