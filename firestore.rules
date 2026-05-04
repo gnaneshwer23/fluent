@@ -1,62 +1,69 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Default deny
+    // --- Global Helpers ---
+    function isSignedIn() { return request.auth != null; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isAdmin() { return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    
+    // --- Schema Validators ---
+    function isValidUserProfile(data) {
+        return data.name is string && data.name.size() >= 2 && data.name.size() <= 100
+            && data.role is string && (data.role == 'student' || data.role == 'teacher' || data.role == 'parent' || data.role == 'admin')
+            && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'role', 'subjects', 'grade', 'school', 'goal', 'onboarded']);
+    }
+
+    // --- Global Safety Net ---
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Global Helpers
-    function isSignedIn() { return request.auth != null; }
-    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
-    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
-
-    // User Profiles
+    // --- User Profiles ---
     match /users/{userId} {
-      allow read: if isSignedIn(); // Allow reading basic profile info
-      allow write: if isOwner(userId) && isValidUserProfile(request.resource.data);
-    }
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin()) && isValidUserProfile(incoming());
+      
+      match /monitoredStudents/{studentId} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+      }
 
-    function isValidUserProfile(data) {
-      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
-             data.role in ['student', 'teacher', 'parent', 'admin'];
-    }
-
-    // Classes
-    match /classes/{classId} {
-      allow read: if isSignedIn(); // Simplified for now, in production restrict to members
-      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['students', 'attendance']));
-      allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
-
-      match /students/{studentId} {
-        allow read: if isSignedIn();
-        allow write: if isSignedIn(); // Teachers add students. In production, check parent ownerId.
+      match /notifications/{notificationId} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
       }
     }
 
-    // Collection Group for Students (to find my own records)
-    match /{path=**}/students/{studentId} {
+    // --- Classes & Roster (Hardened) ---
+    match /classes/{classId} {
       allow read: if isSignedIn();
+      // Only owner can write
+      allow write: if isSignedIn() && exists(/databases/$(database)/documents/classes/$(classId)) && get(/databases/$(database)/documents/classes/$(classId)).data.ownerId == request.auth.uid;
+
+      match /students/{studentId} {
+        allow read: if isSignedIn();
+        allow write: if isSignedIn() && exists(/databases/$(database)/documents/classes/$(classId)) && get(/databases/$(database)/documents/classes/$(classId)).data.ownerId == request.auth.uid;
+      }
     }
 
-    // Student Pool
+    // --- Bookings (Hardened) ---
+    match /bookings/{bookingId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // --- Student Pool ---
     match /studentPool/{poolId} {
-      allow read: if isSignedIn() && resource.data.ownerId == request.auth.uid;
-      allow write: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+        allow read: if isSignedIn();
+        allow write: if isAdmin();
     }
 
-    // Waitlist collection
     match /waitlist/{entryId} {
-      allow create: if isValidWaitlistEntry(request.resource.data);
-    }
-
-    function isValidWaitlistEntry(data) {
-      return data.email is string && 
-             data.email.size() > 0 && 
-             data.email.size() <= 256 &&
-             data.requestedAt == request.time &&
-             (data.role == null || (data.role in ['student', 'teacher', 'head']));
+      allow read, delete: if isAdmin();
+      allow create: if true;
     }
   }
 }

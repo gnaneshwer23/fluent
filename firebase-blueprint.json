@@ -62,7 +62,18 @@
         "phone": { "type": "string" },
         "studentId": { "type": "string" },
         "enrolledAt": { "type": "string" },
-        "privateFeedback": { "type": "string" },
+        "privateFeedback": { 
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "text": { "type": "string" },
+              "category": { "type": "string" },
+              "date": { "type": "string" }
+            }
+          }
+        },
         "attended": { "type": "number" },
         "total": { "type": "number" },
         "history": { "type": "array", "items": { "type": "object" } },
@@ -79,6 +90,46 @@
         "ownerId": { "type": "string" }
       },
       "required": ["name", "ownerId"]
+    },
+    "ChildRecord": {
+      "title": "Monitored Child",
+      "description": "A student profile being tracked by a parent.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "linkedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name"]
+    },
+    "Booking": {
+      "title": "Consultation Booking",
+      "description": "A scheduled meeting between a parent/student and faculty.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userRole": { "type": "string" },
+        "facultyId": { "type": "string" },
+        "facultyName": { "type": "string" },
+        "subject": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "time": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "date", "time", "status"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "User notification about actions or updates.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "message": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "message", "read", "createdAt"]
     }
   },
   "firestore": {
@@ -89,6 +140,18 @@
     "users": {
         "schema": "UserProfile",
         "description": "User profile data."
+    },
+    "users/{userId}/monitoredStudents": {
+        "schema": "ChildRecord",
+        "description": "Students being monitored by a parent."
+    },
+    "users/{userId}/notifications": {
+        "schema": "Notification",
+        "description": "User notifications."
+    },
+    "bookings": {
+        "schema": "Booking",
+        "description": "Consultation bookings with faculty."
     },
     "classes": {
         "schema": "Class",

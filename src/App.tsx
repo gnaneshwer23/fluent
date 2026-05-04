@@ -5,6 +5,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 import { 
   ArrowRight,
   Sparkles, 
@@ -52,7 +54,9 @@ import {
   Tooltip, 
   ResponsiveContainer,
   AreaChart,
-  Area
+  Area,
+  ScatterChart,
+  Scatter
 } from 'recharts';
 import { initializeApp } from 'firebase/app';
 import { 
@@ -66,6 +70,8 @@ import {
   doc,
   query,
   where,
+  orderBy,
+  limit,
   onSnapshot,
   serverTimestamp,
   deleteDoc,
@@ -80,12 +86,8 @@ import {
   signOut,
   User
 } from 'firebase/auth';
-import firebaseConfig from '../firebase-applet-config.json';
-
-// --- Firebase Initialization ---
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
-export const auth = getAuth(app);
+import { db, auth } from './lib/firebaseInit';
+import { NotificationBell } from './components/NotificationBell';
 const googleProvider = new GoogleAuthProvider();
 
 // --- Error Handling ---
@@ -106,14 +108,23 @@ interface FirestoreErrorInfo {
 }
 
 function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const currentAuth = getAuth();
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
-    authInfo: {}, // No auth implemented as per simple waitlist
+    authInfo: {
+      userId: currentAuth.currentUser?.uid || null,
+      email: currentAuth.currentUser?.email || null,
+      emailVerified: currentAuth.currentUser?.emailVerified || false,
+      isAnonymous: currentAuth.currentUser?.isAnonymous || false
+    },
     operationType,
     path
   };
   console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  // Don't throw for list operations to prevent UI crashing while we debug
+  if (operationType !== OperationType.LIST) {
+     throw new Error(JSON.stringify(errInfo));
+  }
 }
 
 // --- Components ---
@@ -279,7 +290,8 @@ const DashboardShell = ({ role, title, children, navItems, activeNav, setActiveN
           ))}
         </nav>
         
-        <div className="p-4 border-t border-white/5">
+        <div className="p-4 border-t border-white/5 space-y-4">
+          <NotificationBell />
           <button 
             onClick={onBack}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-all text-sm"
@@ -811,7 +823,22 @@ const EarlyAccessSection = () => {
 
 const OnboardingFlow = ({ onComplete }: { onComplete: (view: string, profile: any) => void }) => {
   const [step, setStep] = useState(0);
-  const [data, setData] = useState({ role: "", name: "", school: "", grade: "", subjects: [] as string[], goal: "" });
+  const [data, setData] = useState({ 
+    role: "", 
+    name: "", 
+    school: "", 
+    grade: "", 
+    subjects: [] as string[], 
+    goal: "", 
+    learningStyles: [] as string[], 
+    studyTime: "",
+    preferences: [] as string[], 
+    // New role-specific fields
+    teachingFocus: "",
+    feedbackFrequency: "",
+    parentEngagement: "",
+    extracurricularInterest: false
+  });
   const [isLoading, setIsLoading] = useState(false);
 
   const getSteps = () => {
@@ -824,6 +851,8 @@ const OnboardingFlow = ({ onComplete }: { onComplete: (view: string, profile: an
       return [
         ...baseSteps,
         { title: "Department Focus", subtitle: "Alignment with British school subject standards." },
+        { title: "Teaching Experience", subtitle: "Define your level of expertise and pedagogical approach." },
+        { title: "Classroom Priority", subtitle: "Select your top pedagogical focus." },
         { title: "Teaching Goal", subtitle: "What is your primary instructional focus for this cycle?" },
         { title: "Synthesis Complete", subtitle: "Your personalised faculty hub is ready." },
       ];
@@ -832,21 +861,36 @@ const OnboardingFlow = ({ onComplete }: { onComplete: (view: string, profile: an
     if (data.role === "parent") {
       return [
         ...baseSteps,
-        { title: "Child's Level", subtitle: "Monitoring mastery for students in your care." },
+        { title: "Student Connection", subtitle: "Enter the legal names of students you are monitoring." },
+        { title: "Academic Interests", subtitle: "Define areas of academic interest and support needed." },
+        { title: "Consultation Preference", subtitle: "How do you prefer to receive feedback?" },
         { title: "Consultation Goal", subtitle: "What are your primary milestones for your child's growth?" },
         { title: "Synthesis Complete", subtitle: "Your parent oversight desk is ready." },
       ];
     }
 
+    if (data.role === "admin") {
+      return [
+        ...baseSteps,
+        { title: "Institutional Infrastructure", subtitle: "Define system scope and administrative access privileges." },
+        { title: "Core Configuration", subtitle: "Setup your primary institutional settings." },
+        { title: "Synthesis Complete", subtitle: "Your administration command centre is ready." },
+      ];
+    }
+
+    // Default for student
     return [
       ...baseSteps,
       { title: "Mastery Focus", subtitle: "Defining current levels and target educational outcomes." },
+      { title: "Academic Interests", subtitle: "Select core subjects and technical focus areas." },
+      { title: "Learning Style", subtitle: "How do you prefer to absorb new concepts?" },
       { title: "Strategic Goal", subtitle: "What does success look like for your 2026-27 cycle?" },
       { title: "Synthesis Complete", subtitle: "Your personalised elite journey begins now." },
     ];
   };
 
   const steps = getSteps();
+  const currentStep = steps[step];
 
   const roles = [
     { id: "student", label: "Elite Student", icon: GraduationCap, desc: "Mastery tracking and live sessions in core subjects." },
@@ -855,7 +899,7 @@ const OnboardingFlow = ({ onComplete }: { onComplete: (view: string, profile: an
   ];
 
   const grades = ["Grade 9", "Grade 10", "Grade 11", "Grade 12"];
-  const subjectsList = ["Mathematics", "Physics", "Chemistry", "Biology", "English"];
+  const subjectsList = ["Mathematics", "Physics", "Chemistry", "Biology", "English", "Science (All)"];
   
   const getGoalList = () => {
     if (data.role === "teacher") return ["Advanced Curriculum Delivery", "Student Confidence Building", "Board Exam Preparation", "Innovation in Pedagogy"];
@@ -872,23 +916,38 @@ const OnboardingFlow = ({ onComplete }: { onComplete: (view: string, profile: an
 
   const update = (key: string, val: any) => setData(d => ({ ...d, [key]: val }));
   const toggleSubject = (s: string) => update("subjects", data.subjects.includes(s) ? data.subjects.filter(x => x !== s) : [...data.subjects, s]);
+  const toggleStyle = (s: string) => update("learningStyles", data.learningStyles.includes(s) ? data.learningStyles.filter(x => x !== s) : [...data.learningStyles, s]);
+
+  useEffect(() => {
+    if (step === 2 && data.role === 'parent' && data.name && !data.school) {
+       // Auto-suggest child name if prompt? No, let's just use manual entry
+    }
+  }, [step]);
 
   const canProceed = () => {
     if (step === 0) return !!data.role;
-    if (step === 1) return data.name && (data.role !== "student" || data.grade);
-    if (step === 2) return data.subjects.length > 0;
-    if (step === 3) return !!data.goal;
+    if (step === 1) return data.name && data.name.length > 2;
+    if (step === 2) {
+      if (data.role === 'teacher') return data.subjects.length > 0;
+      if (data.role === 'parent') return data.subjects.length > 0;
+      return data.subjects.length > 0; // Student
+    }
+    if (step === 3) {
+      if (data.role === 'teacher') return !!data.teachingFocus;
+      if (data.role === 'parent') return !!data.parentEngagement;
+      return !!data.goal;
+    }
+    if (step === 4 && data.role === 'student') return data.learningStyles.length > 0 && !!data.studyTime;
     return true;
   };
+
+  const isFinalStep = step === steps.length - 1;
 
   const handleComplete = () => {
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      if (data.role === "parent") onComplete("parent-dashboard", data);
-      else if (data.role === "teacher") onComplete("teacher-dashboard", data);
-      else if (data.role === "admin") onComplete("admin-dashboard", data);
-      else onComplete("student-dashboard", data);
+      onComplete(data.role === "parent" ? "parent-dashboard" : data.role === "teacher" ? "teacher-dashboard" : data.role === "admin" ? "admin-dashboard" : "student-dashboard", data);
     }, 1500);
   };
 
@@ -1005,46 +1064,140 @@ const OnboardingFlow = ({ onComplete }: { onComplete: (view: string, profile: an
                 </div>
               )}
 
-              {/* Step 2: Subjects */}
+              {/* Step 2: Subjects / Children */}
               {step === 2 && (
                 <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-3">
-                    {subjectsList.map(s => (
-                      <div 
-                        key={s} 
-                        onClick={() => toggleSubject(s)}
-                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between group ${
-                          data.subjects.includes(s) ? "border-fluent-teal bg-fluent-teal/5" : "border-black/5 bg-white hover:border-black/20"
-                        }`}
-                      >
-                        <span className="font-bold text-sm">{s}</span>
-                        {data.subjects.includes(s) && <CheckCircle2 size={18} className="text-fluent-teal" />}
+                  {data.role === 'parent' ? (
+                    <div className="space-y-4">
+                      <div className="flex gap-2">
+                        <input 
+                          id="child-name-input"
+                          placeholder="Enter child's full name..."
+                          className="flex-1 p-4 rounded-xl border border-black/10 bg-white focus:outline-none focus:ring-2 focus:ring-fluent-teal/5"
+                        />
+                        <Btn variant="primary" onClick={() => {
+                          const input = document.getElementById('child-name-input') as HTMLInputElement;
+                          if (input.value.trim()) {
+                            update("subjects", [...data.subjects, input.value.trim()]);
+                            input.value = "";
+                          }
+                        }}>Add</Btn>
                       </div>
-                    ))}
-                  </div>
+                      <div className="flex flex-wrap gap-2">
+                        {data.subjects.map(name => (
+                          <div key={name} className="px-4 py-2 bg-fluent-teal/10 text-fluent-teal rounded-full text-sm font-bold flex items-center gap-2">
+                            {name}
+                            <X size={14} className="cursor-pointer" onClick={() => update("subjects", data.subjects.filter(s => s !== name))} />
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-xs text-slate-400 italic">Add names exactly as registered in school roster.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      {subjectsList.map(s => (
+                        <div 
+                          key={s} 
+                          onClick={() => toggleSubject(s)}
+                          className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between group ${
+                            data.subjects.includes(s) ? "border-fluent-teal bg-fluent-teal/5" : "border-black/5 bg-white hover:border-black/20"
+                          }`}
+                        >
+                          <span className="font-bold text-sm">{s}</span>
+                          {data.subjects.includes(s) && <CheckCircle2 size={18} className="text-fluent-teal" />}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Step 3: Goal */}
+              {/* Step 3: Dynamic Role Questions */}
               {step === 3 && (
-                <div className="space-y-3">
-                  {goals.map(g => (
-                    <div 
-                      key={g} 
-                      onClick={() => update("goal", g)}
-                      className={`p-5 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between group ${
-                        data.goal === g ? "border-fluent-gold bg-fluent-gold/5" : "border-black/5 bg-white hover:border-black/20"
-                      }`}
-                    >
-                      <span className="font-bold text-sm">{g}</span>
-                      {data.goal === g && <div className="w-2 h-2 rounded-full bg-fluent-gold" />}
+                <div className="space-y-6">
+                  {data.role === 'teacher' && (
+                    <div className="space-y-4">
+                      <label className="text-xs font-bold uppercase tracking-widest text-fluent-navy">Primary Teaching Focus</label>
+                      {["Curriculum Depth", "Student Engagement", "Skill-based Learning", "Exam Strategy"].map(f => (
+                        <div key={f} onClick={() => update("teachingFocus", f)} className={`p-4 rounded-xl border-2 cursor-pointer ${data.teachingFocus === f ? "border-fluent-gold bg-fluent-gold/5" : "border-black/5"}`}>
+                          {f}
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
+                  {data.role === 'parent' && (
+                    <div className="space-y-4">
+                      <label className="text-xs font-bold uppercase tracking-widest text-fluent-navy">Engagement Level</label>
+                      {["Daily Check-ins", "Weekly Summaries", "Monthly Consultations"].map(e => (
+                        <div key={e} onClick={() => update("parentEngagement", e)} className={`p-4 rounded-xl border-2 cursor-pointer ${data.parentEngagement === e ? "border-fluent-gold bg-fluent-gold/5" : "border-black/5"}`}>
+                          {e}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {data.role === 'student' && (
+                    <div className="space-y-3">
+                      {goals.map(g => (
+                        <div 
+                          key={g} 
+                          onClick={() => update("goal", g)}
+                          className={`p-5 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between group ${
+                            data.goal === g ? "border-fluent-gold bg-fluent-gold/5" : "border-black/5 bg-white hover:border-black/20"
+                          }`}
+                        >
+                          <span className="font-bold text-sm">{g}</span>
+                          {data.goal === g && <div className="w-2 h-2 rounded-full bg-fluent-gold" />}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Step 4: Success */}
+              {/* Step 4: Preferences */}
               {step === 4 && (
+                <div className="space-y-8">
+                  <div className="space-y-4">
+                    <label className="text-xs font-bold uppercase tracking-widest text-fluent-navy">Preferred Study Style</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {["Visual", "Auditory", "Interactive", "Reading/Writing"].map(s => (
+                        <div 
+                          key={s} 
+                          onClick={() => toggleStyle(s)}
+                          className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between group ${
+                            data.learningStyles.includes(s) ? "border-fluent-teal bg-fluent-teal/5" : "border-black/5 bg-white hover:border-black/20"
+                          }`}
+                        >
+                          <span className="font-bold text-sm">{s}</span>
+                          {data.learningStyles.includes(s) && <CheckCircle2 size={18} className="text-fluent-teal" />}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <label className="text-xs font-bold uppercase tracking-widest text-fluent-navy">Best Time to Study</label>
+                    <div className="flex flex-wrap gap-2.5">
+                      {["Early Morning", "Afternoon", "Evening", "Late Night"].map(t => (
+                        <button
+                          key={t}
+                          onClick={() => update("studyTime", t)}
+                          className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all border-2 ${
+                            data.studyTime === t 
+                              ? "bg-fluent-navy text-white border-fluent-navy" 
+                              : "bg-white text-slate-500 border-black/5 hover:border-black/20"
+                          }`}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 5: Success */}
+              {step === 5 && (
                 <div className="text-center py-8">
                   <div className="w-24 h-24 rounded-full bg-fluent-teal/10 flex items-center justify-center mx-auto mb-10 border-4 border-fluent-teal/20">
                     <Sparkles size={48} className="text-fluent-teal" />
@@ -1071,7 +1224,7 @@ const OnboardingFlow = ({ onComplete }: { onComplete: (view: string, profile: an
                 </div>
               )}
 
-              {step < 4 && (
+              {step < 5 && (
                 <div className="flex justify-between items-center mt-16 pt-8 border-t border-black/5">
                   <Btn variant="ghost" onClick={() => setStep(s => Math.max(0, s - 1))} className={step === 0 ? "invisible" : ""}>
                     ← Back
@@ -1081,7 +1234,7 @@ const OnboardingFlow = ({ onComplete }: { onComplete: (view: string, profile: an
                     onClick={() => setStep(s => s + 1)} 
                     disabled={!canProceed()}
                   >
-                    {step === 3 ? "Complete Setup" : "Continue →"}
+                    {step === 4 ? "Complete Setup" : "Continue →"}
                   </Btn>
                 </div>
               )}
@@ -1093,21 +1246,156 @@ const OnboardingFlow = ({ onComplete }: { onComplete: (view: string, profile: an
   );
 };
 
+const BookingModal = ({ isOpen, onClose, profile }: { isOpen: boolean, onClose: () => void, profile: any }) => {
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [subject, setSubject] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!date || !time) return;
+    setLoading(true);
+
+    try {
+      await addDoc(collection(db, 'bookings'), {
+        userId: auth.currentUser?.uid,
+        userName: profile?.name || auth.currentUser?.displayName || "User",
+        userRole: profile?.role || "student",
+        subject: subject || (profile?.subjects?.[0]) || "General Consultation",
+        date,
+        time,
+        status: 'pending',
+        createdAt: serverTimestamp()
+      });
+      setSuccess(true);
+      setTimeout(() => {
+        setSuccess(false);
+        onClose();
+        setDate("");
+        setTime("");
+      }, 2000);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'bookings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-fluent-navy/30 backdrop-blur-md">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="bg-white rounded-[40px] p-10 max-w-lg w-full shadow-2xl relative overflow-hidden"
+      >
+        <button onClick={onClose} className="absolute top-8 right-8 text-slate-400 hover:text-fluent-navy transition-colors">
+          <X size={24} />
+        </button>
+
+        {success ? (
+          <div className="text-center py-12">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-green-600">
+              <CheckCircle2 size={40} />
+            </div>
+            <h3 className="text-2xl font-serif font-bold mb-2">Request Shared</h3>
+            <p className="text-slate-500">The faculty will review and confirm shortly.</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-12 h-12 rounded-2xl bg-fluent-gold/10 flex items-center justify-center text-fluent-gold">
+                <Calendar size={24} />
+              </div>
+              <div>
+                <h3 className="text-2xl font-serif font-bold tracking-tight">Book Consultation</h3>
+                <p className="text-sm text-slate-500">Sync with your dedicated faculty specialist.</p>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 block">Consultation Topic</label>
+                <select 
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  className="w-full p-4 bg-gray-50 border border-black/10 rounded-2xl focus:outline-none focus:ring-2 focus:ring-fluent-teal/20 text-sm font-medium"
+                >
+                  <option value="">Select a subject...</option>
+                  {(profile?.subjects || ["Mathematics", "Science", "History", "General Guidance"]).map((s: string) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 block">Preferred Date</label>
+                  <input 
+                    type="date" 
+                    required
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full p-4 bg-gray-50 border border-black/10 rounded-2xl focus:outline-none focus:ring-2 focus:ring-fluent-teal/20 text-sm font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 block">Preferred Slot</label>
+                  <select 
+                    required
+                    value={time}
+                    onChange={(e) => setTime(e.target.value)}
+                    className="w-full p-4 bg-gray-50 border border-black/10 rounded-2xl focus:outline-none focus:ring-2 focus:ring-fluent-teal/20 text-sm font-medium"
+                  >
+                    <option value="">Choose time...</option>
+                    <option value="09:00 AM">09:00 AM</option>
+                    <option value="10:30 AM">10:30 AM</option>
+                    <option value="02:00 PM">02:00 PM</option>
+                    <option value="04:30 PM">04:30 PM</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <Btn type="submit" variant="primary" className="w-full py-4 text-lg" disabled={loading}>
+                  {loading ? "Syncing..." : "Confirm Schedule"}
+                </Btn>
+              </div>
+            </div>
+          </form>
+        )}
+      </motion.div>
+    </div>
+  );
+};
+
 const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) => {
   const [activeNav, setActiveNav] = useState("overview");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingClass, setEditingClass] = useState<any>(null);
   const [selectedClassForStudents, setSelectedClassForStudents] = useState<any>(null);
   const [selectedPoolStudents, setSelectedPoolStudents] = useState<string[]>([]);
+  const [studentSearch, setStudentSearch] = useState("");
+  const [studentSort, setStudentSort] = useState("name-asc");
+  const [feedbackCategory, setFeedbackCategory] = useState("Academic Improvement");
+  const [feedbackFilter, setFeedbackFilter] = useState("All");
+  const [feedbackSort, setFeedbackSort] = useState("newest");
+  const [feedbackDate, setFeedbackDate] = useState(new Date().toISOString().split('T')[0]);
   const [viewingHistory, setViewingHistory] = useState<any>(null);
   const [editingStudent, setEditingStudent] = useState<any>(null);
   const [viewingStudentDetail, setViewingStudentDetail] = useState<any>(null);
-  const [rosterSortOrder, setRosterSortOrder] = useState<'desc' | 'asc' | null>(null);
   const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [bulkText, setBulkText] = useState("");
   const [unassignedStudents, setUnassignedStudents] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cohortSubjectFilter, setCohortSubjectFilter] = useState(profile?.subjects?.[0] || "All");
+  const [cohortGradeFilter, setCohortGradeFilter] = useState("All");
 
   const teacherName = profile?.name || auth.currentUser?.displayName || "Dr. Sarah Mills";
   const department = profile?.subjects?.[0] || "Physics";
@@ -1131,9 +1419,17 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
       setUnassignedStudents(poolData);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'studentPool'));
 
+    // Listen to bookings
+    if (!auth.currentUser) return;                
+    const bookingsQuery = query(collection(db, 'bookings'), orderBy('createdAt', 'desc'), limit(50));
+    const unsubBookings = onSnapshot(bookingsQuery, (snap) => {
+      setBookings(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'bookings'));
+
     return () => {
       unsubClasses();
       unsubPool();
+      unsubBookings();
     };
   }, []);
 
@@ -1153,10 +1449,31 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
     return () => unsub();
   }, [selectedClassForStudents?.id]);
 
+  const [allStudents, setAllStudents] = useState<any[]>([]);
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    const q = query(collectionGroup(db, 'students'), where('teacherId', '==', auth.currentUser.uid));
+    const unsub = onSnapshot(q, (snap) => {
+      setAllStudents(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'collectionGroup/students'));
+    return () => unsub();
+  }, []);
+
+  const alerts = allStudents.filter(s => {
+    const rate = s.total > 2 ? (s.attended / s.total) : 1;
+    return rate < 0.6;
+  }).slice(0, 3).map(s => ({
+    type: "Attendance Alert",
+    student: s.name,
+    class: s.className,
+    msg: "Participation dropped below 60%. Scaffolding gap detected."
+  }));
+
   const navItems = [
     { id: "overview", label: "Faculty Console", icon: Home },
     { id: "cohorts", label: "Student Cohorts", icon: Users, badge: classes.length.toString() },
     { id: "registry", label: "Registry", icon: Database },
+    { id: "bookings", label: "Consultations", icon: Calendar, badge: bookings.filter(b => b.status === "pending").length.toString() },
     { id: "live", label: "Live Delivery", icon: Play, badge: "Live" },
     { id: "curriculum", label: "British Methods", icon: BookOpen },
     { id: "settings", label: "Preferences", icon: Settings },
@@ -1240,6 +1557,30 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
 
         {activeNav === 'overview' ? (
           <>
+            {alerts.length > 0 && (
+              <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-1000">
+                <div className="text-[10px] text-red-500 font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                  Priority Actions Required
+                </div>
+                <div className="grid md:grid-cols-3 gap-4">
+                  {alerts.map((a, i) => (
+                    <div key={i} className="p-5 bg-white border border-red-100 rounded-2xl shadow-sm hover:shadow-md transition-all group flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="text-[10px] font-bold text-red-500 uppercase tracking-tighter">{a.type}</span>
+                          <span className="text-[9px] text-slate-400 font-medium px-2 py-0.5 bg-gray-50 rounded-full">{a.class}</span>
+                        </div>
+                        <div className="font-bold text-fluent-navy mb-1">{a.student}</div>
+                        <p className="text-[11px] text-slate-500 leading-relaxed">{a.msg}</p>
+                      </div>
+                      <Btn variant="ghost" size="sm" className="mt-4 text-[10px] w-full text-fluent-teal group-hover:bg-fluent-teal/5">Address Gap →</Btn>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
               <MetricTile label="Active Cohorts" value={classes.length.toString()} icon={Users} color="#1B4F5E" />
               <MetricTile label="Avg Fluency" value="84%" delta="+4%" icon={TrendingUp} color="#0D1B2A" />
@@ -1299,10 +1640,226 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
               </Card>
             </div>
           </>
+        ) : activeNav === 'settings' ? (
+          <div className="max-w-2xl">
+            <h2 className="text-3xl font-serif font-bold mb-8">Faculty Preferences</h2>
+            <Card className="p-8">
+              <h3 className="text-lg font-bold mb-6">Subject Specializations</h3>
+              <p className="text-sm text-slate-500 mb-6">Select the subjects you specialize in to improve student matching and class management.</p>
+              <div className="grid grid-cols-2 gap-3">
+                {["Mathematics", "Physics", "Chemistry", "Biology", "English", "Science (All)"].map(s => (
+                  <div 
+                    key={s} 
+                    onClick={async () => {
+                      if (!auth.currentUser) return;
+                      const newSubjects = (profile?.subjects || []).includes(s) 
+                        ? (profile?.subjects || []).filter((x: string) => x !== s)
+                        : [...(profile?.subjects || []), s];
+                      try {
+                        await updateDoc(doc(db, 'users', auth.currentUser.uid), { subjects: newSubjects });
+                      } catch (e) { handleFirestoreError(e, OperationType.WRITE, 'users'); }
+                    }}
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between group ${
+                      (profile?.subjects || []).includes(s) ? "border-fluent-teal bg-fluent-teal/5" : "border-black/5 bg-white hover:border-black/20"
+                    }`}
+                  >
+                    <span className="font-bold text-sm">{s}</span>
+                    {(profile?.subjects || []).includes(s) && <CheckCircle2 size={18} className="text-fluent-teal" />}
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
         ) : activeNav === 'cohorts' ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {classes.map(c => (
-              <Card key={c.id} className="p-6 flex flex-col">
+
+          <div className="space-y-10">
+            {/* Filters & Analytics Header */}
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-white p-8 rounded-[32px] border border-black/5 shadow-sm">
+              <div className="flex flex-wrap gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 block px-1">Subject Filter</label>
+                  <div className="flex gap-2 p-1 bg-gray-50 rounded-xl border border-black/5">
+                    {["All", "Mathematics", "Physics", "Chemistry", "Biology", "English"].map(subject => (
+                      <button
+                        key={subject}
+                        onClick={() => setCohortSubjectFilter(subject)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          cohortSubjectFilter === subject 
+                            ? 'bg-fluent-navy text-white shadow-md' 
+                            : 'text-slate-400 hover:text-fluent-navy hover:bg-white'
+                        }`}
+                      >
+                        {subject}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 block px-1">Grade Level</label>
+                  <div className="flex gap-2 p-1 bg-gray-50 rounded-xl border border-black/5">
+                    {["All", "Grade 9", "Grade 10", "Grade 11", "Grade 12"].map(grade => (
+                      <button
+                        key={grade}
+                        onClick={() => setCohortGradeFilter(grade)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          cohortGradeFilter === grade 
+                            ? 'bg-fluent-navy text-white shadow-md' 
+                            : 'text-slate-400 hover:text-fluent-navy hover:bg-white'
+                        }`}
+                      >
+                        {grade}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="text-right">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-1">Impact Score</div>
+                  <div className="text-2xl font-serif font-bold text-fluent-navy">
+                    {classes.filter(c => {
+                      const subjectMatch = cohortSubjectFilter === "All" || c.subject === cohortSubjectFilter;
+                      const gradeMatch = cohortGradeFilter === "All" || c.grade === cohortGradeFilter;
+                      return subjectMatch && gradeMatch;
+                    }).reduce((sum, c) => sum + (c.students || 0), 0)} <span className="text-xs text-slate-300 font-sans uppercase">Scholars</span>
+                  </div>
+                </div>
+                <div className="w-px h-10 bg-slate-100 hidden md:block" />
+                <div className="text-right">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-1">Global Mastery</div>
+                  <div className="text-2xl font-serif font-bold text-fluent-teal text-right">
+                    {(() => {
+                      const filtered = classes.filter(c => {
+                        const subjectMatch = cohortSubjectFilter === "All" || c.subject === cohortSubjectFilter;
+                        const gradeMatch = cohortGradeFilter === "All" || c.grade === cohortGradeFilter;
+                        return subjectMatch && gradeMatch;
+                      });
+                      return filtered.length > 0 
+                        ? Math.round(filtered.reduce((sum, c) => sum + (c.avgScore || 0), 0) / filtered.length) 
+                        : 0;
+                    })()}%
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Analytics Dashboard Grid */}
+            <div className="grid lg:grid-cols-3 gap-8">
+              <Card className="lg:col-span-2 p-8 relative overflow-hidden">
+                <div className="flex justify-between items-center mb-8 relative z-10">
+                  <div>
+                    <h3 className="text-xl font-serif font-bold">Performance Trajectory</h3>
+                    <p className="text-xs text-slate-400 font-medium">Aggregate mastery trend across {cohortSubjectFilter} {cohortGradeFilter !== 'All' ? `(${cohortGradeFilter})` : ''} cohorts</p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                     <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-fluent-teal"></div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Mastery %</span>
+                     </div>
+                  </div>
+                </div>
+                
+                <div className="h-[240px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={[
+                        { name: 'Jan', value: 65 },
+                        { name: 'Feb', value: 68 },
+                        { name: 'Mar', value: 75 },
+                        { name: 'Apr', value: 72 },
+                        { name: 'May', value: 80 },
+                        { name: 'Jun', value: 84 },
+                      ]}
+                      margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="var(--color-fluent-teal)" stopOpacity={0.1}/>
+                          <stop offset="95%" stopColor="var(--color-fluent-teal)" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                      <XAxis 
+                        dataKey="name" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{fontSize: 10, fontWeight: 700, fill: '#94a3b8'}}
+                      />
+                      <YAxis 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{fontSize: 10, fontWeight: 700, fill: '#94a3b8'}}
+                        domain={[0, 100]}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: '#fff', 
+                          border: 'none', 
+                          borderRadius: '12px', 
+                          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+                          fontSize: '12px'
+                        }} 
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="value" 
+                        stroke="var(--color-fluent-teal)" 
+                        strokeWidth={3} 
+                        fillOpacity={1} 
+                        fill="url(#colorValue)" 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+
+              <div className="grid grid-cols-1 gap-6">
+                <MetricTile 
+                  label="Avg Attendance" 
+                  value={`${(() => {
+                    const filtered = classes.filter(c => {
+                      const subjectMatch = cohortSubjectFilter === "All" || c.subject === cohortSubjectFilter;
+                      const gradeMatch = cohortGradeFilter === "All" || c.grade === cohortGradeFilter;
+                      return subjectMatch && gradeMatch;
+                    });
+                    return filtered.length > 0 
+                      ? Math.round(filtered.reduce((sum, c) => sum + (c.attendance || 0), 0) / filtered.length) 
+                      : 0;
+                  })()}%`} 
+                  icon={CheckCircle2} 
+                  color="#1B4F5E" 
+                />
+                <MetricTile 
+                  label="Cohorts Tracked" 
+                  value={classes.filter(c => {
+                    const subjectMatch = cohortSubjectFilter === "All" || c.subject === cohortSubjectFilter;
+                    const gradeMatch = cohortGradeFilter === "All" || c.grade === cohortGradeFilter;
+                    return subjectMatch && gradeMatch;
+                  }).length.toString()} 
+                  icon={BookOpen} 
+                  color="#C9A84C" 
+                />
+                <div className="bg-fluent-navy text-white rounded-xl p-6 shadow-lg shadow-fluent-navy/20 flex flex-col justify-center">
+                  <div className="text-[10px] font-bold text-fluent-gold uppercase tracking-[0.3em] mb-4">Focus Directive</div>
+                  <p className="text-xs text-white/50 leading-relaxed font-medium">
+                    Priority given to <span className="text-white font-bold">{cohortSubjectFilter !== 'All' ? cohortSubjectFilter : 'all subjects'}</span> engagement. Recommended intervention for cohorts falling below 70% mastery in conceptually critical modules.
+                  </p>
+                  <Btn variant="gold" size="sm" className="mt-6 w-full text-[9px] py-1.5">Download Insights Report</Btn>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {classes
+                .filter(c => {
+                  const subjectMatch = cohortSubjectFilter === "All" || c.subject === cohortSubjectFilter;
+                  const gradeMatch = cohortGradeFilter === "All" || c.grade === cohortGradeFilter;
+                  return subjectMatch && gradeMatch;
+                })
+                .map(c => (
+              <Card key={c.id} className="p-6 flex flex-col" hover onClick={() => setSelectedClassForStudents(c)}>
                 <div className="flex justify-between items-start mb-4">
                   <div className="w-12 h-12 rounded-xl bg-fluent-navy/5 flex items-center justify-center text-fluent-navy">
                     <Users size={20} />
@@ -1350,6 +1907,7 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
               <span className="text-sm font-bold uppercase tracking-widest">Create New Class</span>
             </button>
           </div>
+        </div>
         ) : activeNav === "registry" ? (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex justify-between items-end">
@@ -1427,6 +1985,100 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
                     <div className="text-[10px] font-bold text-fluent-gold uppercase tracking-[0.2em] mb-1">ARCHIVE</div>
                     <div className="text-xs font-medium">Deleting a student from the pool is permanent. Assigned students stay in their class until removed.</div>
                   </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+        ) : activeNav === "bookings" ? (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div>
+              <h2 className="text-3xl font-serif font-bold">Consultation Desk</h2>
+              <p className="text-slate-500 mt-2">Manage incoming and upcoming sync requests from students and parents.</p>
+            </div>
+
+            <div className="grid lg:grid-cols-4 gap-8">
+              <div className="lg:col-span-1 space-y-6">
+                <Card className="p-6">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Pending Requests</div>
+                  <div className="text-4xl font-serif font-bold text-fluent-gold">
+                    {bookings.filter(b => b.status === 'pending').length}
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-2 font-medium">Require immediate verification</p>
+                </Card>
+                <Card className="p-6">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Confirmed This Week</div>
+                  <div className="text-4xl font-serif font-bold text-fluent-teal">
+                    {bookings.filter(b => b.status === 'confirmed').length}
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-2 font-medium">Mapped to academic calendar</p>
+                </Card>
+              </div>
+
+              <Card className="lg:col-span-3 p-8">
+                <div className="flex justify-between items-center mb-10">
+                  <h3 className="text-xl font-serif font-bold">Sync Pipeline</h3>
+                  <div className="flex gap-2">
+                    <Btn variant="ghost" size="sm" className="bg-gray-50 text-[10px] font-bold uppercase tracking-widest">Filter</Btn>
+                    <Btn variant="ghost" size="sm" className="bg-gray-50 text-[10px] font-bold uppercase tracking-widest">Export</Btn>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b border-slate-100">
+                                <th className="text-left py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Requestor</th>
+                                <th className="text-left py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Context</th>
+                                <th className="text-left py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Schedule</th>
+                                <th className="text-left py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Status</th>
+                                <th className="text-right py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                            {bookings.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="py-20 text-center text-slate-400 italic">No bookings found in the pipeline.</td>
+                                </tr>
+                            ) : bookings.map((b) => (
+                                <tr key={b.id} className="group hover:bg-slate-50/50 transition-colors">
+                                    <td className="py-5">
+                                        <div className="flex items-center gap-3">
+                                            <Avatar name={b.userName} size={32} />
+                                            <div>
+                                                <div className="text-sm font-bold text-fluent-navy">{b.userName}</div>
+                                                <div className="text-[10px] font-medium text-slate-400 capitalize">{b.userRole}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="py-5">
+                                        <div className="px-2 py-1 bg-gray-100 rounded text-[10px] font-bold text-slate-600 inline-block uppercase tracking-tighter">
+                                            {b.subject}
+                                        </div>
+                                    </td>
+                                    <td className="py-5">
+                                        <div className="text-xs font-bold text-slate-600">{b.date}</div>
+                                        <div className="text-[10px] text-slate-400">{b.time}</div>
+                                    </td>
+                                    <td className="py-5">
+                                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${
+                                            b.status === 'confirmed' ? "bg-green-100 text-green-600" : 
+                                            b.status === 'pending' ? "bg-fluent-gold/20 text-fluent-gold" : "bg-red-100 text-red-600"
+                                        }`}>
+                                            {b.status}
+                                        </span>
+                                    </td>
+                                    <td className="py-5 text-right">
+                                        <div className="flex justify-end gap-2">
+                                            {b.status === 'pending' && (
+                                                <Btn variant="primary" size="sm" className="px-3 h-8 text-[10px] bg-fluent-teal" onClick={() => updateDoc(doc(db, 'bookings', b.id), { status: 'confirmed' })}>Confirm</Btn>
+                                            )}
+                                            <Btn variant="ghost" size="sm" className="px-3 h-8 text-[10px] text-red-400 hover:bg-red-50" onClick={() => deleteDoc(doc(db, 'bookings', b.id))}>Cancel</Btn>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
               </Card>
             </div>
@@ -1528,56 +2180,117 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
                 </button>
               </div>
 
-              <div className="flex-1 overflow-auto pr-2">
-                <div className="space-y-4 mb-8">
-                  <div className="flex justify-between items-center">
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                      {showBulkAdd ? "Bulk Student Import" : "Quick Add Student"}
-                    </div>
+              <div className="flex-1 overflow-auto pr-2 custom-scrollbar">
+                <div className="space-y-6 mb-8">
+                  <div className="flex gap-4 p-1 bg-gray-100 rounded-2xl">
                     <button 
-                      onClick={() => setShowBulkAdd(!showBulkAdd)}
-                      className="text-[10px] font-bold uppercase tracking-widest text-fluent-teal hover:text-fluent-navy transition-colors flex items-center gap-1.5"
+                      onClick={() => setShowBulkAdd(false)}
+                      className={`flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${!showBulkAdd ? 'bg-white shadow-sm text-fluent-navy' : 'text-slate-400'}`}
                     >
-                      {showBulkAdd ? <Users size={12} /> : <FileText size={12} />}
-                      {showBulkAdd ? "Simple Mode" : "Bulk Mode"}
+                      Single Entry
+                    </button>
+                    <button 
+                      onClick={() => setShowBulkAdd(true)}
+                      className={`flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${showBulkAdd ? 'bg-white shadow-sm text-fluent-navy' : 'text-slate-400'}`}
+                    >
+                      Bulk Import
                     </button>
                   </div>
 
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="p-4 bg-fluent-navy/5 rounded-xl">
+                        <div className="text-[10px] font-bold text-slate-500 uppercase">Attendance Rate</div>
+                        <div className="text-xl font-mono font-bold text-fluent-navy">{selectedClassForStudents.attendance || 0}%</div>
+                    </div>
+                    <div className="p-4 bg-fluent-navy/5 rounded-xl">
+                        <div className="text-[10px] font-bold text-slate-500 uppercase">Avg Mastery</div>
+                        <div className="text-xl font-mono font-bold text-fluent-teal">{selectedClassForStudents.avgScore || 0}%</div>
+                    </div>
+                    <div className="col-span-2 text-center">
+                        <Btn variant="ghost" size="sm" className="text-xs text-fluent-teal">View Comprehensive Analytics Report →</Btn>
+                    </div>
+                  </div>
+
                   {!showBulkAdd ? (
-                    <form 
-                      className="flex gap-2"
-                      onSubmit={async (e) => {
-                        e.preventDefault();
-                        const form = e.currentTarget;
-                        const input = form.elements.namedItem('studentName') as HTMLInputElement;
-                        const name = input.value;
-                        if (!name.trim()) return;
-                        
-                        try {
-                          const studentsRef = collection(db, 'classes', selectedClassForStudents.id, 'students');
-                          await addDoc(studentsRef, {
-                            name,
-                            studentId: `ST-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-                            enrolledAt: new Date().toISOString(),
-                            attended: 0,
-                            total: 0,
-                            history: [],
-                            grade: selectedClassForStudents.grade,
-                            subject: selectedClassForStudents.subject,
-                            className: selectedClassForStudents.name
-                          });
-                          await updateDoc(doc(db, 'classes', selectedClassForStudents.id), {
-                            students: (selectedClassForStudents.students || 0) + 1
-                          });
-                          input.value = '';
-                        } catch (error) {
-                          handleFirestoreError(error, OperationType.WRITE, `classes/${selectedClassForStudents.id}/students`);
-                        }
-                      }}
-                    >
-                      <input name="studentName" placeholder="Type student name..." className="flex-1 p-3 bg-gray-50 border border-black/5 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-fluent-teal" />
-                      <Btn type="submit" variant="primary" size="sm">Enroll</Btn>
-                    </form>
+                    <div className="space-y-4">
+                      <form 
+                        className="flex gap-2"
+                        onSubmit={async (e) => {
+                          e.preventDefault();
+                          const form = e.currentTarget;
+                          const input = form.elements.namedItem('studentName') as HTMLInputElement;
+                          const name = input.value;
+                          if (!name.trim()) return;
+                          
+                          try {
+                            const studentsRef = collection(db, 'classes', selectedClassForStudents.id, 'students');
+                            await addDoc(studentsRef, {
+                              name,
+                              teacherId: auth.currentUser?.uid,
+                              studentId: `ST-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+                              enrolledAt: new Date().toISOString(),
+                              attended: 0,
+                              total: 0,
+                              history: [],
+                              grade: selectedClassForStudents.grade,
+                              subject: selectedClassForStudents.subject,
+                              className: selectedClassForStudents.name
+                            });
+                            await updateDoc(doc(db, 'classes', selectedClassForStudents.id), {
+                              students: (selectedClassForStudents.students || 0) + 1
+                            });
+                            input.value = '';
+                          } catch (error) {
+                            handleFirestoreError(error, OperationType.WRITE, `classes/${selectedClassForStudents.id}/students`);
+                          }
+                        }}
+                      >
+                        <input name="studentName" placeholder="Type name for quick enrollment..." className="flex-1 p-3 bg-gray-50 border border-black/5 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-fluent-teal" />
+                        <Btn type="submit" variant="primary" size="sm">Enroll</Btn>
+                      </form>
+
+                      {unassignedStudents.length > 0 && (
+                        <div className="pt-2">
+                          <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 ml-1">Available from Registry</div>
+                          <div className="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto p-1">
+                            {unassignedStudents.map(s => (
+                              <button
+                                key={s.id}
+                                onClick={async () => {
+                                  try {
+                                    const studentsRef = collection(db, 'classes', selectedClassForStudents.id, 'students');
+                                    await addDoc(studentsRef, {
+                                      ...s,
+                                      id: undefined, // Let Firestore generate new ID
+                                      teacherId: auth.currentUser?.uid,
+                                      enrolledAt: new Date().toISOString(),
+                                      attended: 0,
+                                      total: 0,
+                                      history: [],
+                                      grade: selectedClassForStudents.grade,
+                                      subject: selectedClassForStudents.subject,
+                                      className: selectedClassForStudents.name
+                                    });
+                                    // Remove from pool
+                                    await deleteDoc(doc(db, 'studentPool', s.id));
+                                    // Update count
+                                    await updateDoc(doc(db, 'classes', selectedClassForStudents.id), {
+                                      students: (selectedClassForStudents.students || 0) + 1
+                                    });
+                                  } catch (error) {
+                                    handleFirestoreError(error, OperationType.WRITE, `classes/${selectedClassForStudents.id}/students`);
+                                  }
+                                }}
+                                className="group flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-black/5 rounded-full text-[11px] font-medium text-slate-600 hover:bg-fluent-teal hover:text-white transition-all shadow-sm"
+                              >
+                                <Plus size={12} className="text-fluent-teal group-hover:text-white" />
+                                {s.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <div className="space-y-3">
                       <div className="flex justify-between items-center px-1">
@@ -1667,68 +2380,109 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
 
                 <div className="space-y-4">
                   {classStudents.length > 0 && (
-                    <div className="bg-fluent-navy text-white rounded-3xl p-6 shadow-lg relative overflow-hidden group">
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-fluent-teal/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-fluent-teal/20 transition-colors"></div>
-                      <div className="relative z-10 flex items-center justify-between">
-                        <div>
-                          <div className="text-[10px] font-bold uppercase tracking-widest text-fluent-teal/80 mb-1">Class Attendance Vitality</div>
-                          <div className="text-4xl font-serif font-bold tracking-tight">
-                            {(() => {
-                              const attended = classStudents.reduce((sum: number, s: any) => sum + (s.attended + (s.status === 'present' ? 1 : 0)), 0);
-                              const total = classStudents.reduce((sum: number, s: any) => sum + (s.total + (s.status ? 1 : 0)), 0);
-                              return total > 0 ? Math.round((attended / total) * 100) : 0;
-                            })()}%
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-fluent-navy text-white rounded-3xl p-6 shadow-lg relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-fluent-teal/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-fluent-teal/20 transition-colors"></div>
+                        <div className="relative z-10 flex items-center justify-between">
+                          <div>
+                            <div className="text-[10px] font-bold uppercase tracking-widest text-fluent-teal/80 mb-1">Class Attendance</div>
+                            <div className="text-4xl font-serif font-bold tracking-tight">
+                              {(() => {
+                                const attended = classStudents.reduce((sum: number, s: any) => sum + (s.attended + (s.status === 'present' ? 1 : 0)), 0);
+                                const total = classStudents.reduce((sum: number, s: any) => sum + (s.total + (s.status ? 1 : 0)), 0);
+                                return total > 0 ? Math.round((attended / total) * 100) : 0;
+                              })()}%
+                            </div>
+                          </div>
+                          <div className="text-right">
+                             <div className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-1">Total Impact</div>
+                             <div className="text-xs font-bold text-fluent-teal">
+                               {classStudents.reduce((sum: number, s: any) => sum + (s.attended + (s.status === 'present' ? 1 : 0)), 0)} Sessions
+                             </div>
                           </div>
                         </div>
-                        <div className="flex flex-col items-end">
-                          <div className="flex gap-1 mb-2">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <div 
-                                key={i} 
-                                className={`w-1 h-3 rounded-full ${i < 4 ? 'bg-fluent-teal' : 'bg-white/20'}`}
-                              />
-                            ))}
-                          </div>
-                          <div className="text-[9px] font-bold uppercase tracking-widest text-white/40">Aggregated Metric</div>
+                        <div className="mt-4 w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ 
+                              width: `${(() => {
+                                const attended = classStudents.reduce((sum: number, s: any) => sum + (s.attended + (s.status === 'present' ? 1 : 0)), 0);
+                                const total = classStudents.reduce((sum: number, s: any) => sum + (s.total + (s.status ? 1 : 0)), 0);
+                                return total > 0 ? Math.round((attended / total) * 100) : 0;
+                              })()}%` 
+                            }}
+                            className="h-full bg-fluent-teal"
+                          />
                         </div>
                       </div>
-                      <div className="mt-4 w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                        <motion.div 
-                          initial={{ width: 0 }}
-                          animate={{ 
-                            width: `${(() => {
-                              const attended = classStudents.reduce((sum: number, s: any) => sum + (s.attended + (s.status === 'present' ? 1 : 0)), 0);
-                              const total = classStudents.reduce((sum: number, s: any) => sum + (s.total + (s.status ? 1 : 0)), 0);
-                              return total > 0 ? Math.round((attended / total) * 100) : 0;
-                            })()}%` 
+                      
+                      <div className="bg-fluent-cream/30 border border-black/5 rounded-3xl p-6 flex flex-col justify-between group hover:bg-fluent-cream/50 transition-colors">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Avg Mastery Level</div>
+                            <div className="text-4xl font-serif font-bold text-fluent-navy">
+                              {(() => {
+                                const scores = classStudents.map((s: any) => {
+                                  const total = s.total + (s.status ? 1 : 0);
+                                  const attended = s.attended + (s.status === 'present' ? 1 : 0);
+                                  return total > 0 ? (attended / total) * 100 : 0;
+                                });
+                                const avg = scores.reduce((a: number, b: number) => a + b, 0) / (scores.length || 1);
+                                return Math.round(avg);
+                              })()}%
+                            </div>
+                          </div>
+                          <div className="w-10 h-10 rounded-2xl bg-white border border-black/5 flex items-center justify-center text-fluent-teal shadow-sm group-hover:scale-110 transition-transform">
+                            <TrendingUp size={20} />
+                          </div>
+                        </div>
+                        
+                        <button 
+                          onClick={() => {
+                            setSelectedClassForStudents(null);
+                            setActiveNav('cohorts');
                           }}
-                          className="h-full bg-fluent-teal"
-                        />
+                          className="mt-4 flex items-center justify-center gap-2 w-full py-3 bg-white border border-black/5 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-600 hover:bg-fluent-teal hover:text-white hover:border-fluent-teal transition-all group/btn shadow-sm"
+                        >
+                          <BarChart3 size={14} className="group-hover/btn:rotate-12 transition-transform" />
+                          Full Analytics Report
+                        </button>
                       </div>
                     </div>
                   )}
 
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="flex items-center gap-4">
-                      <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Class Roster</div>
-                      <div className="flex items-center bg-gray-100 p-1 rounded-lg gap-1">
-                        <button 
-                          onClick={() => setRosterSortOrder(rosterSortOrder === 'desc' ? null : 'desc')}
-                          className={`p-1 rounded-md transition-all ${rosterSortOrder === 'desc' ? 'bg-fluent-navy text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                          title="Sort Highest First"
+                  <div className="space-y-4 mb-6">
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <div className="flex-1 relative">
+                        <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input 
+                          type="text" 
+                          placeholder="Search scholars by name..."
+                          value={studentSearch}
+                          onChange={(e) => setStudentSearch(e.target.value)}
+                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-black/5 rounded-2xl text-xs font-medium focus:outline-none focus:ring-1 focus:ring-fluent-teal transition-all"
+                        />
+                      </div>
+                      <div className="flex items-center bg-gray-50 border border-black/5 rounded-2xl p-1 shrink-0">
+                        <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-3 border-r border-black/5 mr-1">Sort</div>
+                        <select 
+                          value={studentSort}
+                          onChange={(e) => setStudentSort(e.target.value)}
+                          className="bg-transparent text-[10px] font-bold uppercase tracking-widest text-fluent-navy px-2 py-1 outline-none cursor-pointer"
                         >
-                          <ChevronUp size={14} />
-                        </button>
-                        <button 
-                          onClick={() => setRosterSortOrder(rosterSortOrder === 'asc' ? null : 'asc')}
-                          className={`p-1 rounded-md transition-all ${rosterSortOrder === 'asc' ? 'bg-fluent-navy text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                          title="Sort Lowest First"
-                        >
-                          <ChevronDown size={14} />
-                        </button>
+                          <option value="name-asc">A-Z Name</option>
+                          <option value="name-desc">Z-A Name</option>
+                          <option value="rate-desc">High Attendance</option>
+                          <option value="rate-asc">Low Attendance</option>
+                          <option value="grade-desc">Highest Grade</option>
+                        </select>
                       </div>
                     </div>
-                    <Badge color="navy">{selectedClassForStudents.students || 0} Enrolled</Badge>
+                  </div>
+
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Class Roster</div>
+                    <Badge color="navy">{classStudents.length} Enrolled</Badge>
                   </div>
                   {classStudents.length === 0 ? (
                     <div className="p-12 text-center bg-gray-50 rounded-[32px] border border-dashed border-slate-200">
@@ -1739,17 +2493,27 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
                         No students enrolled yet. Use the tools above to build your cohort.
                       </p>
                     </div>
-                  ) : classStudents.slice().sort((a: any, b: any) => {
-                    if (!rosterSortOrder) return 0;
-                    const getRate = (s: any) => {
-                      const total = s.total + (s.status ? 1 : 0);
-                      if (total === 0) return 0;
-                      return (s.attended + (s.status === 'present' ? 1 : 0)) / total;
-                    };
-                    const rateA = getRate(a);
-                    const rateB = getRate(b);
-                    return rosterSortOrder === 'desc' ? rateB - rateA : rateA - rateB;
-                  }).map((s: any, i: number) => (
+                  ) : classStudents
+                    .filter((s: any) => s.name.toLowerCase().includes(studentSearch.toLowerCase()))
+                    .slice()
+                    .sort((a: any, b: any) => {
+                      const getRate = (s: any) => {
+                        const total = s.total + (s.status ? 1 : 0);
+                        if (total === 0) return 0;
+                        return (s.attended + (s.status === 'present' ? 1 : 0)) / total;
+                      };
+
+                      if (studentSort === 'name-asc') return a.name.localeCompare(b.name);
+                      if (studentSort === 'name-desc') return b.name.localeCompare(a.name);
+                      if (studentSort === 'rate-desc') return getRate(b) - getRate(a);
+                      if (studentSort === 'rate-asc') return getRate(a) - getRate(b);
+                      if (studentSort === 'grade-desc') {
+                        const gA = parseInt((a.grade || "0").replace(/\D/g, '')) || 0;
+                        const gB = parseInt((b.grade || "0").replace(/\D/g, '')) || 0;
+                        return gB - gA;
+                      }
+                      return 0;
+                    }).map((s: any, i: number) => (
                     <div key={s.id || i} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                       <div 
                         className="flex items-center gap-3 cursor-pointer group/item"
@@ -2085,20 +2849,149 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
                   </div>
 
                   <div>
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4 px-1 flex justify-between items-center text-red-500">
-                      <span>Private Faculty Feedback</span>
-                      <Shield size={10} className="ml-1" />
-                    </h4>
-                    <div className="relative">
-                      <textarea
-                        id="edit-student-feedback"
-                        defaultValue={viewingStudentDetail.privateFeedback || ""}
-                        className="w-full bg-red-50/30 border border-red-100 rounded-2xl p-5 text-xs text-slate-700 min-h-[120px] focus:outline-none focus:ring-1 focus:ring-red-200 transition-all placeholder:text-slate-300"
-                        placeholder="Internal notes only visible to faculty members..."
-                      />
-                      <div className="absolute top-4 right-4 pointer-events-none">
-                        <Lock size={12} className="text-red-200" />
+                    <div className="flex justify-between items-center mb-4 px-1">
+                      <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center text-red-500">
+                        <span>Private faculty feedback log</span>
+                        <Shield size={10} className="ml-1" />
+                      </h4>
+                      <div className="flex gap-1 items-center">
+                        <select
+                          value={feedbackSort}
+                          onChange={(e) => setFeedbackSort(e.target.value)}
+                          className="px-2 py-1 rounded-md text-[8px] font-bold uppercase bg-slate-100 text-slate-500 cursor-pointer"
+                        >
+                          <option value="newest">Newest</option>
+                          <option value="oldest">Oldest</option>
+                        </select>
+                        {["All", "Academic Improvement", "Behavioral Note", "Effort Recognition"].map(cat => (
+                          <button
+                            key={cat}
+                            onClick={() => setFeedbackFilter(cat)}
+                            className={`px-2 py-1 rounded-md text-[8px] font-bold uppercase transition-all ${
+                              feedbackFilter === cat 
+                                ? 'bg-red-500 text-white' 
+                                : 'bg-red-50 text-red-400 hover:bg-red-100'
+                            }`}
+                          >
+                            {cat === "Academic Improvement" ? "Academic" : cat === "Behavioral Note" ? "Behavior" : cat === "Effort Recognition" ? "Effort" : cat}
+                          </button>
+                        ))}
                       </div>
+                    </div>
+
+                    <div className="space-y-3 mb-6 bg-red-50/20 p-5 rounded-[28px] border border-red-100/50">
+                      <div className="flex flex-col gap-3">
+                        <div className="flex gap-2 p-1 bg-white rounded-xl border border-black/5">
+                          {["Academic Improvement", "Behavioral Note", "Effort Recognition"].map(cat => (
+                            <button
+                              key={cat}
+                              onClick={() => setFeedbackCategory(cat)}
+                              className={`flex-1 px-2 py-2 rounded-lg text-[9px] font-bold uppercase transition-all ${
+                                feedbackCategory === cat 
+                                  ? 'bg-red-500 text-white shadow-sm' 
+                                  : 'text-slate-400 hover:bg-slate-50'
+                              }`}
+                            >
+                              {cat}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex gap-3">
+                           <div className="flex-1 relative">
+                            <textarea
+                              id="new-feedback-text"
+                              className="w-full bg-white border border-black/5 rounded-2xl p-4 text-xs text-slate-700 min-h-[80px] focus:outline-none focus:ring-1 focus:ring-red-200 transition-all placeholder:text-slate-300"
+                              placeholder="Describe the observation or feedback..."
+                            />
+                            <div className="absolute top-3 right-3 pointer-events-none">
+                              <Lock size={12} className="text-red-200" />
+                            </div>
+                          </div>
+                          <div className="w-32 flex flex-col gap-2">
+                             <input 
+                                type="date"
+                                value={feedbackDate}
+                                onChange={(e) => setFeedbackDate(e.target.value)}
+                                className="w-full bg-white border border-black/5 rounded-xl px-2 py-2 text-[10px] font-bold text-slate-600 focus:outline-none focus:ring-1 focus:ring-red-200"
+                             />
+                             <button 
+                                onClick={async () => {
+                                  const textEl = document.getElementById('new-feedback-text') as HTMLTextAreaElement;
+                                  const text = textEl.value.trim();
+                                  if (!text) return;
+
+                                  try {
+                                    const studentRef = doc(db, 'classes', selectedClassForStudents.id, 'students', viewingStudentDetail.id);
+                                    const existingFeedback = Array.isArray(viewingStudentDetail.privateFeedback) ? viewingStudentDetail.privateFeedback : [];
+                                    const newNote = {
+                                      id: Math.random().toString(36).substr(2, 9),
+                                      text,
+                                      category: feedbackCategory,
+                                      date: new Date(feedbackDate).toISOString()
+                                    };
+                                    
+                                    const updated = [...existingFeedback, newNote];
+                                    await updateDoc(studentRef, { privateFeedback: updated });
+                                    
+                                    // Update local state to show immediately
+                                    setViewingStudentDetail({ ...viewingStudentDetail, privateFeedback: updated });
+                                    textEl.value = "";
+                                  } catch (error) {
+                                    handleFirestoreError(error, OperationType.UPDATE, `classes/${selectedClassForStudents.id}/students/${viewingStudentDetail.id}`);
+                                  }
+                                }}
+                                className="flex-1 bg-red-500 text-white rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-red-600 transition-colors shadow-sm"
+                             >
+                               Log Note
+                             </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+                      {(Array.isArray(viewingStudentDetail.privateFeedback) ? viewingStudentDetail.privateFeedback : [])
+                        .filter((f: any) => feedbackFilter === "All" || f.category === feedbackFilter)
+                        .sort((a: any, b: any) => feedbackSort === "newest" ? new Date(b.date).getTime() - new Date(a.date).getTime() : new Date(a.date).getTime() - new Date(b.date).getTime())
+                        .map((f: any) => (
+                          <div key={f.id} className="p-4 bg-white border border-black/5 rounded-2xl relative group hover:border-red-200 transition-colors shadow-sm">
+                            <div className="flex justify-between items-start mb-2">
+                              <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase ${
+                                f.category === 'Academic Improvement' ? 'bg-blue-50 text-blue-500' :
+                                f.category === 'Behavioral Note' ? 'bg-orange-50 text-orange-500' :
+                                'bg-green-50 text-green-500'
+                              }`}>
+                                {f.category}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-bold text-slate-300 uppercase tracking-tight">{new Date(f.date).toLocaleDateString()}</span>
+                                <button 
+                                  onClick={async () => {
+                                    if (!window.confirm("Remove this entry?")) return;
+                                    try {
+                                      const studentRef = doc(db, 'classes', selectedClassForStudents.id, 'students', viewingStudentDetail.id);
+                                      const updated = viewingStudentDetail.privateFeedback.filter((note: any) => note.id !== f.id);
+                                      await updateDoc(studentRef, { privateFeedback: updated });
+                                      setViewingStudentDetail({ ...viewingStudentDetail, privateFeedback: updated });
+                                    } catch (error) {
+                                      handleFirestoreError(error, OperationType.UPDATE, `classes/${selectedClassForStudents.id}/students/${viewingStudentDetail.id}`);
+                                    }
+                                  }}
+                                  className="opacity-0 group-hover:opacity-100 text-red-300 hover:text-red-500 transition-all"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            </div>
+                            <p className="text-xs text-slate-600 leading-relaxed font-medium">{f.text}</p>
+                          </div>
+                        ))}
+                      {(!Array.isArray(viewingStudentDetail.privateFeedback) || viewingStudentDetail.privateFeedback.filter((f: any) => feedbackFilter === "All" || f.category === feedbackFilter).length === 0) && (
+                        <div className="text-center py-10 bg-red-50/10 rounded-[32px] border border-dashed border-red-100">
+                          <Shield size={20} className="mx-auto mb-3 text-red-100" />
+                          <p className="text-[10px] text-red-300 font-bold uppercase tracking-[0.2em]">Academic Integrity Log Empty</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -2107,16 +3000,15 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
                   <Btn variant="primary" className="flex-1" onClick={async () => {
                     const email = (document.getElementById('edit-student-email') as HTMLInputElement).value;
                     const phone = (document.getElementById('edit-student-phone') as HTMLInputElement).value;
-                    const privateFeedback = (document.getElementById('edit-student-feedback') as HTMLTextAreaElement).value;
+                    
                     try {
                       const studentRef = doc(db, 'classes', selectedClassForStudents.id, 'students', viewingStudentDetail.id);
-                      await updateDoc(studentRef, { email, phone, privateFeedback });
-                      // Update the selected student in classStudents if possible, but easier to just close
+                      await updateDoc(studentRef, { email, phone });
                       setViewingStudentDetail(null);
                     } catch (error) {
                       handleFirestoreError(error, OperationType.UPDATE, `classes/${selectedClassForStudents.id}/students/${viewingStudentDetail.id}`);
                     }
-                  }}>Sync Profile Data</Btn>
+                  }}>Save Contact Info</Btn>
                   <Btn variant="outline" className="flex-1" onClick={() => {
                     setViewingStudentDetail(null);
                     setViewingHistory(viewingStudentDetail);
@@ -2265,6 +3157,7 @@ const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) 
 
 const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => void }) => {
   const [activeNav, setActiveNav] = useState("overview");
+  const [showBooking, setShowBooking] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [myRecords, setMyRecords] = useState<any[]>([]);
@@ -2308,6 +3201,8 @@ const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => vo
       "English": "#C9A84C"
     };
 
+    const isFocus = (profile?.interests || []).includes(r.subject) || (profile?.goal || "").toLowerCase().includes(r.subject.toLowerCase());
+
     return {
       name: r.subject || "General",
       className: r.className || "Class",
@@ -2315,15 +3210,20 @@ const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => vo
       sessions: r.total,
       trend: trend >= 0 ? `+${trend}%` : `${trend}%`,
       color: colors[r.subject] || "#1B4F5E",
-      history: (r.history || []).map((h: any, idx: number) => ({ week: `S${idx + 1}`, score: h.status === 'present' ? 100 : 0 }))
+      history: (r.history || []).map((h: any, idx: number) => ({ week: `S${idx + 1}`, score: h.status === 'present' ? 100 : 0 })),
+      isFocus
     };
-  });
+  }).sort((a, b) => (b.isFocus ? 1 : 0) - (a.isFocus ? 1 : 0));
 
   const overallMastery = subjectProgress.length > 0 
     ? Math.round(subjectProgress.reduce((acc, curr) => acc + curr.score, 0) / subjectProgress.length) 
     : 0;
   
   const totalSessions = myRecords.reduce((acc, curr) => acc + (curr.total || 0), 0);
+  
+  const allFeedback = myRecords.flatMap(r => 
+    (r.privateFeedback || []).map((f: any) => ({ ...f, subject: r.subject }))
+  ).sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const upcomingSessions = [
     { subject: "Mathematics", topic: "Quadratic Equations", time: "Today, 4:00 PM", teacher: "Dr. Sarah Mills", color: "#1B4F5E" },
@@ -2350,6 +3250,15 @@ const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => vo
             </h1>
             <p className="text-slate-500 mt-2">Targeting {profile?.goal || "Academic Excellence"} • Momentum looks strong.</p>
           </div>
+
+          <div className="p-6 bg-fluent-teal/5 border border-fluent-teal/10 rounded-2xl animate-in fade-in duration-1000">
+            <div className="font-bold text-fluent-teal mb-2 uppercase text-xs tracking-widest flex items-center gap-2">
+              <Sparkles size={14} /> Personalised Focus
+            </div>
+            <p className="text-sm text-slate-600">
+              Goal: <span className="font-bold text-fluent-navy">{profile?.goal || "Academic Excellence"}</span>.
+            </p>
+          </div>
           <div className="flex gap-3 relative">
             <Btn 
               variant="outline" 
@@ -2368,14 +3277,26 @@ const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => vo
               >
                 <div className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Recent Alerts</div>
                 <div className="space-y-4">
-                  <div className="p-3 bg-fluent-teal/5 rounded-lg">
-                    <div className="text-xs font-bold text-fluent-teal">New Feedback Available</div>
-                    <div className="text-[10px] text-slate-500 mt-1">Dr. Sarah left a note on your Algebra submission.</div>
-                  </div>
-                  <div className="p-3 bg-fluent-gold/5 rounded-lg">
-                    <div className="text-xs font-bold text-fluent-gold">Session Starting Soon</div>
-                    <div className="text-[10px] text-slate-500 mt-1">Mathematics starts in 45 minutes.</div>
-                  </div>
+                  {allFeedback.length > 0 ? allFeedback.slice(0, 3).map((f: any, idx: number) => (
+                    <div key={idx} className="p-3 bg-fluent-teal/5 rounded-lg border border-fluent-teal/10">
+                      <div className="text-xs font-bold text-fluent-teal flex justify-between">
+                        <span>{f.category}</span>
+                        <span className="text-[9px] opacity-60">{new Date(f.date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="text-[10px] text-slate-600 mt-1 line-clamp-2">{f.text}</div>
+                      <div className="text-[9px] text-fluent-navy font-bold mt-1 uppercase tracking-tighter opacity-40">— {f.subject} Faculty</div>
+                    </div>
+                  )) : (
+                    <div className="py-8 text-center bg-gray-50 rounded-lg border border-dashed border-slate-200">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">No new feedback</p>
+                    </div>
+                  )}
+                  {upcomingSessions.slice(0, 1).map((s, i) => (
+                    <div key={i} className="p-3 bg-fluent-gold/5 rounded-lg border border-fluent-gold/10">
+                      <div className="text-xs font-bold text-fluent-gold">Session Starting Soon</div>
+                      <div className="text-[10px] text-slate-500 mt-1">{s.subject} starts in 45 minutes.</div>
+                    </div>
+                  ))}
                 </div>
               </motion.div>
             )}
@@ -2394,8 +3315,17 @@ const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => vo
         {activeNav === "progress" ? (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="grid lg:grid-cols-2 gap-8">
+              <MasteryHeatmap data={[
+                { math: 65, science: 70 }, 
+                { math: 80, science: 75 }, 
+                { math: 90, science: 85 },
+                { math: 50, science: 60 },
+                { math: 75, science: 80 },
+                { math: 85, science: 90 }
+              ]} />
               {subjectProgress.map((s) => (
-                <Card key={s.name} className="p-8">
+                <Card key={s.name} className={`p-8 ${s.isFocus ? 'border-2 border-fluent-teal' : ''}`}>
+                  {s.isFocus && <div className="text-xs font-bold text-fluent-teal uppercase tracking-widest mb-2 flex items-center gap-1.5"><Sparkles size={12} /> Primary Focus Subject</div>}
                   <div className="flex justify-between items-start mb-8">
                     <div>
                       <h3 className="text-xl font-serif font-bold text-fluent-navy">{s.name}</h3>
@@ -2479,7 +3409,9 @@ const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => vo
                 </div>
                 <div className="flex gap-4 shrink-0">
                   <Btn variant="gold" size="md">Download Term Report</Btn>
-                  <Btn variant="outline" size="md" className="text-white border-white/20">Consult Faculty</Btn>
+                  <Btn variant="outline" size="md" className="text-white border-white/20" onClick={() => setShowBooking(true)}>Consult Faculty</Btn>
+
+                  <BookingModal isOpen={showBooking} onClose={() => setShowBooking(false)} profile={profile} />
                 </div>
               </div>
             </Card>
@@ -2568,9 +3500,27 @@ const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => vo
   );
 };
 
+const MasteryHeatmap = ({ data, title = "Conceptual Fluency: Math vs Science" }: { data: any[], title?: string }) => {
+  return (
+    <div className="h-96 w-full bg-white p-6 rounded-2xl shadow-sm border border-black/5">
+        <h4 className="text-sm font-bold text-fluent-navy mb-4">{title}</h4>
+        <ResponsiveContainer width="100%" height="85%">
+        <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis type="number" dataKey="math" name="Math" unit="%" label={{ value: 'Math Mastery', position: 'bottom', offset: 0 }} />
+            <YAxis type="number" dataKey="science" name="Science" unit="%" label={{ value: 'Science Mastery', angle: -90, position: 'left' }} />
+            <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+            <Scatter name="Concepts" data={data} fill="#1B4F5E" />
+        </ScatterChart>
+        </ResponsiveContainer>
+    </div>
+  );
+};
+
 const ParentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => void }) => {
   const [activeNav, setActiveNav] = useState("overview");
   const [activeChild, setActiveChild] = useState(0);
+  const [showBooking, setShowBooking] = useState(false);
   const [monitoredStudents, setMonitoredStudents] = useState<any[]>([]);
   const [showAddChild, setShowAddChild] = useState(false);
   const [searchName, setSearchName] = useState("");
@@ -2582,7 +3532,7 @@ const ParentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => voi
     if (!auth.currentUser) return;
     const unsub = onSnapshot(collection(db, 'users', auth.currentUser.uid, 'monitoredStudents'), (snap) => {
       setMonitoredStudents(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'monitoredStudents'));
     return () => unsub();
   }, []);
 
@@ -2597,7 +3547,7 @@ const ParentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => voi
     const q = query(collectionGroup(db, 'students'), where('name', '==', childName));
     const unsub = onSnapshot(q, (snap) => {
       setChildRecords(snap.docs.map(doc => doc.data()));
-    });
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'collectionGroup/students'));
     return () => unsub();
   }, [monitoredStudents, activeChild]);
 
@@ -2639,7 +3589,9 @@ const ParentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => voi
             <h1 className="text-3xl font-serif font-bold tracking-tight">Welcome, {parentName.split(' ')[0]} ✦</h1>
             <p className="text-slate-500 mt-1">Focusing on {profile?.goal || "Holistic Academic Support"} for your family.</p>
           </div>
-          <Btn variant="gold" icon={Calendar} size="sm">Book Faculty Consultation</Btn>
+          <Btn variant="gold" icon={Calendar} size="sm" onClick={() => setShowBooking(true)}>Book Faculty Consultation</Btn>
+          
+          <BookingModal isOpen={showBooking} onClose={() => setShowBooking(false)} profile={profile} />
         </header>
 
         {/* Child Selector */}
@@ -2798,9 +3750,90 @@ const ParentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => voi
   );
 };
 
+const FacultyPerformanceView = () => {
+  const data = [
+    { name: 'Dr. Sarah', mastery: 88, engagement: 92, effectiveness: 90 },
+    { name: 'Mr. Alex', mastery: 91, engagement: 85, effectiveness: 84 },
+    { name: 'Ms. Emily', mastery: 85, engagement: 95, effectiveness: 92 },
+  ];
+  
+  const institutionalAverages = { mastery: 85, engagement: 88, effectiveness: 82 };
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="grid md:grid-cols-4 gap-6">
+        <MetricTile label="Avg Mastery" value="88%" icon={Award} color="#1B4F5E" />
+        <MetricTile label="Avg Engagement" value="91%" icon={Bell} color="#C9A84C" />
+        <MetricTile label="Effectiveness" value="89%" icon={Target} color="#7C3AED" />
+        <MetricTile label="Active Faculty" value="12" icon={Users} color="#0D1B2A" />
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-8">
+        <Card className="p-8">
+          <h3 className="font-serif font-bold text-lg mb-6">Faculty vs Institutional Average</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis domain={[0, 100]} />
+                <Tooltip />
+                <Area type="monotone" dataKey="mastery" stackId="1" stroke="#1B4F5E" fill="#1B4F5E" name="Mastery" />
+                <Area type="monotone" dataKey="effectiveness" stackId="2" stroke="#7C3AED" fill="#7C3AED" name="Effectiveness" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        <Card className="p-8">
+          <h3 className="font-serif font-bold text-lg mb-6">Mastery vs Engagement Insights</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <ScatterChart>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" dataKey="mastery" name="Mastery" unit="%" />
+                <YAxis type="number" dataKey="engagement" name="Engagement" unit="%" />
+                <Tooltip />
+                <Scatter name="Faculty" data={data} fill="#1B4F5E" />
+              </ScatterChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
 const AdminCommand = ({ onBack }: { onBack: () => void }) => {
   const [waitlist, setWaitlist] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeNav, setActiveNav] = useState("overview");
+
+  const generateAuditReport = (school: any) => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text(`Audit Report: ${school.name}`, 14, 22);
+    doc.setFontSize(12);
+    doc.text(`Students: ${school.students}`, 14, 32);
+    doc.text(`Teachers: ${school.teachers}`, 14, 40);
+    doc.text(`Average Mastery: ${school.avg}%`, 14, 48);
+    doc.text(`Status: ${school.status}`, 14, 56);
+    doc.text(`Plan: ${school.plan}`, 14, 64);
+    
+    // @ts-ignore
+    doc.autoTable({
+        startY: 75,
+        head: [['Metric', 'Value']],
+        body: [
+            ['Students', school.students],
+            ['Teachers', school.teachers],
+            ['Average Mastery', `${school.avg}%`],
+            ['Status', school.status],
+            ['Plan', school.plan]
+        ]
+    });
+    doc.save(`${school.name}_Audit_Report.pdf`);
+  };
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'waitlist'), (snap) => {
@@ -2817,11 +3850,11 @@ const AdminCommand = ({ onBack }: { onBack: () => void }) => {
       handleFirestoreError(e, OperationType.DELETE, `waitlist/${id}`);
     }
   };
-  const [activeNav, setActiveNav] = useState("overview");
 
   const navItems = [
     { id: "overview", label: "Strategic Command", icon: Home },
     { id: "institutions", label: "Partner Schools", icon: Globe },
+    { id: "faculty-performance", label: "Faculty Performance", icon: BarChart3 },
     { id: "faculty", label: "Faculty Audits", icon: Award },
     { id: "curriculum", label: "Curriculum Health", icon: BookOpen },
     { id: "analytics", label: "System Analytics", icon: BarChart3 },
@@ -2844,7 +3877,7 @@ const AdminCommand = ({ onBack }: { onBack: () => void }) => {
               <div className="w-2 h-2 rounded-full bg-green-500" />
               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">All Systems Operational</span>
             </div>
-            <h1 className="text-3xl font-serif font-bold tracking-tight">Institutional Command</h1>
+            <h1 className="text-3xl font-serif font-bold tracking-tight">{navItems.find(n => n.id === activeNav)?.label || 'Institutional Command'}</h1>
             <p className="text-slate-500 mt-1">High-stakes oversight of curriculum integrity and faculty performance.</p>
           </div>
           <div className="flex gap-3">
@@ -2853,139 +3886,172 @@ const AdminCommand = ({ onBack }: { onBack: () => void }) => {
           </div>
         </header>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-          <MetricTile label="Institutional Students" value="45.2K" delta="+1.2K" icon={Users} color="var(--color-fluent-teal)" />
-          <MetricTile label="Faculty Compliance" value="99.4%" delta="+0.2%" icon={ShieldCheck} color="var(--color-fluent-navy)" />
-          <MetricTile label="Curriculum Health" value="94%" icon={BookOpen} color="var(--color-fluent-gold)" />
-          <MetricTile label="System Efficiency" value="99.9%" icon={Zap} color="#7C3AED" />
-        </div>
-
-        <Card className="p-8 mb-10">
-          <div className="flex justify-between items-center mb-8">
-            <h3 className="text-xl font-serif font-bold">Waitlist Applications</h3>
-            <Badge color="gold">{waitlist.length} Pending</Badge>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b border-black/5">
-                  <th className="text-left py-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Email Address</th>
-                  <th className="text-left py-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Requested On</th>
-                  <th className="text-center py-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {waitlist.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className="py-12 text-center text-slate-400 italic">No pending waitlist applications.</td>
-                  </tr>
-                ) : waitlist.map((entry, i) => (
-                  <tr key={entry.id || i} className="border-b border-black/5 hover:bg-gray-50 transition-colors">
-                    <td className="py-5 px-4 font-bold text-sm text-fluent-navy">{entry.email}</td>
-                    <td className="py-5 px-4 text-sm text-slate-500 font-medium font-mono">
-                      {entry.requestedAt?.toDate ? entry.requestedAt.toDate().toLocaleDateString() : 'Recent'}
-                    </td>
-                    <td className="py-5 px-4 text-center">
-                      <Btn variant="outline" size="sm" onClick={() => handleResolve(entry.id)}>Resolve</Btn>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
-        <Card className="p-8">
-          <div className="flex justify-between items-center mb-8">
-            <h3 className="text-xl font-serif font-bold">Partner Institutions</h3>
-                <div className="flex gap-4">
-                  <Btn 
-                    variant="outline" 
-                    size="sm" 
-                    icon={Database} 
-                    onClick={async () => {
-                      if (!confirm("Seed database with sample classes and students?")) return;
-                      try {
-                        const uid = auth.currentUser?.uid;
-                        if (!uid) return;
-                        
-                        // Seed Classes
-                        const sampleClasses = [
-                          { name: "G10 Physics - Advanced", grade: "Grade 10", subject: "Physics", students: 5, avgScore: 88, attendance: 95, ownerId: uid, createdAt: serverTimestamp() },
-                          { name: "G9 Maths - Logic", grade: "Grade 9", subject: "Mathematics", students: 3, avgScore: 72, attendance: 90, ownerId: uid, createdAt: serverTimestamp() }
-                        ];
-
-                        for (const c of sampleClasses) {
-                          const classRef = await addDoc(collection(db, 'classes'), c);
-                          // Add some students
-                          const students = [
-                            { name: "Akshay P.", attended: 10, total: 10, history: [], grade: c.grade },
-                            { name: "Zoya K.", attended: 9, total: 10, history: [], grade: c.grade }
-                          ];
-                          for (const s of students) {
-                            await addDoc(collection(db, 'classes', classRef.id, 'students'), s);
-                          }
-                        }
-
-                        // Seed Student Pool
-                        const pool = ["Vikram S.", "Leila O.", "Marcus T."];
-                        for (const name of pool) {
-                          await addDoc(collection(db, 'studentPool'), { name, ownerId: uid });
-                        }
-
-                        alert("Database seeded successfully!");
-                      } catch (e) {
-                        console.error(e);
-                        alert("Seeding failed: " + e);
-                      }
-                    }}
-                  >
-                    Seed Sample Data
-                  </Btn>
-                  <div className="relative">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input placeholder="Search schools..." className="pl-10 pr-4 py-2 bg-gray-50 border border-black/5 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-fluent-navy/5" />
-              </div>
+        {activeNav === "overview" ? (
+          <>
+            <div className="flex gap-4 mb-4">
+              <Btn 
+                variant="primary" 
+                size="sm" 
+                onClick={async () => {
+                  if (auth.currentUser) {
+                      await addDoc(collection(db, `users/${auth.currentUser.uid}/notifications`), {
+                          userId: auth.currentUser.uid,
+                          message: "Test notification at " + new Date().toLocaleTimeString(),
+                          read: false,
+                          createdAt: serverTimestamp()
+                      });
+                  }
+                }}
+              >
+                Send Test Notification
+              </Btn>
             </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+              <MetricTile label="Total Users" value="12.4K" delta="+150" icon={Users} color="#1B4F5E" />
+              <MetricTile label="Active Classes" value="482" delta="+12" icon={BookOpen} color="#0D1B2A" />
+              <MetricTile label="Avg Mastery" value="89.2%" delta="+1.2%" icon={Award} color="#C9A84C" />
+              <MetricTile label="Avg Engagement" value="92.4%" delta="+0.8%" icon={Zap} color="#7C3AED" />
+            </div>
+
+            <Card className="p-8 mb-10">
+              <div className="flex justify-between items-center mb-8">
+                <h3 className="text-xl font-serif font-bold">Waitlist Applications</h3>
+                <Badge color="gold">{waitlist.length} Pending</Badge>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b border-black/5">
+                      <th className="text-left py-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Email Address</th>
+                      <th className="text-left py-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Requested On</th>
+                      <th className="text-center py-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {waitlist.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} className="py-12 text-center text-slate-400 italic">No pending waitlist applications.</td>
+                      </tr>
+                    ) : waitlist.map((entry, i) => (
+                      <tr key={entry.id || i} className="border-b border-black/5 hover:bg-gray-50 transition-colors">
+                        <td className="py-5 px-4 font-bold text-sm text-fluent-navy">{entry.email}</td>
+                        <td className="py-5 px-4 text-sm text-slate-500 font-medium font-mono">
+                          {entry.requestedAt?.toDate ? entry.requestedAt.toDate().toLocaleDateString() : 'Recent'}
+                        </td>
+                        <td className="py-5 px-4 text-center">
+                          <Btn variant="outline" size="sm" onClick={() => handleResolve(entry.id)}>Resolve</Btn>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+
+            <Card className="p-8">
+              <div className="flex justify-between items-center mb-8">
+                <h3 className="text-xl font-serif font-bold">Partner Institutions</h3>
+                    <div className="flex gap-4">
+                      <Btn 
+                        variant="outline" 
+                        size="sm" 
+                        icon={Database} 
+                        onClick={async () => {
+                          if (!confirm("Seed database with sample classes and students?")) return;
+                          try {
+                            const uid = auth.currentUser?.uid;
+                            if (!uid) return;
+                            
+                            // Seed Classes
+                            const sampleClasses = [
+                              { name: "G10 Physics - Advanced", grade: "Grade 10", subject: "Physics", students: 5, avgScore: 88, attendance: 95, ownerId: uid, createdAt: serverTimestamp() },
+                              { name: "G9 Maths - Logic", grade: "Grade 9", subject: "Mathematics", students: 3, avgScore: 72, attendance: 90, ownerId: uid, createdAt: serverTimestamp() }
+                            ];
+
+                            for (const c of sampleClasses) {
+                              const classRef = await addDoc(collection(db, 'classes'), c);
+                              // Add some students
+                              const students = [
+                                { name: "Akshay P.", attended: 10, total: 10, history: [], grade: c.grade },
+                                { name: "Zoya K.", attended: 9, total: 10, history: [], grade: c.grade }
+                              ];
+                              for (const s of students) {
+                                await addDoc(collection(db, 'classes', classRef.id, 'students'), s);
+                              }
+                            }
+
+                            // Seed Student Pool
+                            const pool = ["Vikram S.", "Leila O.", "Marcus T."];
+                            for (const name of pool) {
+                              await addDoc(collection(db, 'studentPool'), { name, ownerId: uid });
+                            }
+
+                            alert("Database seeded successfully!");
+                          } catch (e) {
+                            console.error(e);
+                            alert("Seeding failed: " + e);
+                          }
+                        }}
+                      >
+                        Seed Sample Data
+                      </Btn>
+                      <div className="relative">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input placeholder="Search schools..." className="pl-10 pr-4 py-2 bg-gray-50 border border-black/5 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-fluent-navy/5" />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b border-black/5">
+                      <th className="text-left py-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">School</th>
+                      <th className="text-left py-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Students</th>
+                      <th className="text-left py-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Avg Mastery</th>
+                      <th className="text-left py-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tier</th>
+                      <th className="text-left py-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {schools.map((s, i) => (
+                      <tr key={i} className="border-b border-black/5 hover:bg-gray-50 transition-colors">
+                        <td className="py-5 px-4 font-bold text-sm text-fluent-navy">{s.name}</td>
+                        <td className="py-5 px-4 text-sm text-slate-500 font-medium">{s.students}</td>
+                        <td className="py-5 px-4">
+                          <div className="flex items-center gap-3">
+                            <span className="font-mono font-bold text-sm text-fluent-teal">{s.avg}%</span>
+                            <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-fluent-teal rounded-full" style={{ width: `${s.avg}%` }} />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-5 px-4"><Badge color={s.plan === 'Elite' ? 'gold' : 'navy'}>{s.plan}</Badge></td>
+                        <td className="py-5 px-4">
+                          <div className="flex justify-center gap-2">
+                            <Btn variant="ghost" size="sm" className="p-2"><Edit2 size={14} /></Btn>
+                            <Btn variant="ghost" size="sm" className="p-2 text-red-400"><Trash2 size={14} /></Btn>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </>
+        ) : activeNav === "faculty-performance" ? (
+          <FacultyPerformanceView />
+        ) : (
+          <div className="py-20 text-center">
+             <div className="w-20 h-20 rounded-2xl bg-fluent-navy/5 flex items-center justify-center mx-auto mb-6 text-fluent-navy/20">
+              {navItems.find(n => n.id === activeNav)?.icon && React.createElement(navItems.find(n => n.id === activeNav)!.icon, { size: 40 })}
+            </div>
+            <h3 className="text-2xl font-serif font-bold mb-2 uppercase tracking-tight">{activeNav} Control</h3>
+            <p className="text-slate-400 max-w-sm mx-auto">This portal module is being calibrated for Admin oversight. Access will be granted following feature release.</p>
+            <Btn variant="outline" size="sm" className="mt-8" onClick={() => setActiveNav("overview")}>Back to Overview</Btn>
           </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b border-black/5">
-                  <th className="text-left py-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">School</th>
-                  <th className="text-left py-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Students</th>
-                  <th className="text-left py-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Avg Mastery</th>
-                  <th className="text-left py-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tier</th>
-                  <th className="text-left py-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {schools.map((s, i) => (
-                  <tr key={i} className="border-b border-black/5 hover:bg-gray-50 transition-colors">
-                    <td className="py-5 px-4 font-bold text-sm text-fluent-navy">{s.name}</td>
-                    <td className="py-5 px-4 text-sm text-slate-500 font-medium">{s.students}</td>
-                    <td className="py-5 px-4">
-                      <div className="flex items-center gap-3">
-                        <span className="font-mono font-bold text-sm text-fluent-teal">{s.avg}%</span>
-                        <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-fluent-teal rounded-full" style={{ width: `${s.avg}%` }} />
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-5 px-4"><Badge color={s.plan === 'Elite' ? 'gold' : 'navy'}>{s.plan}</Badge></td>
-                    <td className="py-5 px-4">
-                      <div className="flex justify-center gap-2">
-                        <Btn variant="ghost" size="sm" className="p-2"><Edit2 size={14} /></Btn>
-                        <Btn variant="ghost" size="sm" className="p-2 text-red-400"><Trash2 size={14} /></Btn>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+        )}
       </div>
     </DashboardShell>
   );
@@ -3031,7 +4097,7 @@ export default function App() {
           } else {
             setView("onboarding");
           }
-        });
+        }, (error) => handleFirestoreError(error, OperationType.GET, `users/${u.uid}`));
       } else {
         setUserProfile(null);
         setView("landing");
@@ -3040,17 +4106,26 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  const navigate = (v: string, profile?: any) => {
+  const navigate = async (v: string, profile?: any) => {
     if (profile) {
       setUserProfile(profile);
-      // Persist profile to Firestore if user exists
       if (user) {
-        const profileRef = doc(db, 'users', user.uid);
-        setDoc(profileRef, { ...profile, onboarded: true }, { merge: true })
-          .then(() => {
-            // After saving, the onSnapshot in useEffect will handle navigation
-          })
-          .catch(e => handleFirestoreError(e, OperationType.WRITE, 'users'));
+        try {
+          const profileRef = doc(db, 'users', user.uid);
+          await setDoc(profileRef, { ...profile, onboarded: true }, { merge: true });
+          
+          // If parent, populate monitoredStudents collection
+          if (profile.role === 'parent' && Array.isArray(profile.subjects)) {
+            for (const childName of profile.subjects) {
+              await addDoc(collection(db, 'users', user.uid, 'monitoredStudents'), {
+                name: childName,
+                linkedAt: new Date().toISOString()
+              });
+            }
+          }
+        } catch (e) {
+          handleFirestoreError(e, OperationType.WRITE, 'users');
+        }
       }
     } else {
       window.scrollTo({ top: 0, behavior: 'smooth' });
