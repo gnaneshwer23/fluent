@@ -9,7 +9,7 @@ import { Logo, Btn, Card } from './UI';
 
 import { initiatePayment } from '../lib/paymentService';
 
-export const OnboardingFlow = ({ onComplete }: { onComplete: (view: string, profile: any) => void }) => {
+export const OnboardingFlow = ({ onComplete, onBack }: { onComplete: (view: string, profile: any) => void, onBack: () => void }) => {
   const [step, setStep] = useState(0);
   const [data, setData] = useState({ 
     role: "", 
@@ -26,6 +26,14 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: (view: string, prof
     isPaid: false,
   });
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleBack = () => {
+    if (step === 0) {
+      onBack();
+    } else {
+      setStep(s => s - 1);
+    }
+  };
 
   const getSteps = () => {
     const baseSteps = [
@@ -370,7 +378,7 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: (view: string, prof
 
               {step < steps.length - 1 && steps[step].title !== "Institutional Levy" && (
                 <div className="flex justify-between mt-20 pt-8 border-t border-black/5">
-                   <Btn variant="ghost" className="text-slate-400 font-black tracking-widest text-[10px] uppercase" onClick={() => setStep(s => s - 1)} disabled={step === 0}>Back</Btn>
+                   <Btn variant="ghost" className="text-slate-400 font-black tracking-widest text-[10px] uppercase" onClick={handleBack}>Back</Btn>
                    <Btn variant="primary" className="px-12 py-4 shadow-xl shadow-fluent-teal/10" onClick={() => setStep(s => s + 1)} disabled={!canProceed()}>Continue</Btn>
                 </div>
               )}

@@ -5,18 +5,22 @@ import { handleFirestoreError, OperationType } from "../lib/errorHandling";
 import { Card, Btn, Badge, Avatar } from "./UI";
 import { ShieldAlert, CheckCircle2, Calendar, MessageSquare } from "lucide-react";
 
-export default function AdminAlerts() {
+export default function AdminAlerts({ schoolId }: { schoolId?: string }) {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, "alerts"), orderBy("date", "desc"));
+    let q = query(collection(db, "alerts"), orderBy("date", "desc"));
+    if (schoolId && schoolId !== 'all') {
+      q = query(collection(db, "alerts"), where("schoolId", "==", schoolId), orderBy("date", "desc"));
+    }
+
     const unsub = onSnapshot(q, (snap) => {
       setAlerts(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setLoading(false);
     }, (error) => handleFirestoreError(error, OperationType.LIST, "alerts"));
     return () => unsub();
-  }, []);
+  }, [schoolId]);
 
   const resolveAlert = async (id: string) => {
     try {

@@ -81,7 +81,7 @@ export const LandingPage = () => {
             >
               <div className="mb-8 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-fluent-gold/20 bg-fluent-gold/5">
                 <div className="w-1.5 h-1.5 rounded-full bg-fluent-gold animate-pulse opacity-80" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-fluent-gold">World-Class Virtual Schooling</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-fluent-gold">Fluent Academy • Intelligent Mastery</span>
               </div>
 
               <h1 className="text-7xl md:text-8xl font-serif font-bold tracking-tight text-fluent-navy mb-8 leading-[0.95]">

@@ -5,18 +5,23 @@ import { handleFirestoreError, OperationType } from "../lib/errorHandling";
 import { Card, Btn, Badge, Avatar } from "./UI";
 import { Search, GraduationCap, TrendingUp, ShieldAlert } from "lucide-react";
 
-export default function AdminStudents() {
+export default function AdminStudents({ schoolId }: { schoolId?: string }) {
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, "users"), where("role", "==", "student"));
+    let q = query(collection(db, "users"), where("role", "==", "student"));
+    if (schoolId && schoolId !== 'all') {
+      q = query(collection(db, "users"), where("role", "==", "student"), where("schoolId", "==", schoolId));
+    }
+    
     const unsub = onSnapshot(q, (snap) => {
       setStudents(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setLoading(false);
     }, (error) => handleFirestoreError(error, OperationType.LIST, "users/students"));
+    
     return () => unsub();
-  }, []);
+  }, [schoolId]);
 
   if (loading) return <div className="flex justify-center p-20 animate-pulse text-slate-400">Loading Scholar Registry...</div>;
 

@@ -1,27 +1,39 @@
-# Security Specification: Fortress Firestore
+# Security Specification - Fluent Academy
 
 ## 1. Data Invariants
-- Users can only read/write their own `UserProfile`.
-- Parents can monitor students only if they have a linked record.
-- Faculty can manage classes they own (verified by `ownerId`).
-- Bookings must relate to a valid `userId` (the requester) and `facultyId` (the booked teacher).
-- Terminal states (e.g. `status: 'completed'`) in `Bookings` must be immutable.
+- A **Student** cannot exist without a valid **Teacher** or **School** context (relational integrity).
+- A **School** must have an **Admin Email** that matches a verified user with the `school_admin` role for management.
+- **Alerts** are system-generated and once created, can only be marked as 'resolved' by authorized faculty/admin.
+- **Payments** are immutable once recorded.
+- **Waitlist** submissions are allowed for non-authenticated users, but viewing them is restricted to `admin`.
 
-## 2. The "Dirty Dozen" Payloads (Examples to deny)
-1.  Attempt to create a `UserProfile` with a different `userId` in the path.
-2.  Attempt to update `monitoredStudents` for someone else's `userId`.
-3.  Attempt to inject a 2MB string into `name` fields.
-4.  Attempt to create a class where `ownerId` does not match `request.auth.uid`.
-5.  Attempt to update a `Booking` status to 'completed' then back to 'pending'.
-6.  Attempt to set an admin field on own `UserProfile`.
-7.  Attempt list query on `studentPool` without authentication.
-8.  Attempt write on `waitlist` with `requestedAt` set to a future timestamp.
-9.  Attempt access to PII in `users` collection without proper authorization.
-10. Attempt to link a student in `monitoredStudents` without existing `UserProfile`.
-11. Attempt to inject shadow fields into `UserProfile`.
-12. Attempt to list `classes` with an unauthenticated session.
+## 2. The "Dirty Dozen" Payloads (Attack Vectors)
 
-## 3. Test Plan (`firestore.rules.test.ts` - abstract)
-- Test `list` queries for all collections ensure they filter by `request.auth.uid`.
-- Test `create` operations verify schema validation helpers.
-- Test `update` operations verify field-level permissions (e.g., cannot change `createdAt`).
+1. **Email Spoofing (Admin Escalation)**: Attempting to create an `admins` document for a user UID without having the `drbiryanihelp@gmail.com` email.
+2. **Ghost Field Injection (Schools)**: Adding `isVerified: true` to a school document when only `onboarding` status is allowed.
+3. **Shadow Update (Users)**: A student attempting to change their `role` to `admin`.
+4. **Identity Spoofing (Alerts)**: A student creating an alert for themselves to skip class.
+5. **PII Blanket Leak (Users)**: An authenticated student attempting to list all `users` and view their `email` or `goal`.
+6. **Orphaned Writes (Classes)**: Creating a class without an `ownerId` that matches the current user.
+7. **Cross-School Data Scraping**: A `school_admin` of School A attempting to read `schools/SchoolB`.
+8. **State Shortcutting (Onboarding)**: Setting `status: active` on a school while bypassing the `onboarding` workflow steps.
+9. **Resource Poisoning (Long Strings)**: Sending a 1MB string for a student's `name`.
+10. **Terminal State Locking Bypass**: Modifying a "resolved" alert once it's closed.
+11. **Attendance Forgery**: A student marking themselves as "Present" in the `attendance` collection.
+12. **Query Trust Violation**: Listing `weeklyReports` without a filter, expecting the rules to hide others' reports.
+
+## 3. Red Team Evaluation Table
+
+| Collection | Identity Spoofing | State Shortcutting | Resource Poisoning | Status |
+|---|---|---|---|---|
+| `users` | Blocked (UID check) | Blocked (Role immutable) | Protected (Size check) | ✅ Pass |
+| `schools` | Blocked (Admin check) | **Weak** (No hasOnly) | Protected (Size check) | ⚠️ Warn |
+| `classes` | Blocked (Owner check) | Blocked | Protected | ✅ Pass |
+| `alerts` | Blocked (Teacher required) | Blocked (Status check) | Protected | ✅ Pass |
+| `payments` | Blocked (Admin only) | Blocked | Protected | ✅ Pass |
+| `waitlist` | Blocked | Blocked | Protected | ✅ Pass |
+
+## 4. Remediation Plan
+- Add `affectedKeys().hasOnly()` to `users` and `schools` update blocks.
+- Strengthen `isValidSchool` to include `setupProgress` schema validation.
+- Ensure `school_admin` can only access their specific school ID.

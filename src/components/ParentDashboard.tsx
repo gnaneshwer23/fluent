@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Home, BarChart3, Calendar, Mail, Lock, Settings, Plus, Users, TrendingUp, ShieldCheck, Award, MessageCircle, MessageSquare, ExternalLink, CalendarDays, LineChart as LineChartIcon,
-  CheckCircle2, ArrowRight, Zap, ShieldAlert
+  CheckCircle2, ArrowRight, Zap, ShieldAlert, LogOut
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { collection, query, where, onSnapshot, addDoc, serverTimestamp, collectionGroup, orderBy } from 'firebase/firestore';
@@ -118,6 +118,7 @@ export const ParentDashboard = ({ profile, onBack }: { profile?: any, onBack: ()
                 <Btn variant="outline" icon={MessageCircle} className="border-green-500 text-green-600 hover:bg-green-50">Direct WhatsApp</Btn>
              </a>
              <Btn variant="gold" icon={Calendar} size="sm" onClick={() => setShowBooking(true)}>Book Faculty Consultation</Btn>
+             <Btn variant="ghost" size="sm" className="text-red-500 hover:bg-red-50" icon={LogOut} onClick={onBack}>Sign Out</Btn>
           </div>
         </header>
 

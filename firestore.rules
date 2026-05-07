@@ -3,16 +3,36 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // --- Global Helpers ---
     function isSignedIn() { return request.auth != null; }
+    function isVerified() { return isSignedIn() && request.auth.token.email_verified == true; }
     function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
-    function isAdmin() { return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
-    function isTeacher() { return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher'; }
+    
+    // Bootstrapped Admin check
+    function isAdmin() { 
+      return isVerified() && (
+        request.auth.token.email == 'drbiryanihelp@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      ); 
+    }
+    
+    function isTeacher() { 
+      return isVerified() && (
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher') ||
+        isAdmin() 
+      );
+    }
     
     // --- Schema Validators ---
     function isValidUserProfile(data) {
         return data.name is string && data.name.size() >= 2 && data.name.size() <= 100
-            && data.role is string && (data.role == 'student' || data.role == 'teacher' || data.role == 'parent' || data.role == 'admin');
+            && data.role is string && (data.role == 'student' || data.role == 'teacher' || data.role == 'parent' || data.role == 'admin' || data.role == 'school_admin');
+    }
+
+    function isValidSchool(data) {
+        return data.name is string && data.name.size() > 0
+            && data.adminEmail is string && data.adminEmail.size() > 0
+            && (data.status == 'active' || data.status == 'onboarding' || data.status == 'paused');
     }
 
     // --- Global Safety Net ---
@@ -23,10 +43,17 @@ service cloud.firestore {
     // --- User Profiles ---
     match /users/{userId} {
       allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin() || isTeacher());
+      allow list: if isAdmin() || isTeacher();
       allow create: if isSignedIn() && request.auth.uid == userId && isValidUserProfile(incoming());
       allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin()) 
         && isValidUserProfile(incoming())
-        && (isAdmin() || incoming().diff(existing()).affectedKeys().hasOnly(['name', 'role', 'subjects', 'grade', 'school', 'goal', 'onboarded', 'email', 'createdAt', 'preferences', 'learningGoals', 'preferredStudyMethods', 'learningStyles', 'studyTime']));
+        && (isAdmin() || (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'name', 'subjects', 'grade', 'school', 'goal', 'onboarded', 
+              'preferences', 'learningGoals', 'preferredStudyMethods', 
+              'learningStyles', 'studyTime', 'schoolId'
+            ]) && incoming().role == existing().role
+        ));
       
       match /monitoredStudents/{studentId} {
         allow read, write: if isSignedIn() && request.auth.uid == userId;
@@ -139,6 +166,20 @@ service cloud.firestore {
     match /notifications/{notifyId} {
       allow read: if isAdmin();
       allow create: if true; // Allows the system/app to log notifications sent
+    }
+
+    // --- Schools ---
+    match /schools/{schoolId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin() && isValidSchool(incoming());
+      allow update: if (isAdmin() || (isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'school_admin' && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.schoolId == schoolId))
+        && isValidSchool(incoming())
+        && (isAdmin() || (
+          incoming().name == existing().name &&
+          incoming().adminEmail == existing().adminEmail &&
+          (existing().status != 'active' || incoming().status == 'active')
+        ));
+      allow delete: if isAdmin();
     }
   }
 }

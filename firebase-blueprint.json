@@ -29,14 +29,37 @@
       "type": "object",
       "properties": {
         "name": { "type": "string" },
-        "role": { "type": "string", "enum": ["student", "teacher", "parent", "admin"] },
+        "role": { "type": "string", "enum": ["student", "teacher", "parent", "admin", "school_admin"] },
         "subjects": { "type": "array", "items": { "type": "string" } },
         "grade": { "type": "string" },
         "school": { "type": "string" },
+        "schoolId": { "type": "string" },
         "goal": { "type": "string" },
         "onboarded": { "type": "boolean" }
       },
       "required": ["name", "role"]
+    },
+    "School": {
+      "title": "Educational Institution",
+      "description": "Information about a partner school or institution.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "adminEmail": { "type": "string", "format": "email" },
+        "studentCount": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "onboarding", "paused"] },
+        "location": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "setupProgress": {
+          "type": "object",
+          "properties": {
+            "studentsUploaded": { "type": "boolean" },
+            "teachersAssigned": { "type": "boolean" },
+            "classesStarted": { "type": "boolean" }
+          }
+        }
+      },
+      "required": ["name", "adminEmail", "status"]
     },
     "Class": {
       "title": "Class Cohort",
@@ -227,6 +250,20 @@
         "month": { "type": "string" }
       },
       "required": ["teacherId", "avgMarks", "month"]
+    },
+    "TeacherGrowth": {
+      "title": "Teacher Growth",
+      "description": "Historical performance data for faculty tracking.",
+      "type": "object",
+      "properties": {
+        "teacherId": { "type": "string" },
+        "month": { "type": "string" },
+        "avgMarks": { "type": "number" },
+        "avgConfidence": { "type": "number" },
+        "avgParticipation": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" }
+      },
+      "required": ["teacherId", "month", "avgMarks"]
     }
   },
   "firestore": {
@@ -315,19 +352,12 @@
         "description": "System-generated intervention alerts for students and faculty."
     },
     "teacherGrowth": {
-        "schema": {
-          "type": "object",
-          "properties": {
-            "teacherId": { "type": "string" },
-            "month": { "type": "string" },
-            "avgMarks": { "type": "number" },
-            "avgConfidence": { "type": "number" },
-            "avgParticipation": { "type": "number" },
-            "date": { "type": "string", "format": "date-time" }
-          },
-          "required": ["teacherId", "month", "avgMarks"]
-        },
+        "schema": "TeacherGrowth",
         "description": "Historical performance data for faculty tracking."
+    },
+    "schools": {
+        "schema": "School",
+        "description": "Institutional partners and schools."
     }
   }
 }

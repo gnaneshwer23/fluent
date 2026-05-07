@@ -1,6 +1,6 @@
 {
-  "name": "FLUENT - Intelligent Academic Mastery",
-  "description": "An AI-driven academic intervention platform. Features real-time scholar growth tracking, faculty performance analytics, automated WhatsApp alerting, and secure Razorpay payment flows.",
+  "name": "Fluent Academy - Intelligent Academic Mastery",
+  "description": "An AI-driven academic intervention platform by Fluent Academy. Features real-time scholar growth tracking, faculty performance analytics, automated WhatsApp alerting, and secure Razorpay payment flows.",
   "requestFramePermissions": [
     "microphone",
     "camera"

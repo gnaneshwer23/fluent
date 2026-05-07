@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Home, Users, Database, Calendar, Play, BookOpen, Settings, Plus, Search, 
   Trash2, Edit2, BarChart3, TrendingUp, Zap, CheckCircle2, ArrowRight, X, Mail, Phone, Shield, ShieldCheck, Lock, Check,
-  ClipboardList, FileText, CalendarDays
+  ClipboardList, FileText, CalendarDays, LogOut
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, deleteDoc, serverTimestamp, orderBy, limit, collectionGroup, setDoc } from 'firebase/firestore';
@@ -285,6 +285,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
           <div className="flex gap-3">
              <Btn variant="outline" size="sm" icon={Plus} onClick={() => setShowCreateModal(true)}>New Cohort</Btn>
              {activeNav === 'overview' && <Btn variant="gold" size="sm" icon={Play}>Enter {department} Lab</Btn>}
+             <Btn variant="ghost" size="sm" className="text-red-500 hover:bg-red-50" icon={LogOut} onClick={onBack}>Sign Out</Btn>
           </div>
         </header>
 

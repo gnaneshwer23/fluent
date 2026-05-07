@@ -68,7 +68,7 @@ export const Logo = ({ className = "", variant = "dark", onClick, animate = fals
     <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:rotate-6 ${variant === 'dark' ? 'bg-fluent-navy' : 'bg-white'}`}>
       <BookOpen size={16} className={variant === 'dark' ? 'text-fluent-gold' : 'text-fluent-navy'} />
     </div>
-    <span className={`font-serif font-bold text-xl tracking-tight ${variant === 'dark' ? 'text-fluent-navy' : 'text-white'}`}>FLUENT.</span>
+    <span className={`font-serif font-bold text-xl tracking-tight ${variant === 'dark' ? 'text-fluent-navy' : 'text-white'}`}>Fluent Academy.</span>
   </div>
 );
 

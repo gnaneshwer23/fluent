@@ -120,11 +120,12 @@ function AppContent() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="/onboarding" element={<OnboardingFlow onComplete={handleOnboardingComplete} />} />
+      <Route path="/onboarding" element={<OnboardingFlow onComplete={handleOnboardingComplete} onBack={() => auth.signOut()} />} />
       <Route path="/teacher-dashboard" element={<FacultyHub profile={profile} onBack={() => auth.signOut()} />} />
       <Route path="/student-dashboard" element={<StudentDashboard profile={profile} onBack={() => auth.signOut()} />} />
       <Route path="/parent-dashboard" element={<ParentDashboard profile={profile} onBack={() => auth.signOut()} />} />
       <Route path="/admin-dashboard" element={<AdminCommand onBack={() => auth.signOut()} />} />
+      <Route path="/school_admin-dashboard" element={<AdminCommand onBack={() => auth.signOut()} schoolId={profile?.schoolId} />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );

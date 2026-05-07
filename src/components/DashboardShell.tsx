@@ -11,18 +11,26 @@ export const DashboardShell = ({ role, title, children, navItems, activeNav, set
       <aside className="w-72 bg-fluent-navy flex flex-col fixed top-0 left-0 h-screen z-50 border-r border-white/5">
         <div className="p-10 border-b border-white/5">
           <Logo variant="light" className="mb-8 scale-90 origin-left" />
-          <div className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
-            <Avatar name={title} size={40} color="var(--color-fluent-gold)" />
-            <div className="overflow-hidden">
-              <div className="text-[11px] text-fluent-gold font-bold uppercase tracking-[0.2em] mb-0.5">Verified Identity</div>
-              <div className="text-sm font-bold text-white truncate leading-none">{title}</div>
-              <div className="text-[10px] text-white/30 uppercase tracking-widest mt-1.5 font-mono">{role} :: active</div>
+          <div className="flex items-center justify-between gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
+            <div className="flex items-center gap-3 overflow-hidden">
+              <Avatar name={title} size={36} color="var(--color-fluent-gold)" />
+              <div className="overflow-hidden">
+                <div className="text-[11px] text-fluent-gold font-bold uppercase tracking-[0.2em] mb-0.5">Verified</div>
+                <div className="text-sm font-bold text-white truncate leading-none">{title}</div>
+              </div>
             </div>
+            <button 
+              onClick={onBack}
+              title="Sign Out"
+              className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-red-500/5 group"
+            >
+              <LogOut size={14} className="group-hover:scale-110 transition-transform" />
+            </button>
           </div>
         </div>
         
         <div className="px-4 py-2 text-[10px] font-bold text-white/20 uppercase tracking-[0.3em] mb-2 px-10">Command Center</div>
-        <nav className="flex-1 px-6 space-y-1">
+        <nav className="flex-1 px-6 space-y-1 overflow-y-auto custom-scrollbar">
           {navItems.map(item => (
             <button
               key={item.id}

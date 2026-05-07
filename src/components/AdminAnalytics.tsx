@@ -1,19 +1,50 @@
-import React from "react";
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts';
+import React, { useState, useEffect } from "react";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { collection, onSnapshot, query, limit, where } from 'firebase/firestore';
+import { db } from '../lib/firebaseInit';
 import { Card, Badge, MetricTile } from "./UI";
 import { 
   Users, BarChart3, TrendingUp, Zap, Globe, 
   Activity, ArrowUpRight, Award, ShieldCheck 
 } from "lucide-react";
 
-export default function AdminAnalytics() {
-  const data = [
+export default function AdminAnalytics({ schoolId }: { schoolId?: string }) {
+  const [studentsCount, setStudentsCount] = useState(0);
+  const [revenue, setRevenue] = useState(0);
+  const [data, setData] = useState([
     { month: 'Jan', active: 400, revenue: 12400 },
     { month: 'Feb', active: 620, revenue: 18900 },
     { month: 'Mar', active: 890, revenue: 26500 },
     { month: 'Apr', active: 1100, revenue: 34200 },
     { month: 'May', active: 1450, revenue: 42100 },
-  ];
+  ]);
+
+  useEffect(() => {
+    const withSchoolId = (q: any) => {
+      if (schoolId && schoolId !== 'all') {
+        return query(q, where('schoolId', '==', schoolId));
+      }
+      return q;
+    };
+
+    // Listen for total students
+    const studentQuery = withSchoolId(query(collection(db, 'users'), where('role', '==', 'student')));
+    const unsubStudents = onSnapshot(studentQuery, (snap) => {
+      setStudentsCount(snap.docs.length);
+    });
+
+    // Listen for total revenue
+    const paymentQuery = withSchoolId(collection(db, 'payments'));
+    const unsubPayments = onSnapshot(paymentQuery, (snap) => {
+      const total = snap.docs.reduce((sum, doc) => sum + (doc.data().amount || 0), 0);
+      setRevenue(total);
+    });
+
+    return () => {
+      unsubStudents();
+      unsubPayments();
+    };
+  }, [schoolId]);
 
   return (
     <div className="space-y-10 pb-20">
@@ -23,8 +54,8 @@ export default function AdminAnalytics() {
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricTile label="Active Nodes" value="1,452" delta="+12%" icon={Users} color="#1B4F5E" />
-        <MetricTile label="Monthly Revenue" value="£42.1K" delta="+8%" icon={TrendingUp} color="#C9A84C" />
+        <MetricTile label="Active Nodes" value={studentsCount.toString()} delta="+12%" icon={Users} color="#1B4F5E" />
+        <MetricTile label="Cumulative Revenue" value={`₹${(revenue/1000).toFixed(1)}K`} delta="+8%" icon={TrendingUp} color="#C9A84C" />
         <MetricTile label="Global Retention" value="94.2%" icon={ShieldCheck} color="#0D1B2A" />
         <MetricTile label="System Uptime" value="99.99%" icon={Zap} color="#7C3AED" />
       </div>
