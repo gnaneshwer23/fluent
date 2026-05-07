@@ -79,14 +79,11 @@ export const AdminCommand = ({ onBack, schoolId: initialSchoolId }: { onBack: ()
             <h1 className="text-4xl font-serif font-bold tracking-tight text-fluent-navy">
               {navItems.find(n => n.id === activeNav)?.label}
             </h1>
-            <div className="mt-2 flex items-center gap-2">
-              <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Active Context:</span>
-              <span className="text-xs font-serif font-bold italic text-fluent-gold">
-                {selectedSchoolId === 'all' 
-                  ? 'Global Institutional Network' 
-                  : (schools.find(s => s.id === selectedSchoolId)?.name || 'Loading Node...')}
-              </span>
-            </div>
+            <h2 className="text-lg font-serif font-bold italic text-fluent-gold mt-2">
+              Viewing: {selectedSchoolId === 'all' 
+                ? 'All Schools (Global Network)' 
+                : (schools.find(s => s.id === selectedSchoolId)?.name || 'Loading Institution...')}
+            </h2>
           </div>
 
           <div className="flex flex-col md:flex-row items-center gap-4">
