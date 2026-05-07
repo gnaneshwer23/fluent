@@ -77,7 +77,7 @@ export const LandingPage = () => {
               transition={{ duration: 0.8 }}
             >
               <div className="mb-8 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-fluent-gold/20 bg-fluent-gold/5">
-                <div className="w-1.5 h-1.5 rounded-full bg-fluent-gold animate-pulse" />
+                <div className="w-1.5 h-1.5 rounded-full bg-fluent-gold animate-pulse opacity-80" />
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-fluent-gold">World-Class Virtual Schooling</span>
               </div>
 
@@ -175,7 +175,7 @@ export const LandingPage = () => {
           </div>
         </section>
 
-        <section className="py-24 px-6 bg-white">
+        <section id="diagnosis" className="py-24 px-6 bg-white">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
               <div className="text-[10px] font-black text-red-500 uppercase tracking-[0.4em] mb-4">Diagnosis</div>
@@ -295,7 +295,7 @@ export const LandingPage = () => {
           </div>
         </section>
 
-        <section id="flow" className="py-32 px-6 max-w-7xl mx-auto">
+        <section id="programs" className="py-32 px-6 max-w-7xl mx-auto">
           <div className="text-center mb-20">
             <h2 className="text-5xl font-serif font-bold text-fluent-navy">How It Works</h2>
           </div>
@@ -305,7 +305,7 @@ export const LandingPage = () => {
                <div key={i} className="flex flex-col items-center group">
                   <div className="w-24 h-24 bg-white border border-black/5 rounded-full flex items-center justify-center text-3xl font-serif font-bold text-fluent-navy shadow-lg group-hover:bg-fluent-navy group-hover:text-white transition-all duration-500 mb-6 relative">
                      {i + 1}
-                     <div className="absolute -inset-2 rounded-full border border-fluent-teal opacity-0 group-hover:opacity-100 transition-opacity animate-ping" />
+                     <div className="absolute -inset-2 rounded-full border border-fluent-teal opacity-0 group-hover:opacity-40 transition-opacity animate-pulse" />
                   </div>
                   <p className="font-black text-sm uppercase tracking-widest text-slate-400 group-hover:text-fluent-navy transition-colors">{step}</p>
                </div>
