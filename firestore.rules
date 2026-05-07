@@ -119,6 +119,16 @@ service cloud.firestore {
       allow create: if true;
     }
 
+    match /schoolLeads/{leadId} {
+      allow read, delete: if isAdmin();
+      allow create: if true;
+    }
+
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
     // --- Assignments ---
     match /assignments/{assignmentId} {
       allow read: if isSignedIn();

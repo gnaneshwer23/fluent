@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  CheckCircle2, Sparkles, GraduationCap, Users, BookOpen, X, Calendar, ArrowRight, ShieldCheck
+  CheckCircle2, Sparkles, GraduationCap, Users, BookOpen, X, Calendar, ArrowRight, ShieldCheck, Building2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { db, auth } from '../lib/firebaseInit';
-import { collection, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { Logo, Btn, Card } from './UI';
 
 import { initiatePayment } from '../lib/paymentService';
@@ -26,6 +26,14 @@ export const OnboardingFlow = ({ onComplete, onBack }: { onComplete: (view: stri
     isPaid: false,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [schools, setSchools] = useState<any[]>([]);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'schools'), (snap) => {
+      setSchools(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+    return () => unsub();
+  }, []);
 
   const handleBack = () => {
     if (step === 0) {
@@ -56,6 +64,22 @@ export const OnboardingFlow = ({ onComplete, onBack }: { onComplete: (view: stri
         { title: "Student Connection", subtitle: "Legal names of students." },
         { title: "Monitoring Goal", subtitle: "Primary milestones." },
         { title: "Institutional Levy", subtitle: "Secure your child's cohort seat." },
+        { title: "Synthesis Complete", subtitle: "Ready." },
+      ];
+    }
+
+    if (data.role === "school_admin") {
+      return [
+        ...baseSteps,
+        { title: "Node Selection", subtitle: "Connecting to your academic institution." },
+        { title: "Synthesis Complete", subtitle: "Ready." },
+      ];
+    }
+
+    if (data.role === "admin") {
+      return [
+        ...baseSteps,
+        { title: "Strategic Parameters", subtitle: "Configuring global system nodes." },
         { title: "Synthesis Complete", subtitle: "Ready." },
       ];
     }
@@ -94,6 +118,10 @@ export const OnboardingFlow = ({ onComplete, onBack }: { onComplete: (view: stri
     { id: "student", label: "Elite Student", icon: GraduationCap, desc: "Mastery tracking and live sessions." },
     { id: "parent", label: "Academic Parent", icon: Users, desc: "Monitor child and book consultations." },
     { id: "teacher", label: "Expert Faculty", icon: BookOpen, desc: "Cohorts and curriculum tools." },
+    { id: "school_admin", label: "Institutional Admin", icon: Building2, desc: "Manage school nodes and students." },
+    ...(auth.currentUser?.email === 'drbiryanihelp@gmail.com' || auth.currentUser?.email === 'gnaneshwer.jadav@gmail.com' ? [
+       { id: "admin", label: "Academy Provost", icon: ShieldCheck, desc: "Global system oversight and nodes." }
+    ] : [])
   ];
 
   const grades = ["Grade 9", "Grade 10", "Grade 11", "Grade 12"];
@@ -275,24 +303,48 @@ export const OnboardingFlow = ({ onComplete, onBack }: { onComplete: (view: stri
                             ? 'Departmental Specialisation' 
                             : data.role === 'parent'
                               ? 'Audit Focus (Student Subjects)'
-                              : 'Mastery Focus (Subjects)'}
+                              : data.role === 'school_admin'
+                                ? 'Assigned Institutional Node'
+                                : 'Mastery Focus (Subjects)'}
                        </label>
                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {subjectsList.map(s => (
-                            <button 
-                              key={s} 
-                              onClick={() => toggleSelection("subjects", s)}
-                              className={`p-6 rounded-2xl border-2 flex items-center justify-between transition-all ${
-                                data.subjects.includes(s) 
-                                  ? "border-fluent-teal bg-fluent-teal/5 text-fluent-navy" 
-                                  : "border-black/5 bg-white text-slate-400"
-                              }`}
-                            >
-                               <span className="font-bold text-sm tracking-tight">{s}</span>
-                               {data.subjects.includes(s) && <CheckCircle2 size={18} className="text-fluent-teal" />}
-                            </button>
-                          ))}
+                          {data.role === 'school_admin' ? (
+                            schools.map(s => (
+                              <button 
+                                key={s.id} 
+                                onClick={() => update("schoolId", s.id)}
+                                className={`p-6 rounded-2xl border-2 flex items-center justify-between transition-all ${
+                                  data.schoolId === s.id 
+                                    ? "border-fluent-teal bg-fluent-teal/5 text-fluent-navy" 
+                                    : "border-black/5 bg-white text-slate-400"
+                                }`}
+                              >
+                                 <span className="font-bold text-sm tracking-tight">{s.name}</span>
+                                 {data.schoolId === s.id && <CheckCircle2 size={18} className="text-fluent-teal" />}
+                              </button>
+                            ))
+                          ) : (
+                            subjectsList.map(s => (
+                              <button 
+                                key={s} 
+                                onClick={() => toggleSelection("subjects", s)}
+                                className={`p-6 rounded-2xl border-2 flex items-center justify-between transition-all ${
+                                  data.subjects.includes(s) 
+                                    ? "border-fluent-teal bg-fluent-teal/5 text-fluent-navy" 
+                                    : "border-black/5 bg-white text-slate-400"
+                                }`}
+                              >
+                                 <span className="font-bold text-sm tracking-tight">{s}</span>
+                                 {data.subjects.includes(s) && <CheckCircle2 size={18} className="text-fluent-teal" />}
+                              </button>
+                            ))
+                          )}
                        </div>
+                       {data.role === 'school_admin' && schools.length === 0 && (
+                         <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-black/10">
+                            <p className="text-xs text-slate-400 font-medium">No schools detected. Please contact the Academy Provost for account provisioning.</p>
+                         </div>
+                       )}
                     </div>
                   </div>
                 )}
@@ -327,7 +379,7 @@ export const OnboardingFlow = ({ onComplete, onBack }: { onComplete: (view: stri
                   </div>
                 )}
                 
-                {(step > 3 || (data.role !== 'student' && step > 1)) && step < steps.length - 1 && (
+                {(step > 3 || (['teacher', 'school_admin', 'admin'].includes(data.role) && step > 1)) && step < steps.length - 1 && (
                    <div className="p-12 text-center border-2 border-dashed border-black/5 rounded-3xl opacity-60">
                       <div className="text-sm font-bold text-slate-400 tracking-widest uppercase">Protocol Configuration Step {step + 1}</div>
                       <p className="text-xs text-slate-400 mt-2 italic font-medium">Finalising institutional parameters for your {data.role} profile.</p>

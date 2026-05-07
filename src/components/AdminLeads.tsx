@@ -10,11 +10,11 @@ export default function AdminLeads() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, "waitlist"), orderBy("requestedAt", "desc"));
+    const q = query(collection(db, "schoolLeads"), orderBy("requestedAt", "desc"));
     const unsub = onSnapshot(q, (snap) => {
       setLeads(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setLoading(false);
-    }, (error) => handleFirestoreError(error, OperationType.LIST, "waitlist"));
+    }, (error) => handleFirestoreError(error, OperationType.LIST, "schoolLeads"));
     return () => unsub();
   }, []);
 
@@ -58,15 +58,18 @@ export default function AdminLeads() {
                 <td className="p-6">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-fluent-teal/10 flex items-center justify-center text-fluent-teal font-black text-xs">
-                       {lead.email?.[0].toUpperCase()}
+                       {lead.schoolName?.[0] || lead.email?.[0]?.toUpperCase()}
                     </div>
                     <div>
-                      <div className="text-sm font-bold text-fluent-navy">{lead.email}</div>
-                      <div className="text-[10px] text-slate-400 font-medium">Source: Direct Inbound</div>
+                      <div className="text-sm font-bold text-fluent-navy">{lead.schoolName}</div>
+                      <div className="text-[10px] text-slate-400 font-medium">Contact: {lead.contactPerson}</div>
                     </div>
                   </div>
                 </td>
-                <td className="p-6 text-xs font-bold text-slate-500 uppercase tracking-widest">{lead.role || "Prospect"}</td>
+                <td className="p-6 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                  {lead.designation}
+                  <div className="text-[10px] text-slate-400 mt-1 capitalize font-medium">{lead.studentCount} Students ({lead.classes})</div>
+                </td>
                 <td className="p-6"><Badge color="gold">Verified Audit</Badge></td>
                 <td className="p-6 text-right">
                   <Btn variant="ghost" size="sm" className="text-[10px] font-black tracking-widest">INITIATE CALL</Btn>

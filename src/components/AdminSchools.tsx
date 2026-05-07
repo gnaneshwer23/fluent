@@ -51,6 +51,27 @@ export default function AdminSchools() {
     }
   };
 
+  const provisionAdmin = async (school: any) => {
+    try {
+      // Find if user already exists
+      const q = query(collection(db, 'users'), where('email', '==', school.adminEmail));
+      const snap = await getDocs(q);
+      
+      if (!snap.empty) {
+        const userDoc = snap.docs[0];
+        await updateDoc(doc(db, 'users', userDoc.id), {
+          role: 'school_admin',
+          schoolId: school.id
+        });
+      } else {
+        // Invite system would go here, for now we'll just track that it's pending
+        alert(`Admin user with email ${school.adminEmail} must register first. After registration, their account will be automatically linked if the email matches.`);
+      }
+    } catch (e) {
+      handleFirestoreError(e, OperationType.UPDATE, `users/provision`);
+    }
+  };
+
   if (isLoading) return <div className="flex justify-center p-20 animate-pulse text-slate-400 font-black tracking-widest uppercase text-xs">Synchronizing Institutional Nodes...</div>;
 
   return (
@@ -153,7 +174,7 @@ export default function AdminSchools() {
       {/* SCHOOL REGISTRY GRID */}
       <div className="grid lg:grid-cols-2 gap-8">
         {schools.map((school, i) => (
-          <SchoolCard key={school.id} school={school} index={i} />
+          <SchoolCard key={school.id} school={school} index={i} provisionAdmin={provisionAdmin} />
         ))}
         {schools.length === 0 && (
           <div className="lg:col-span-2 py-40 text-center bg-slate-50 rounded-[3rem] border border-black/5 border-dashed">
@@ -167,7 +188,7 @@ export default function AdminSchools() {
   );
 }
 
-function SchoolCard({ school, index }: { school: any, index: number, key?: any }) {
+function SchoolCard({ school, index, provisionAdmin }: { school: any, index: number, provisionAdmin: (s: any) => void, key?: any }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const progress = [
@@ -188,7 +209,15 @@ function SchoolCard({ school, index }: { school: any, index: number, key?: any }
       <Card className={`overflow-hidden transition-all duration-500 border-black/5 flex flex-col ${isExpanded ? 'h-auto ring-2 ring-fluent-gold/10' : 'h-[320px] shadow-xl shadow-slate-200/50'}`}>
         <div className="p-8 flex-1 flex flex-col">
           <div className="flex justify-between items-start mb-6">
-            <Badge color={school.status === 'active' ? 'teal' : 'gold'}>{school.status.toUpperCase()}</Badge>
+            <div className="flex gap-2">
+              <Badge color={school.status === 'active' ? 'teal' : 'gold'}>{school.status.toUpperCase()}</Badge>
+              <button 
+                onClick={(e) => { e.stopPropagation(); provisionAdmin(school); }}
+                className="text-[10px] font-black uppercase tracking-widest text-fluent-gold hover:text-fluent-navy transition-colors flex items-center gap-1"
+              >
+                <ShieldCheck size={12} /> Provision Admin
+              </button>
+            </div>
             <Btn variant="ghost" size="sm" icon={MoreVertical} className="text-slate-300">Action</Btn>
           </div>
           

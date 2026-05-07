@@ -23,6 +23,23 @@
       },
       "required": ["email", "requestedAt"]
     },
+    "SchoolLead": {
+      "title": "School Partnership Lead",
+      "description": "Detailed institutional lead capture for B2B onboarding.",
+      "type": "object",
+      "properties": {
+        "schoolName": { "type": "string" },
+        "contactPerson": { "type": "string" },
+        "designation": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "studentCount": { "type": "string" },
+        "classes": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "contacted", "onboarded"] },
+        "requestedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["schoolName", "email", "requestedAt"]
+    },
     "UserProfile": {
       "title": "User Profile",
       "description": "Personalized information for registered faculty or students.",
@@ -358,6 +375,20 @@
     "schools": {
         "schema": "School",
         "description": "Institutional partners and schools."
+    },
+    "schoolLeads": {
+        "schema": "SchoolLead",
+        "description": "B2B institutional partnership leads."
+    },
+    "admins": {
+        "schema": {
+            "type": "object",
+            "properties": {
+                "email": { "type": "string" },
+                "addedAt": { "type": "string", "format": "date-time" }
+            }
+        },
+        "description": "Registry of system-level platform administrators."
     }
   }
 }

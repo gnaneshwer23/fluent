@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowRight, Sparkles, Target, Zap, ShieldCheck, Award, Users, BookOpen, GraduationCap, UserCheck, LayoutDashboard, Settings } from 'lucide-react';
+import { ArrowRight, Sparkles, Target, Zap, ShieldCheck, Award, Users, BookOpen, GraduationCap, UserCheck, LayoutDashboard, Settings, X } from 'lucide-react';
 import { Logo, Btn, Badge, Card } from './UI';
 import { db, auth } from '../lib/firebaseInit';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -15,7 +15,36 @@ export const LandingPage = () => {
   const [waitlistEmail, setWaitlistEmail] = useState("");
   const [waitlistSuccess, setWaitlistSuccess] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<'parent' | 'student' | 'teacher' | 'head'>('parent');
+  const [showLeadModal, setShowLeadModal] = useState(false);
+  const [leadData, setLeadData] = useState({
+    schoolName: "",
+    contactPerson: "",
+    designation: "Principal / Admin",
+    phone: "",
+    email: "",
+    studentCount: "",
+    classes: "6-12"
+  });
+  const [isSubmittingLead, setIsSubmittingLead] = useState(false);
+
+  const handleLeadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmittingLead(true);
+    try {
+      await addDoc(collection(db, 'schoolLeads'), {
+        ...leadData,
+        status: 'pending',
+        requestedAt: serverTimestamp()
+      });
+      setShowLeadModal(false);
+      setWaitlistSuccess(true);
+      notifyNewLead(leadData.email);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'schoolLeads');
+    } finally {
+      setIsSubmittingLead(false);
+    }
+  };
 
   const handleWaitlist = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -379,10 +408,87 @@ export const LandingPage = () => {
         <h2 className="text-5xl font-serif font-bold mb-10 italic">
           Give Your Child <br /> <span className="text-fluent-gold">Confidence for Life.</span>
         </h2>
-        <Btn variant="gold" size="lg" className="px-16 py-6 shadow-2xl shadow-fluent-gold/20" onClick={handleLogin}>
+        <Btn variant="gold" size="lg" className="px-16 py-6 shadow-2xl shadow-fluent-gold/20" onClick={() => setShowLeadModal(true)}>
           Book Free Demo
         </Btn>
       </section>
+
+      <AnimatePresence>
+        {showLeadModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+             <motion.div 
+               initial={{ opacity: 0 }} 
+               animate={{ opacity: 1 }} 
+               exit={{ opacity: 0 }} 
+               onClick={() => setShowLeadModal(false)}
+               className="absolute inset-0 bg-fluent-navy/60 backdrop-blur-md" 
+             />
+             <motion.div 
+               initial={{ opacity: 0, scale: 0.95, y: 20 }}
+               animate={{ opacity: 1, scale: 1, y: 0 }}
+               exit={{ opacity: 0, scale: 0.95, y: 20 }}
+               className="relative bg-white w-full max-w-xl rounded-[40px] shadow-2xl overflow-hidden p-10 md:p-12"
+             >
+                <div className="flex justify-between items-start mb-8">
+                   <div>
+                      <div className="text-[10px] font-black text-fluent-teal uppercase tracking-[0.4em] mb-2">Institutional Partnership</div>
+                      <h3 className="text-3xl font-serif font-bold text-fluent-navy tracking-tight">Book Synthesis Demo</h3>
+                   </div>
+                   <button onClick={() => setShowLeadModal(false)} className="p-2 hover:bg-slate-50 rounded-full transition-colors"><X size={20}/></button>
+                </div>
+
+                <form onSubmit={handleLeadSubmit} className="space-y-6">
+                   <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">School Name</label>
+                         <input required value={leadData.schoolName} onChange={e => setLeadData(d => ({...d, schoolName: e.target.value}))} className="w-full p-4 bg-slate-50 border border-black/5 rounded-xl text-sm" placeholder="Global Academy..." />
+                      </div>
+                      <div className="space-y-1">
+                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Contact Person</label>
+                         <input required value={leadData.contactPerson} onChange={e => setLeadData(d => ({...d, contactPerson: e.target.value}))} className="w-full p-4 bg-slate-50 border border-black/5 rounded-xl text-sm" placeholder="Full Name..." />
+                      </div>
+                   </div>
+
+                   <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Designation</label>
+                         <select value={leadData.designation} onChange={e => setLeadData(d => ({...d, designation: e.target.value}))} className="w-full p-4 bg-slate-50 border border-black/5 rounded-xl text-sm">
+                            <option>Principal / Admin</option>
+                            <option>Department Head</option>
+                            <option>Trustee</option>
+                            <option>Other</option>
+                         </select>
+                      </div>
+                      <div className="space-y-1">
+                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Phone Number</label>
+                         <input required value={leadData.phone} onChange={e => setLeadData(d => ({...d, phone: e.target.value}))} className="w-full p-4 bg-slate-50 border border-black/5 rounded-xl text-sm" placeholder="+91..." />
+                      </div>
+                   </div>
+
+                   <div className="space-y-1">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Institutional Email</label>
+                      <input required type="email" value={leadData.email} onChange={e => setLeadData(d => ({...d, email: e.target.value}))} className="w-full p-4 bg-slate-50 border border-black/5 rounded-xl text-sm" placeholder="school@academy.edu" />
+                   </div>
+
+                   <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Student Count</label>
+                         <input required value={leadData.studentCount} onChange={e => setLeadData(d => ({...d, studentCount: e.target.value}))} className="w-full p-4 bg-slate-50 border border-black/5 rounded-xl text-sm" placeholder="e.g. 500" />
+                      </div>
+                      <div className="space-y-1">
+                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Target Classes</label>
+                         <input required value={leadData.classes} onChange={e => setLeadData(d => ({...d, classes: e.target.value}))} className="w-full p-4 bg-slate-50 border border-black/5 rounded-xl text-sm" placeholder="e.g. 6-12" />
+                      </div>
+                   </div>
+
+                   <Btn variant="primary" className="w-full py-5 text-sm font-black uppercase tracking-widest rounded-2xl" disabled={isSubmittingLead}>
+                      {isSubmittingLead ? "TRANSMITTING..." : "SUBMIT DEMO REQUEST ✦"}
+                   </Btn>
+                </form>
+             </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <footer className="py-24 px-6 border-t border-black/5 bg-white">
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-12 mb-20">
