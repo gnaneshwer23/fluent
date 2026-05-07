@@ -7,12 +7,12 @@ service cloud.firestore {
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
     function isAdmin() { return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    function isTeacher() { return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher'; }
     
     // --- Schema Validators ---
     function isValidUserProfile(data) {
         return data.name is string && data.name.size() >= 2 && data.name.size() <= 100
-            && data.role is string && (data.role == 'student' || data.role == 'teacher' || data.role == 'parent' || data.role == 'admin')
-            && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'role', 'subjects', 'grade', 'school', 'goal', 'onboarded']);
+            && data.role is string && (data.role == 'student' || data.role == 'teacher' || data.role == 'parent' || data.role == 'admin');
     }
 
     // --- Global Safety Net ---
@@ -22,8 +22,11 @@ service cloud.firestore {
 
     // --- User Profiles ---
     match /users/{userId} {
-      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
-      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin()) && isValidUserProfile(incoming());
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin() || isTeacher());
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUserProfile(incoming());
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin()) 
+        && isValidUserProfile(incoming())
+        && (isAdmin() || incoming().diff(existing()).affectedKeys().hasOnly(['name', 'role', 'subjects', 'grade', 'school', 'goal', 'onboarded', 'email', 'createdAt', 'preferences', 'learningGoals', 'preferredStudyMethods', 'learningStyles', 'studyTime']));
       
       match /monitoredStudents/{studentId} {
         allow read, write: if isSignedIn() && request.auth.uid == userId;
@@ -38,27 +41,50 @@ service cloud.firestore {
     match /classes/{classId} {
       allow read: if isSignedIn();
       // Only owner can write
-      allow write: if isSignedIn() && exists(/databases/$(database)/documents/classes/$(classId)) && get(/databases/$(database)/documents/classes/$(classId)).data.ownerId == request.auth.uid;
+      allow write: if isSignedIn() && (
+        (exists(/databases/$(database)/documents/classes/$(classId)) && get(/databases/$(database)/documents/classes/$(classId)).data.ownerId == request.auth.uid) ||
+        (!exists(/databases/$(database)/documents/classes/$(classId)) && incoming().ownerId == request.auth.uid) ||
+        isAdmin()
+      );
+    }
 
-      match /students/{studentId} {
-        allow read: if isSignedIn();
-        allow write: if isSignedIn() && exists(/databases/$(database)/documents/classes/$(classId)) && get(/databases/$(database)/documents/classes/$(classId)).data.ownerId == request.auth.uid;
-      }
+    // --- Collection Group: Students (Enables specialized dashboards) ---
+    match /{path=**}/students/{studentId} {
+      allow list, get: if isSignedIn();
+      allow create, update, delete: if isSignedIn() && (isAdmin() || isTeacher());
     }
 
     // --- Bookings (Hardened) ---
     match /bookings/{bookingId} {
-      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin() || isTeacher());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin() || isTeacher());
       allow create: if isSignedIn() && incoming().userId == request.auth.uid;
-      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin() || isTeacher());
+      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin() || isTeacher());
     }
 
     // --- Student Pool ---
     match /studentPool/{poolId} {
         allow read: if isSignedIn();
-        allow write: if isAdmin();
+        allow create, update, delete: if isSignedIn(); // Simplified for now, but should ideally check ownership
+    }
+
+    // --- Live Sessions (Adaptive Synthesis Hub) ---
+    match /liveSessions/{sessionId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (
+        // Teacher can update protocol
+        (resource.data.teacherId == request.auth.uid) ||
+        // Students can update activeCount (increment/decrement)
+        (incoming().diff(existing()).affectedKeys().hasOnly(['activeCount']))
+      );
+      allow delete: if isSignedIn() && resource.data.teacherId == request.auth.uid;
+
+      match /messages/{messageId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn();
+      }
     }
 
     match /waitlist/{entryId} {

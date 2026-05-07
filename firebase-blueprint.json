@@ -76,6 +76,7 @@
         },
         "attended": { "type": "number" },
         "total": { "type": "number" },
+        "teacherId": { "type": "string", "description": "UID of the faculty member managing this record." },
         "history": { "type": "array", "items": { "type": "object" } },
         "grade": { "type": "string" }
       },
@@ -130,6 +131,37 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "message", "read", "createdAt"]
+    },
+    "LiveSession": {
+      "title": "Live Delivery Session",
+      "description": "Active real-time instructional session.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "className": { "type": "string" },
+        "subject": { "type": "string" },
+        "topic": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "teacherName": { "type": "string" },
+        "activeCount": { "type": "number" },
+        "currentProtocol": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastUpdate": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "className", "subject", "teacherId"]
+    },
+    "LiveMessage": {
+      "title": "Live Session Message",
+      "description": "Transient concept query or faculty transmission.",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "role": { "type": "string", "enum": ["teacher", "student"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["text", "senderId", "role"]
     }
   },
   "firestore": {
@@ -164,6 +196,14 @@
     "studentPool": {
         "schema": "PoolStudent",
         "description": "Registry of students available for assignment."
+    },
+    "liveSessions": {
+        "schema": "LiveSession",
+        "description": "Active real-time instructional sessions."
+    },
+    "liveSessions/{sessionId}/messages": {
+        "schema": "LiveMessage",
+        "description": "Concept feed for a specific session."
     }
   }
 }

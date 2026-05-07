@@ -27,6 +27,11 @@ export const NotificationBell = () => {
             }));
             setNotifications(newNotifications);
             setUnreadCount(newNotifications.filter(n => !n.read).length);
+        }, (error) => {
+            // Silently fail if not signed in anymore
+            if (auth.currentUser) {
+                console.error("Notification listener error:", error);
+            }
         });
 
         return () => unsubscribe();
