@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { BookOpen, CheckCircle2, ArrowRight } from 'lucide-react';
 
-export const Badge = ({ children, color = "navy", className = "" }: { children: React.ReactNode, color?: 'navy' | 'gold' | 'teal' | 'green' | 'red' | 'gray', className?: string }) => {
+export const Badge = ({ children, color = "navy", className = "", icon: Icon }: { children: React.ReactNode, color?: 'navy' | 'gold' | 'teal' | 'green' | 'red' | 'gray', className?: string, icon?: any }) => {
   const colors = {
     navy: "bg-fluent-navy/10 text-fluent-navy",
     gold: "bg-fluent-gold/10 text-[#92620A]",
@@ -12,7 +12,8 @@ export const Badge = ({ children, color = "navy", className = "" }: { children: 
     gray: "bg-gray-100 text-gray-600",
   };
   return (
-    <span className={`text-[10px] font-bold tracking-wider px-2 py-1 rounded uppercase whitespace-nowrap ${colors[color]} ${className}`}>
+    <span className={`text-[10px] font-bold tracking-wider px-2 py-1 rounded uppercase whitespace-nowrap flex items-center gap-1.5 ${colors[color]} ${className}`}>
+      {Icon && <Icon size={12} />}
       {children}
     </span>
   );

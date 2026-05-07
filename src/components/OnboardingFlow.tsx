@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  CheckCircle2, Sparkles, GraduationCap, Users, BookOpen, X, Calendar, ArrowRight
+  CheckCircle2, Sparkles, GraduationCap, Users, BookOpen, X, Calendar, ArrowRight, ShieldCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { db, auth } from '../lib/firebaseInit';
 import { collection, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
-import { Logo, Btn } from './UI';
+import { Logo, Btn, Card } from './UI';
+
+import { initiatePayment } from '../lib/paymentService';
 
 export const OnboardingFlow = ({ onComplete }: { onComplete: (view: string, profile: any) => void }) => {
   const [step, setStep] = useState(0);
@@ -21,6 +23,7 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: (view: string, prof
     learningStyles: [] as string[], 
     studyTime: "",
     preferences: [] as string[], 
+    isPaid: false,
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -44,6 +47,7 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: (view: string, prof
         ...baseSteps,
         { title: "Student Connection", subtitle: "Legal names of students." },
         { title: "Monitoring Goal", subtitle: "Primary milestones." },
+        { title: "Institutional Levy", subtitle: "Secure your child's cohort seat." },
         { title: "Synthesis Complete", subtitle: "Ready." },
       ];
     }
@@ -54,8 +58,27 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: (view: string, prof
       { title: "Learning Goals", subtitle: "Specific areas for improvement." },
       { title: "Study Methods", subtitle: "How do you prefer to learn?" },
       { title: "Strategic Goal", subtitle: "What success looks like for 2026-27." },
+      { title: "Institutional Levy", subtitle: "Secure your technical academic seat." },
       { title: "Synthesis Complete", subtitle: "Elite journey begins." },
     ];
+  };
+
+  const handlePayment = () => {
+    initiatePayment({
+      amount: 3999,
+      currency: "INR",
+      name: data.name,
+      description: "Synthesis Mastery Subscription",
+      email: auth.currentUser?.email || "",
+      phone: "",
+      onSuccess: (res) => {
+        update("isPaid", true);
+        setStep(s => s + 1);
+      },
+      onFailure: (err) => {
+        alert("Payment verification failed. Please try again.");
+      }
+    });
   };
 
   const steps = getSteps();
@@ -315,9 +338,37 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: (view: string, prof
                     <Btn variant="primary" className="w-full py-6 text-sm font-black tracking-[0.2em]" onClick={handleComplete}>{isLoading ? "SYNTHESISING..." : "ENTER COMMAND CENTER"}</Btn>
                   </div>
                 )}
+
+                {steps[step].title === "Institutional Levy" && (
+                  <div className="text-center py-10">
+                    <div className="w-24 h-24 bg-fluent-navy/5 rounded-2xl flex items-center justify-center mx-auto mb-8">
+                       <ShieldCheck size={48} className="text-fluent-navy" />
+                    </div>
+                    <h3 className="text-3xl font-serif font-bold text-fluent-navy mb-4">Strategic Commitment</h3>
+                    <p className="text-sm text-slate-500 font-medium mb-10 max-w-sm mx-auto">To maintain institutional standards and faculty ratios, we require a commitment to the Synthesis standard.</p>
+                    
+                    <Card className="p-8 border-fluent-teal border-2 ring-8 ring-fluent-teal/5 mb-10 text-left">
+                       <div className="flex justify-between items-center mb-6">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-fluent-teal">Standard Synthesis</span>
+                          <span className="text-2xl font-serif font-bold text-fluent-navy">₹3,999<span className="text-xs font-sans text-slate-400">/mo</span></span>
+                       </div>
+                       <ul className="space-y-3">
+                          {["Full Subject Access", "Expert British Faculty", "Weekly Momentum Reports"].map(f => (
+                            <li key={f} className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                               <CheckCircle2 size={14} className="text-fluent-teal" /> {f}
+                            </li>
+                          ))}
+                       </ul>
+                    </Card>
+
+                    <Btn variant="primary" className="w-full py-6 text-sm font-black tracking-[0.2em] shadow-2xl shadow-fluent-navy/20" onClick={handlePayment}>
+                       INITIATE PAYMENT ✦
+                    </Btn>
+                  </div>
+                )}
               </div>
 
-              {step < steps.length - 1 && (
+              {step < steps.length - 1 && steps[step].title !== "Institutional Levy" && (
                 <div className="flex justify-between mt-20 pt-8 border-t border-black/5">
                    <Btn variant="ghost" className="text-slate-400 font-black tracking-widest text-[10px] uppercase" onClick={() => setStep(s => s - 1)} disabled={step === 0}>Back</Btn>
                    <Btn variant="primary" className="px-12 py-4 shadow-xl shadow-fluent-teal/10" onClick={() => setStep(s => s + 1)} disabled={!canProceed()}>Continue</Btn>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Home, BookOpen, Calendar, BarChart3, Award, Settings, Bell, Play, 
-  Sparkles, Zap, CheckCircle2, ArrowRight, Target
+  Sparkles, Zap, CheckCircle2, ArrowRight, Target, ClipboardList, MessageCircle
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { collectionGroup, query, where, onSnapshot, collection, limit } from 'firebase/firestore';
@@ -14,6 +14,11 @@ import { MasteryHeatmap } from './Charts';
 import { LiveLab } from './LiveLab';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from 'recharts';
 
+// New Sub-components
+import StudentAssignments from './StudentAssignments';
+import StudentProgress from './StudentProgress';
+import ConfidenceTraining from './ConfidenceTraining';
+
 export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => void }) => {
   const [activeNav, setActiveNav] = useState("overview");
   const [showBooking, setShowBooking] = useState(false);
@@ -22,6 +27,7 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
   const [myRecords, setMyRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [alerts, setAlerts] = useState<any[]>([]);
 
   const studentName = profile?.name || auth.currentUser?.displayName || "Arjun Sharma";
   const studentGrade = profile?.grade || "Grade 10";
@@ -59,12 +65,25 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
     return () => unsub();
   }, [studentName]);
 
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    const q = query(
+      collection(db, "alerts"), 
+      where("studentId", "==", auth.currentUser.uid),
+      where("status", "==", "active")
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      setAlerts(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (error) => handleFirestoreError(error, OperationType.LIST, "alerts"));
+    return () => unsub();
+  }, []);
+
   const navItems = [
-    { id: "overview", label: "Overview", icon: Home },
-    { id: "subjects", label: "My Subjects", icon: BookOpen },
-    { id: "sessions", label: "Sessions", icon: Calendar, badge: "2 New" },
-    { id: "progress", label: "Progress", icon: BarChart3 },
-    { id: "achievements", label: "Achievements", icon: Award },
+    { id: "overview", label: "Home", icon: Home },
+    { id: "sessions", label: "My Classes", icon: Calendar, badge: "Live" },
+    { id: "assignments", label: "Assignments", icon: ClipboardList },
+    { id: "progress", label: "Progress Report", icon: BarChart3 },
+    { id: "confidence", label: "Confidence", icon: MessageCircle },
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
@@ -124,6 +143,12 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
             <h1 className="text-4xl font-serif font-bold tracking-tight">
               Good morning, <span className="text-fluent-teal italic font-normal">{studentName.split(' ')[0]}</span> ✦
             </h1>
+            {alerts.length > 0 && (
+              <div className="flex items-center gap-2 mt-4 px-4 py-2 bg-red-50 border border-red-100 rounded-full w-fit animate-pulse">
+                <Zap size={14} className="text-red-500 fill-red-500" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-red-600">{alerts.length} Critical System Warnings</span>
+              </div>
+            )}
             <p className="text-slate-500 mt-2">Targeting {profile?.goal || "Academic Excellence"} • Momentum looks strong.</p>
           </div>
 
@@ -144,12 +169,29 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
               {isJoining ? "Connecting..." : "Join Session"}
             </Btn>
             {showNotification && (
-               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="absolute top-full right-0 mt-2 w-72 bg-white border border-black/5 rounded-xl shadow-2xl z-50 p-4">
-                  <div className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Recent Alerts</div>
+               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="absolute top-full right-0 mt-2 w-80 bg-white border border-black/5 rounded-xl shadow-2xl z-50 p-6">
+                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6">Dispatch Ledger</div>
+                  
+                  {alerts.length > 0 && (
+                    <div className="mb-6 space-y-3">
+                      <div className="text-[9px] font-bold text-red-500 uppercase tracking-widest">Active Alerts</div>
+                      {alerts.map(a => (
+                        <div key={a.id} className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3">
+                          <Zap size={14} className="text-red-500 mt-0.5 shrink-0" />
+                          <div>
+                            <div className="text-[10px] font-bold text-red-600 uppercase tracking-tight">{a.type}</div>
+                            <div className="text-[10px] text-red-400 leading-tight mt-0.5">{a.message}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="space-y-4">
+                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Faculty Feedback</div>
                     {allFeedback.slice(0, 3).map((f: any, idx: number) => (
-                      <div key={idx} className="p-3 bg-fluent-teal/5 rounded-lg border border-fluent-teal/10">
-                        <div className="text-xs font-bold text-fluent-teal">{f.category}</div>
+                      <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                        <div className="text-xs font-bold text-fluent-teal">{f.category || f.subject}</div>
                         <div className="text-[10px] text-slate-600 mt-1">{f.text}</div>
                       </div>
                     ))}
@@ -166,8 +208,8 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
               <div className="grid sm:grid-cols-4 gap-4">
                 <MetricTile label="Mastery Index" value={`${overallMastery}%`} delta="+2.4%" icon={BarChart3} color="#1B4F5E" />
                 <MetricTile label="Live Credits" value={`${totalSessions}`} icon={Calendar} color="#0D1B2A" />
-                <MetricTile label="Current Streak" value="5" icon={Zap} color="#7C3AED" />
-                <MetricTile label="Backlog" value="2" icon={CheckCircle2} color="#C9A84C" />
+                <MetricTile label="Current Streak" value="5 Days" icon={Zap} color="#7C3AED" />
+                <MetricTile label="Leaderboard" value="#04" icon={Award} color="#C9A84C" />
               </div>
 
               {/* Live Session Timetable - Visible Grid Style */}
@@ -294,6 +336,12 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
               </Card>
             </div>
           </div>
+        ) : activeNav === "assignments" ? (
+          <StudentAssignments />
+        ) : activeNav === "progress" ? (
+          <StudentProgress />
+        ) : activeNav === "confidence" ? (
+          <ConfidenceTraining />
         ) : activeNav === "sessions" ? (
           activeSessionId ? (
             <LiveLab sessionId={activeSessionId} role="student" onExit={() => setActiveNav("overview")} />
@@ -306,32 +354,6 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
                <p className="text-sm text-slate-400 mt-2">Check your timetable for upcoming scheduled sessions.</p>
             </div>
           )
-        ) : activeNav === "progress" ? (
-          <div className="space-y-8">
-             <div className="grid lg:grid-cols-2 gap-8">
-                <MasteryHeatmap data={[
-                  { math: 65, science: 70 }, 
-                  { math: 80, science: 75 }, 
-                  { math: 90, science: 85 },
-                  { math: 50, science: 60 }
-                ]} />
-                {subjectProgress.map((s) => (
-                  <Card key={s.name} className={`p-8 ${s.isFocus ? 'border-2 border-fluent-teal' : ''}`}>
-                    <h3 className="text-xl font-serif font-bold text-fluent-navy mb-4">{s.name} Mastery</h3>
-                    <ProgressBar value={s.score} color={s.color} label="Conceptual Fluency" />
-                    <Btn variant="ghost" size="sm" icon={ArrowRight} className="mt-8 text-xs font-bold uppercase tracking-widest">Detailed Analysis</Btn>
-                  </Card>
-                ))}
-             </div>
-             <Card className="p-10 bg-fluent-navy text-white text-center">
-                <h3 className="text-2xl font-serif font-bold mb-4">Predicted Board Outcome: A1</h3>
-                <p className="text-white/60 mb-8 max-w-md mx-auto">Your current velocity suggests a high-distinction profile. Maintain consistency in Physics application tasks.</p>
-                <div className="flex justify-center gap-4">
-                  <Btn variant="gold" size="md">Download Progress Report</Btn>
-                  <Btn variant="outline" className="text-white border-white/20" onClick={() => setShowBooking(true)}>Consult Faculty</Btn>
-                </div>
-             </Card>
-          </div>
         ) : (
           <div className="py-20 text-center">
             <h3 className="text-2xl font-serif font-bold mb-4 uppercase tracking-tighter opacity-20">{activeNav} Module</h3>

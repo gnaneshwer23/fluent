@@ -91,5 +91,54 @@ service cloud.firestore {
       allow read, delete: if isAdmin();
       allow create: if true;
     }
+
+    // --- Assignments ---
+    match /assignments/{assignmentId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isTeacher() || isAdmin();
+    }
+
+    // --- Progress Records ---
+    match /progress/{reportId} {
+      allow read: if isSignedIn() && (resource.data.studentId == request.auth.uid || isTeacher() || isAdmin());
+      allow create, update, delete: if isTeacher() || isAdmin();
+    }
+
+    // --- Weekly Reports ---
+    match /weeklyReports/{reportId} {
+      allow read: if isSignedIn() && (request.auth.token.email == resource.data.parentEmail || isTeacher() || isAdmin());
+      allow create, update, delete: if isTeacher() || isAdmin();
+    }
+
+    // --- Attendance ---
+    match /attendance/{attendanceId} {
+      allow read: if isSignedIn() && (resource.data.studentId == request.auth.uid || isTeacher() || isAdmin());
+      allow create, update, delete: if isTeacher() || isAdmin();
+    }
+
+    // --- Teacher Analytics ---
+    match /teacherAnalytics/{analyticsId} {
+      allow read: if isSignedIn() && (request.auth.uid == resource.data.teacherId || isAdmin());
+      allow create, update, delete: if isAdmin(); // Only system/admin typically updates these, but let's allow teachers to read their own
+    }
+
+    // --- Alerts ---
+    match /alerts/{alertId} {
+      allow read: if isSignedIn() && (resource.data.studentId == request.auth.uid || resource.data.teacherId == request.auth.uid || isTeacher() || isAdmin());
+      allow create: if isTeacher() || isAdmin();
+      allow update, delete: if isTeacher() || isAdmin();
+    }
+
+    // --- Teacher Growth ---
+    match /teacherGrowth/{growthId} {
+      allow read: if isSignedIn() && (resource.data.teacherId == request.auth.uid || isAdmin());
+      allow write: if isTeacher() || isAdmin();
+    }
+
+    // --- Notifications Hub ---
+    match /notifications/{notifyId} {
+      allow read: if isAdmin();
+      allow create: if true; // Allows the system/app to log notifications sent
+    }
   }
 }

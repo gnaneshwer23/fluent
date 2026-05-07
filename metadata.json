@@ -1,6 +1,15 @@
 {
-  "name": "FLUENT - Academic Fluency Platform",
-  "description": "Transform how schools teach Science, Maths, and English with academic fluency. Integrated platform combining foreign tutors and local instruction.",
-  "requestFramePermissions": [],
-  "majorCapabilities": []
+  "name": "FLUENT - Intelligent Academic Mastery",
+  "description": "An AI-driven academic intervention platform. Features real-time scholar growth tracking, faculty performance analytics, automated WhatsApp alerting, and secure Razorpay payment flows.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ],
+  "majorCapabilities": [
+    "Real-time Performance Monitoring",
+    "Intelligent Alert Engine",
+    "Automated Parent Notifications",
+    "Subscription Payment Integration",
+    "Multi-role Management Dashboards"
+  ]
 }

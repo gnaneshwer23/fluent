@@ -7,6 +7,8 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { handleFirestoreError, OperationType } from '../lib/errorHandling';
 
+import { notifyNewLead } from '../lib/communicationService';
+
 const googleProvider = new GoogleAuthProvider();
 
 export const LandingPage = () => {
@@ -24,6 +26,7 @@ export const LandingPage = () => {
         requestedAt: serverTimestamp()
       });
       setWaitlistSuccess(true);
+      notifyNewLead(waitlistEmail);
       setWaitlistEmail("");
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'waitlist');

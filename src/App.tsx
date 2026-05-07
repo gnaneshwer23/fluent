@@ -9,6 +9,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db, auth } from './lib/firebaseInit';
 import { handleFirestoreError, OperationType } from './lib/errorHandling';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 
 // Components
 import { LandingPage } from './components/LandingPage';
@@ -18,11 +19,12 @@ import { StudentDashboard } from './components/StudentDashboard';
 import { ParentDashboard } from './components/ParentDashboard';
 import { AdminCommand } from './components/AdminCommand';
 
-export default function App() {
+function AppContent() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [view, setView] = useState("landing");
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     let unsubProfile: (() => void) | null = null;
@@ -30,7 +32,6 @@ export default function App() {
     const unsubAuth = onAuthStateChanged(auth, (u) => {
       setUser(u);
       
-      // Clear existing profile listener if switching users or logging out
       if (unsubProfile) {
         unsubProfile();
         unsubProfile = null;
@@ -43,22 +44,26 @@ export default function App() {
             const data = snap.data();
             setProfile(data);
             if (data.role) {
-              setView(data.role + "-dashboard");
+              // Only redirect if at root or landing
+              if (location.pathname === '/' || location.pathname === '/onboarding') {
+                navigate(`/${data.role}-dashboard`);
+              }
             } else {
-              setView("onboarding");
+              navigate('/onboarding');
             }
           } else {
-            setView("onboarding");
+            navigate('/onboarding');
           }
           setLoading(false);
         }, (error) => {
-          // Gracefully handle the error if it's due to logout (where u might still be valid in this closure but auth is gone)
           if (auth.currentUser) {
             handleFirestoreError(error, OperationType.GET, `users/${u.uid}`);
           }
         });
       } else {
-        setView("landing");
+        if (location.pathname !== '/') {
+          navigate('/');
+        }
         setProfile(null);
         setLoading(false);
       }
@@ -68,22 +73,17 @@ export default function App() {
       unsubAuth();
       if (unsubProfile) unsubProfile();
     };
-  }, []);
+  }, [navigate]);
 
   const handleOnboardingComplete = async (nextView: string, onboardingData: any) => {
     if (!user) return;
-    try {
-      setProfile(onboardingData);
-      setView(nextView);
-    } catch (e) {
-      console.error(e);
-    }
+    setProfile(onboardingData);
+    navigate(`/${nextView}`);
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-fluent-navy flex flex-col items-center justify-center p-8 overflow-hidden relative">
-        {/* Abstract background elements */}
         <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border border-white/10 rounded-full animate-[pulse_8s_infinite]" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-white/10 rounded-full animate-[pulse_6s_infinite]" />
@@ -112,24 +112,29 @@ export default function App() {
                className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-transparent via-fluent-teal to-transparent shadow-[0_0_15px_rgba(27,79,94,0.8)]"
              />
           </div>
-          
-          <div className="mt-8 flex flex-col items-center gap-1 opacity-40">
-             <div className="text-[9px] font-mono font-bold text-white uppercase tracking-widest">Securing Institutional Handshake...</div>
-             <div className="text-[8px] font-mono text-white/50 uppercase tracking-tighter">AES-256 :: UK_REGION_LOAD</div>
-          </div>
         </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      {view === "landing" && <LandingPage />}
-      {view === "onboarding" && <OnboardingFlow onComplete={handleOnboardingComplete} />}
-      {view === "teacher-dashboard" && <FacultyHub profile={profile} onBack={() => auth.signOut()} />}
-      {view === "student-dashboard" && <StudentDashboard profile={profile} onBack={() => auth.signOut()} />}
-      {view === "parent-dashboard" && <ParentDashboard profile={profile} onBack={() => auth.signOut()} />}
-      {view === "admin-dashboard" && <AdminCommand onBack={() => auth.signOut()} />}
-    </div>
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/onboarding" element={<OnboardingFlow onComplete={handleOnboardingComplete} />} />
+      <Route path="/teacher-dashboard" element={<FacultyHub profile={profile} onBack={() => auth.signOut()} />} />
+      <Route path="/student-dashboard" element={<StudentDashboard profile={profile} onBack={() => auth.signOut()} />} />
+      <Route path="/parent-dashboard" element={<ParentDashboard profile={profile} onBack={() => auth.signOut()} />} />
+      <Route path="/admin-dashboard" element={<AdminCommand onBack={() => auth.signOut()} />} />
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
   );
 }
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  );
+}
+

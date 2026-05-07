@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Home, Users, Database, Calendar, Play, BookOpen, Settings, Plus, Search, 
-  Trash2, Edit2, BarChart3, TrendingUp, Zap, CheckCircle2, ArrowRight, X, Mail, Phone, Shield, ShieldCheck, Lock, Check
+  Trash2, Edit2, BarChart3, TrendingUp, Zap, CheckCircle2, ArrowRight, X, Mail, Phone, Shield, ShieldCheck, Lock, Check,
+  ClipboardList, FileText, CalendarDays
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, deleteDoc, serverTimestamp, orderBy, limit, collectionGroup, setDoc } from 'firebase/firestore';
@@ -11,6 +12,11 @@ import { Badge, Card, Avatar, MetricTile, ProgressBar, Btn } from './UI';
 import { DashboardShell } from './DashboardShell';
 import { LiveLab } from './LiveLab';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+
+import TeacherAssignments from './TeacherAssignments';
+import TeacherReports from './TeacherReports';
+import TeacherAttendance from './TeacherAttendance';
+import TeacherAnalytics from './TeacherAnalytics';
 
 export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) => {
   const [activeNav, setActiveNav] = useState("overview");
@@ -142,13 +148,15 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
   }));
 
   const navItems = [
-    { id: "overview", label: "Faculty Console", icon: Home },
-    { id: "cohorts", label: "Student Cohorts", icon: Users, badge: classes.length.toString() },
+    { id: "overview", label: "Dashboard", icon: Home },
+    { id: "cohorts", label: "Cohorts", icon: Users },
+    { id: "assignments", label: "Assignments", icon: ClipboardList },
+    { id: "analytics", label: "Analytics", icon: BarChart3, badge: "AI" },
+    { id: "reports", label: "Accountability", icon: FileText, badge: "Weekly" },
+    { id: "attendance", label: "Roll Call", icon: CalendarDays },
+    { id: "live", label: "Live Lab", icon: Play, badge: "Live" },
     { id: "registry", label: "Registry", icon: Database },
-    { id: "bookings", label: "Consultations", icon: Calendar, badge: bookings.filter(b => b.status === "pending").length.toString() },
-    { id: "live", label: "Live Delivery", icon: Play, badge: "Live" },
-    { id: "curriculum", label: "British Methods", icon: BookOpen },
-    { id: "settings", label: "Preferences", icon: Settings },
+    { id: "settings", label: "Settings", icon: Settings },
   ];
 
   const sessions = [
@@ -711,51 +719,14 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
               </Card>
             </div>
           </div>
-        ) : activeNav === "bookings" ? (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div>
-              <h2 className="text-3xl font-serif font-bold">Consultation Desk</h2>
-              <p className="text-slate-500 mt-2">Manage incoming and upcoming sync requests.</p>
-            </div>
-            <div className="grid lg:grid-cols-4 gap-8">
-              <div className="lg:col-span-1 space-y-6">
-                <Card className="p-6">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Pending Requests</div>
-                  <div className="text-4xl font-serif font-bold text-fluent-gold">{bookings.filter(b => b.status === 'pending').length}</div>
-                </Card>
-              </div>
-              <Card className="lg:col-span-3 p-8">
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="border-b border-slate-100">
-                                <th className="text-left py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Requestor</th>
-                                <th className="text-left py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Context</th>
-                                <th className="text-left py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Status</th>
-                                <th className="text-right py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                            {bookings.map((b) => (
-                                <tr key={b.id} className="group hover:bg-slate-50/50 transition-colors">
-                                    <td className="py-5 flex items-center gap-3">
-                                      <Avatar name={b.userName} size={32} />
-                                      <div><div className="text-sm font-bold text-fluent-navy">{b.userName}</div></div>
-                                    </td>
-                                    <td className="py-5 underline text-xs">{b.subject}</td>
-                                    <td className="py-5"><Badge color={b.status === 'confirmed' ? 'green' : 'gold'}>{b.status}</Badge></td>
-                                    <td className="py-5 text-right flex justify-end gap-2">
-                                        {b.status === 'pending' && <Btn variant="primary" size="sm" onClick={() => updateDoc(doc(db, 'bookings', b.id), { status: 'confirmed' })}>Confirm</Btn>}
-                                        <Btn variant="ghost" size="sm" className="text-red-400" onClick={() => deleteDoc(doc(db, 'bookings', b.id))}>Cancel</Btn>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-              </Card>
-            </div>
-          </div>
+        ) : activeNav === "assignments" ? (
+          <TeacherAssignments />
+        ) : activeNav === "analytics" ? (
+          <TeacherAnalytics teacherId={auth.currentUser?.uid || "system"} />
+        ) : activeNav === "reports" ? (
+          <TeacherReports />
+        ) : activeNav === "attendance" ? (
+          <TeacherAttendance />
         ) : activeNav === "live" ? (
           activeSessionId ? (
             <LiveLab sessionId={activeSessionId} role="teacher" onExit={() => setActiveNav("overview")} />
@@ -784,26 +755,6 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                </div>
             </div>
           )
-        ) : activeNav === "curriculum" ? (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-             <div className="flex justify-between items-end">
-                <div>
-                   <h2 className="text-3xl font-serif font-bold">British Method Curriculum</h2>
-                   <p className="text-slate-500 mt-2">Access and customise unified academic blueprints.</p>
-                </div>
-                <Btn variant="primary" icon={Plus}>New Resource</Btn>
-             </div>
-
-             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {["Physics Standards", "Core Mathematics", "Scientific Literacy", "Advanced Synthesis"].map(item => (
-                   <Card key={item} className="p-6 hover:border-fluent-teal transition-colors cursor-pointer group">
-                      <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-slate-400 mb-4 group-hover:bg-fluent-teal/10 group-hover:text-fluent-teal"><BookOpen size={20} /></div>
-                      <h4 className="font-bold text-fluent-navy text-sm mb-1">{item}</h4>
-                      <p className="text-[10px] text-slate-400 font-medium">Standardised Blueprint v2.1</p>
-                   </Card>
-                ))}
-             </div>
-          </div>
         ) : activeNav === "settings" ? (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div>

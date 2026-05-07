@@ -162,6 +162,71 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["text", "senderId", "role"]
+    },
+    "Assignment": {
+      "title": "Assignment",
+      "description": "Tasks or tests assigned to students.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "batch": { "type": "string" },
+        "dueDate": { "type": "string", "format": "date" },
+        "link": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "completed"] },
+        "assignedTo": { "type": "string" }
+      },
+      "required": ["title", "dueDate"]
+    },
+    "ProgressReport": {
+      "title": "Progress Record",
+      "description": "Topic-wise marks and feedback.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "marks": { "type": "number" },
+        "topic": { "type": "string" },
+        "feedback": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentId", "marks", "topic"]
+    },
+    "WeeklyReport": {
+      "title": "Weekly Progress Report",
+      "description": "Detailed weekly feedback for parents.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "parentEmail": { "type": "string" },
+        "week": { "type": "string" },
+        "marks": { "type": "number" },
+        "confidenceScore": { "type": "number" },
+        "participationScore": { "type": "number" },
+        "strengths": { "type": "string" },
+        "weaknesses": { "type": "string" },
+        "confidenceNote": { "type": "string" },
+        "communicationNote": { "type": "string" },
+        "teacherComment": { "type": "string" },
+        "actionPlan": { "type": "string" },
+        "attendance": { "type": "string" },
+        "date": { "type": "string", "format": "date" }
+      },
+      "required": ["studentId", "week", "marks", "parentEmail"]
+    },
+    "TeacherAnalytics": {
+      "title": "Teacher Analytics",
+      "description": "Aggregated performance metrics for faculty.",
+      "type": "object",
+      "properties": {
+        "teacherId": { "type": "string" },
+        "avgMarks": { "type": "number" },
+        "avgConfidence": { "type": "number" },
+        "avgParticipation": { "type": "number" },
+        "attendanceRate": { "type": "number" },
+        "rating": { "type": "number" },
+        "studentCount": { "type": "number" },
+        "month": { "type": "string" }
+      },
+      "required": ["teacherId", "avgMarks", "month"]
     }
   },
   "firestore": {
@@ -204,6 +269,65 @@
     "liveSessions/{sessionId}/messages": {
         "schema": "LiveMessage",
         "description": "Concept feed for a specific session."
+    },
+    "assignments": {
+        "schema": "Assignment",
+        "description": "Assignments and tests."
+    },
+    "progress": {
+        "schema": "ProgressReport",
+        "description": "Detailed progress records for students."
+    },
+    "weeklyReports": {
+        "schema": "WeeklyReport",
+        "description": "Weekly reports generated for parents."
+    },
+    "attendance": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "studentId": { "type": "string" },
+            "date": { "type": "string", "format": "date" },
+            "status": { "type": "string", "enum": ["Present", "Absent"] },
+            "batch": { "type": "string" }
+          },
+          "required": ["studentId", "date", "status"]
+        },
+        "description": "Student attendance logs."
+    },
+    "teacherAnalytics": {
+        "schema": "TeacherAnalytics",
+        "description": "Performance data for faculty members."
+    },
+    "alerts": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "studentId": { "type": "string" },
+            "teacherId": { "type": "string" },
+            "type": { "type": "string" },
+            "message": { "type": "string" },
+            "date": { "type": "string", "format": "date-time" },
+            "status": { "type": "string", "enum": ["active", "resolved"] }
+          },
+          "required": ["type", "message", "status"]
+        },
+        "description": "System-generated intervention alerts for students and faculty."
+    },
+    "teacherGrowth": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "teacherId": { "type": "string" },
+            "month": { "type": "string" },
+            "avgMarks": { "type": "number" },
+            "avgConfidence": { "type": "number" },
+            "avgParticipation": { "type": "number" },
+            "date": { "type": "string", "format": "date-time" }
+          },
+          "required": ["teacherId", "month", "avgMarks"]
+        },
+        "description": "Historical performance data for faculty tracking."
     }
   }
 }
