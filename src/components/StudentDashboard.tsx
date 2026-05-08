@@ -184,7 +184,6 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
               {isJoining ? "Connecting..." : "Join Session"}
             </Btn>
             <Btn variant="ghost" size="sm" icon={MessageSquare} onClick={() => setShowFeedback(true)}>Feedback</Btn>
-            <Btn variant="ghost" size="sm" className="text-red-500 hover:bg-red-50" icon={LogOut} onClick={onBack}>Sign Out</Btn>
             {showNotification && (
                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="absolute top-full right-0 mt-2 w-80 bg-white border border-black/5 rounded-xl shadow-2xl z-50 p-6">
                   <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6">Dispatch Ledger</div>

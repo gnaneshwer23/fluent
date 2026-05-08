@@ -113,7 +113,7 @@ export const LandingPage = () => {
           <Logo onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
           
           <div className="hidden lg:flex gap-10 items-center">
-            {["Benefits", "Programs", "Methodology", "Investment"].map(item => (
+            {["Vision", "Benefits", "Programs", "Methodology"].map(item => (
               <a key={item} href={`#${item.toLowerCase()}`} className="text-[9px] font-black uppercase tracking-[0.4em] text-fluent-navy/50 hover:text-fluent-navy transition-all duration-500 hover:tracking-[0.5em]">{item}</a>
             ))}
             <div className="h-4 w-px bg-black/10 mx-2" />
@@ -141,10 +141,7 @@ export const LandingPage = () => {
               variants={containerVariants}
               className="max-w-2xl"
             >
-              <motion.div variants={itemVariants} className="mb-12 inline-flex items-center gap-4 px-6 py-2.5 rounded-full border border-fluent-gold/20 bg-white/50 backdrop-blur-sm shadow-sm">
-                <div className="w-1.5 h-1.5 rounded-full bg-fluent-gold animate-pulse shadow-[0_0_8px_rgba(180,140,84,0.6)]" />
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-fluent-gold font-mono">Institutional Protocol 4.0 Alpha</span>
-              </motion.div>
+              <motion.div variants={itemVariants} className="mb-12" />
 
               <motion.h1 variants={itemVariants} className="text-8xl md:text-[130px] font-serif font-bold tracking-tighter text-fluent-navy mb-12 leading-[0.82]">
                 Master the <br />
@@ -264,6 +261,24 @@ export const LandingPage = () => {
           </div>
         </section>
 
+        <div className="py-12 bg-fluent-gold/10 overflow-hidden">
+           <motion.div 
+             className="flex whitespace-nowrap"
+             animate={{ x: ["0%", "-50%"] }}
+             transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+           >
+             {[...Array(2)].map((_, i) => (
+                <div key={i} className="flex gap-20 px-10 items-center">
+                  {["AI Doubt Solver", "Weekly Parent Reports", "Live UK Educators", "Concept Mastery", "Confidence Coaching", "Get Training and Teach your Students by British Trained Teachers"].map((text, j) => (
+                    <span key={j} className="text-fluent-navy font-black tracking-widest uppercase text-xs flex gap-20 items-center">
+                       {text} <span className="text-fluent-gold">✦</span>
+                    </span>
+                  ))}
+                </div>
+             ))}
+           </motion.div>
+        </div>
+
         <section id="diagnosis" className="py-24 px-8 bg-white relative overflow-hidden">
            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-24 bg-gradient-to-b from-transparent to-black/5" />
           
@@ -278,13 +293,17 @@ export const LandingPage = () => {
                 <p className="text-lg text-slate-500 leading-relaxed max-w-lg mb-8 font-serif opacity-80">
                   Academic stagnation is rarely a lack of effort. It is almost always a structural failure in confidence and methodology.
                 </p>
+                <div className="p-8 bg-fluent-navy text-white rounded-[32px]">
+                   <h4 className="text-xl font-bold font-serif mb-4 italic">Core Insight</h4>
+                   <p className="text-white/80 leading-relaxed">"Students do not fail due to lack of intelligence—they struggle due to lack of structured learning, confidence training, and effective teaching systems."</p>
+                </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
-                  { label: "Anxiety", desc: "Fear of vocal participation in group academic settings.", code: "ANX-404" },
-                  { label: "Stagnation", desc: "Performance plateaus despite increased study hours.", code: "PLT-500" },
-                  { label: "Deficit", desc: "Internalised doubt regarding global capability.", code: "CNF-000" },
-                  { label: "Dependency", desc: "A reliance on rote learning over synthesis.", code: "ROT-101" }
+                  { label: "Rote Obsession", desc: "Overemphasis on memorisation over understanding.", code: "ROT-001" },
+                  { label: "Conceptual Gap", desc: "Lack of clarity in core Science/Maths/English.", code: "GAP-100" },
+                  { label: "Confidence Deficit", desc: "Poor participation and vocal skills.", code: "CNF-000" },
+                  { label: "Visibility Gap", desc: "No accountability or parent-teacher visibility.", code: "OPA-404" }
                 ].map((problem, i) => (
                   <div key={i} className="p-6 border border-black/5 rounded-[32px] bg-slate-50/50 shadow-sm relative overflow-hidden group hover:bg-red-500 hover:border-red-500 transition-all duration-700">
                     <div className="text-[9px] font-black text-slate-300 group-hover:text-white/40 uppercase tracking-widest mb-8 font-mono">{problem.code}</div>
@@ -295,6 +314,49 @@ export const LandingPage = () => {
               </div>
             </div>
           </div>
+        </section>
+
+        <section id="differentiation" className="py-24 px-8 bg-slate-50">
+           <div className="max-w-7xl mx-auto">
+              <h2 className="text-5xl font-serif font-bold text-fluent-navy text-center mb-20 tracking-tight">The Academy Advantage</h2>
+              <div className="grid md:grid-cols-2 gap-8">
+                 <Card className="p-10 rounded-[32px] shadow-sm">
+                    <h3 className="text-2xl font-bold text-red-500 mb-8 italic">Traditional Platforms</h3>
+                    <ul className="space-y-4">
+                       {['Content-heavy but outcome-light', 'Minimal, reactive feedback', 'Zero teacher training', 'No performance visibility', 'Individual-based approach'].map(item => (
+                          <li key={item} className="flex gap-3 text-slate-600 font-medium">❌ {item}</li>
+                       ))}
+                    </ul>
+                 </Card>
+                 <Card className="p-10 rounded-[32px] shadow-xl border-t-4 border-fluent-teal">
+                    <h3 className="text-2xl font-bold text-fluent-teal mb-8 italic">Fluent Academy</h3>
+                    <ul className="space-y-4">
+                       {['Learning + Training Integrated', 'Data-driven, proactive feedback', 'Continuous teacher development', 'Full systemic transparency', 'Scalable ecosystem approach'].map(item => (
+                          <li key={item} className="flex gap-3 text-fluent-navy font-bold">✅ {item}</li>
+                       ))}
+                    </ul>
+                 </Card>
+              </div>
+           </div>
+        </section>
+
+        <section id="targeting" className="py-24 px-8 bg-white">
+           <div className="max-w-7xl mx-auto">
+              <h2 className="text-5xl font-serif font-bold text-fluent-navy text-center mb-20 tracking-tight">Ecosystem Participants</h2>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                 {[
+                    { title: "Students", desc: "Classes 6–12 seeking mastery & confidence." },
+                    { title: "Parents", desc: "Seek visibility, accountability & outcomes." },
+                    { title: "Teachers", desc: "Need structured support & feedback." },
+                    { title: "Schools", desc: "Aim for consistent quality & results." }
+                 ].map(user => (
+                    <Card key={user.title} className="p-8 rounded-[32px] bg-slate-50 border-none">
+                       <h4 className="text-xl font-bold font-serif mb-4 text-fluent-navy">{user.title}</h4>
+                       <p className="text-slate-500 text-sm leading-relaxed">{user.desc}</p>
+                    </Card>
+                 ))}
+              </div>
+           </div>
         </section>
 
         <section id="methodology" className="py-24 px-6 bg-fluent-cream/30 relative overflow-hidden">
@@ -338,11 +400,11 @@ export const LandingPage = () => {
                     transition={{ duration: 1.2 }}
                     className="bg-fluent-navy rounded-[64px] p-4 overflow-hidden shadow-[0_60px_100px_-30px_rgba(13,27,42,0.4)] relative"
                   >
-                    <div className="absolute inset-0 bg-fluent-navy/20 z-10" />
+                    <div className="absolute inset-0 z-10" />
                     <img 
-                      src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=2070&auto=format&fit=crop" 
-                      alt="Collaborative Learning" 
-                      className="rounded-[48px] w-full h-[700px] object-cover"
+                      src="https://images.unsplash.com/photo-1577880216142-8549e9488ecd?q=80&w=2070&auto=format&fit=crop" 
+                      alt="Indian Student Learning" 
+                      className="rounded-[48px] w-full h-[700px] object-cover relative z-0"
                       referrerPolicy="no-referrer"
                     />
                   </motion.div>
@@ -366,6 +428,41 @@ export const LandingPage = () => {
                   </motion.div>
                </div>
             </div>
+          </div>
+        </section>
+
+        <section id="vision" className="py-24 px-8 bg-white">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-20">
+               <div className="text-[10px] font-black text-fluent-gold uppercase tracking-[0.5em] mb-6 font-mono">Our Foundation</div>
+               <h2 className="text-6xl font-serif font-bold text-fluent-navy tracking-tight">Vision & Philosophy</h2>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-10">
+               <Card className="p-10 rounded-[32px] border-none shadow-sm hover:shadow-xl transition-shadow bg-white">
+                  <h3 className="text-2xl font-serif font-bold mb-6 text-black">Our Vision</h3>
+                  <p className="text-lg font-serif italic text-black leading-relaxed">"To build the world’s most trusted learning and training platform that improves student outcomes by combining subject mastery, confidence development, and continuous teacher training."</p>
+               </Card>
+               <Card className="p-10 rounded-[32px] border-none shadow-sm hover:shadow-xl transition-shadow bg-fluent-cream">
+                  <h3 className="text-2xl font-serif font-bold mb-6 text-fluent-navy">Our Mission</h3>
+                  <p className="text-lg font-serif italic text-fluent-navy leading-relaxed">"To create a structured, data-driven system where every student improves academically and personally, and every teacher continuously evolves."</p>
+               </Card>
+            </div>
+
+            <div className="mt-16 grid grid-cols-2 lg:grid-cols-4 gap-8">
+               {[
+                 { title: "Subject Mastery", icon: BookOpen },
+                 { title: "Confidence Dev.", icon: Zap },
+                 { title: "Teacher Excellence", icon: Users },
+                 { title: "Data & Accountability", icon: Target },
+               ].map((pillar, i) => (
+                  <div key={i} className="text-center p-8 border border-black/5 rounded-[24px]">
+                     <pillar.icon className="mx-auto mb-6 text-fluent-teal" size={32} />
+                     <h4 className="font-serif font-bold text-fluent-navy text-lg">{pillar.title}</h4>
+                  </div>
+               ))}
+            </div>
+
           </div>
         </section>
 

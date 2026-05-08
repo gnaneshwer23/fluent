@@ -80,13 +80,6 @@ export const DashboardShell = ({ role, title, children, navItems, activeNav, set
           <div className="border border-white/5 bg-white/2 rounded-2xl p-3">
              <NotificationBell />
           </div>
-          <button 
-            onClick={onBack}
-            className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-white/30 hover:text-red-400 hover:bg-red-400/5 transition-all text-[10px] font-bold uppercase tracking-widest group border border-transparent hover:border-red-400/20"
-          >
-            <LogOut size={14} className="text-red-400/40 group-hover:text-red-400" />
-            Sign Out Session
-          </button>
         </div>
       </aside>
       
