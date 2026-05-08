@@ -113,7 +113,7 @@ export const LandingPage = () => {
           <Logo onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
           
           <div className="hidden lg:flex gap-10 items-center">
-            {["Vision", "Benefits", "Programs", "Methodology"].map(item => (
+            {["Benefits", "Methodology"].map(item => (
               <a key={item} href={`#${item.toLowerCase()}`} className="text-[9px] font-black uppercase tracking-[0.4em] text-fluent-navy/50 hover:text-fluent-navy transition-all duration-500 hover:tracking-[0.5em]">{item}</a>
             ))}
             <div className="h-4 w-px bg-black/10 mx-2" />
@@ -125,15 +125,14 @@ export const LandingPage = () => {
       </nav>
 
       <main className="relative z-10">
-        <section className="relative pt-44 pb-20 px-8 overflow-hidden min-h-[90vh] flex items-center">
+        <section className="relative pt-24 pb-16 md:pt-44 md:pb-32 px-6 md:px-8 overflow-hidden min-h-[80vh] md:min-h-[90vh] flex items-center bg-fluent-cream">
           {/* Architectural Background elements */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden translate-y-[-10%]">
-             <div className="absolute top-0 right-0 w-1/2 h-[120%] bg-slate-50/50 skew-x-[-18deg] origin-top translate-x-1/4 shadow-inner" />
-             <div className="absolute top-[10%] left-[-5%] w-[800px] h-[800px] bg-fluent-gold/5 blur-[160px] rounded-full animate-pulse" />
-             <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-fluent-teal/5 blur-[180px] rounded-full" />
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+             <div className="absolute top-0 right-0 w-1/3 h-full bg-slate-50/50 skew-x-[-12deg] translate-x-1/4" />
+             <div className="absolute top-[20%] left-[-10%] w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-fluent-gold/10 blur-[80px] md:blur-[120px] rounded-full animate-pulse" />
           </div>
 
-          <div className="max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-24 items-center relative z-10">
+          <div className="max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-12 md:gap-20 items-center relative z-10">
             <motion.div 
               initial="hidden"
               whileInView="visible"
@@ -141,122 +140,36 @@ export const LandingPage = () => {
               variants={containerVariants}
               className="max-w-2xl"
             >
-              <motion.div variants={itemVariants} className="mb-12" />
-
-              <motion.h1 variants={itemVariants} className="text-8xl md:text-[130px] font-serif font-bold tracking-tighter text-fluent-navy mb-12 leading-[0.82]">
+              <motion.h1 variants={itemVariants} className="text-5xl md:text-7xl lg:text-[100px] font-serif font-bold tracking-tight mb-8 md:mb-12 leading-[0.9]">
                 Master the <br />
-                <span className="italic font-light text-fluent-navy/40 pr-4">Global</span> <br />
+                <span className="italic font-light text-fluent-navy/50">Global</span><br />
                 <span className="text-fluent-teal">Standard.</span>
               </motion.h1>
               
-              <motion.p variants={itemVariants} className="text-2xl text-slate-500/80 max-w-lg mb-16 leading-relaxed font-light font-serif italic">
+              <motion.p variants={itemVariants} className="text-lg md:text-xl lg:text-2xl text-slate-600 max-w-lg mb-10 md:mb-16 leading-relaxed font-light font-serif italic">
                 A synthesis of British pedagogical precision and adaptive technology, architected for the elite scholar cohort.
               </motion.p>
 
-              <div className="flex flex-col sm:flex-row gap-6 mb-16">
-                <Btn variant="primary" size="lg" className="px-14 py-6 shadow-2xl shadow-fluent-navy/30 bg-fluent-navy hover:bg-fluent-navy/95 transition-all text-[11px] font-black uppercase tracking-[0.2em] rounded-full group" onClick={handleLogin} disabled={isLoggingIn}>
-                  <span>{isLoggingIn ? "Authenticating..." : "Commence Transformation"}</span>
-                  <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-6 mb-16">
+                <Btn variant="primary" size="lg" className="px-10 py-5 bg-fluent-navy hover:bg-fluent-navy/90 rounded-full text-[10px] font-black uppercase tracking-[0.2em]" onClick={handleLogin} disabled={isLoggingIn}>
+                  {isLoggingIn ? "Authenticating..." : "Establish Access"}
                 </Btn>
-              </div>
-
-              <div className="flex items-center gap-6">
-                 <div className="flex -space-x-4">
-                    {[1,2,3,4].map(i => (
-                      <div key={i} className="w-12 h-12 rounded-full border-4 border-fluent-cream bg-slate-200 overflow-hidden shadow-sm transition-transform hover:scale-110 hover:z-10">
-                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=student-${i + 10}`} alt="user" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                      </div>
-                    ))}
-                 </div>
-                 <div className="space-y-1">
-                    <div className="text-[10px] font-black text-fluent-navy uppercase tracking-[0.25em]">Global Cohort</div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                       <span className="text-fluent-teal">1.4k+</span> Scholars currently synthesising
-                    </div>
-                 </div>
-              </div>
+              </motion.div>
             </motion.div>
 
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9, rotate: 2 }}
-              whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 1.2, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="relative lg:pl-12"
+              transition={{ duration: 1, delay: 0.2 }}
+              className="relative"
             >
-              <div className="relative z-20 w-full max-w-lg mx-auto lg:ml-auto">
-                 <div className="bg-fluent-navy p-12 rounded-[80px] shadow-[0_40px_100px_-20px_rgba(13,27,42,0.4)] relative overflow-hidden ring-1 ring-white/10 group">
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-fluent-gold/5 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-                    <div className="absolute -top-24 -right-24 w-80 h-80 bg-fluent-gold/10 rounded-full blur-[100px]" />
-                    
-                    <div className="relative z-10 space-y-12">
-                       <div className="space-y-3">
-                          <div className="flex items-center gap-3">
-                             <motion.div 
-                               animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-                               transition={{ duration: 3, repeat: Infinity }}
-                               className="w-2.5 h-2.5 rounded-full bg-fluent-gold shadow-[0_0_15px_rgba(180,140,84,1)]" 
-                             />
-                             <span className="text-[10px] font-black text-fluent-gold uppercase tracking-[0.4em] font-mono">Cognitive Node Alpha</span>
-                          </div>
-                          <h3 className="text-5xl font-serif text-white font-bold tracking-tight">Scholar Index</h3>
-                       </div>
-
-                       <div className="space-y-12">
-                          {[
-                            { name: 'Pure Mathematics', progress: 94, color: 'bg-fluent-gold' },
-                            { name: 'Advanced Science', progress: 89, color: 'bg-fluent-teal' },
-                            { name: 'Global Literature', progress: 97, color: 'bg-white' }
-                          ].map((subject, idx) => (
-                            <div key={subject.name} className="space-y-5">
-                               <div className="flex justify-between items-end">
-                                  <div className="space-y-1.5">
-                                     <span className="text-white font-serif text-2xl block leading-none">{subject.name}</span>
-                                     <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] font-mono">Protocol {idx + 1}</span>
-                                  </div>
-                                  <span className="text-fluent-gold font-mono font-bold text-lg tracking-widest">{subject.progress}%</span>
-                                </div>
-                               <div className="h-[2px] w-full bg-white/5 rounded-full overflow-hidden">
-                                  <motion.div 
-                                    initial={{ width: 0 }}
-                                    whileInView={{ width: `${subject.progress}%` }}
-                                    viewport={{ once: true }}
-                                    transition={{ duration: 2.5, delay: 0.6 + (idx * 0.2), ease: [0.16, 1, 0.3, 1] }}
-                                    className={`h-full ${subject.color} shadow-[0_0_20px_rgba(255,255,255,0.3)]`} 
-                                  />
-                               </div>
-                            </div>
-                          ))}
-                       </div>
-
-                       <div className="pt-12 border-t border-white/5 flex items-center justify-between">
-                          <div className="flex items-center gap-5">
-                             <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 shadow-inner group-hover:scale-110 transition-transform">
-                                <Users size={20} className="text-white/80" />
-                             </div>
-                             <div>
-                                <div className="text-[11px] font-black text-white/40 uppercase tracking-[0.25em]">Registry Intake</div>
-                                <div className="text-[10px] font-bold text-fluent-teal uppercase tracking-widest">Active Synthesis Phase</div>
-                             </div>
-                          </div>
-                          <div className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_10px_rgba(74,222,128,0.5)]" />
-                       </div>
-                    </div>
-                 </div>
-
-                 {/* Floating Decorative Orbs */}
-                 <motion.div 
-                    animate={{ y: [0, -20, 0], rotate: [0, 5, 0] }}
-                    transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute -top-12 -right-12 w-32 h-32 bg-white/5 backdrop-blur-3xl rounded-[40px] border border-white/10 flex items-center justify-center shadow-2xl z-30"
-                 >
-                    <BookOpen size={40} className="text-fluent-gold/40" />
-                 </motion.div>
-              </div>
-
-              {/* Architectural Decorative elements */}
-              <div className="absolute -top-32 -right-32 w-[500px] h-[500px] bg-fluent-gold/5 blur-[150px] rounded-full pointer-events-none" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] border border-black/5 rounded-full opacity-10 pointer-events-none" />
+                  <img 
+                    src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop" 
+                    alt="Scholar Excellence" 
+                    className="rounded-[64px] w-full h-[500px] lg:h-[600px] object-cover shadow-2xl"
+                    referrerPolicy="no-referrer"
+                  />
             </motion.div>
           </div>
         </section>
@@ -279,23 +192,23 @@ export const LandingPage = () => {
            </motion.div>
         </div>
 
-        <section id="diagnosis" className="py-24 px-8 bg-white relative overflow-hidden">
+        <section id="diagnosis" className="py-16 md:py-24 px-6 md:px-8 bg-white relative overflow-hidden">
            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-24 bg-gradient-to-b from-transparent to-black/5" />
           
           <div className="max-w-7xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-20 items-center mb-16">
+            <div className="grid lg:grid-cols-2 gap-12 md:gap-20 items-center mb-16">
               <div>
                 <div className="text-[10px] font-black text-red-500 uppercase tracking-[0.5em] mb-4 font-mono">Status Audit: CRITICAL</div>
-                <h2 className="text-6xl md:text-7xl font-serif font-bold text-fluent-navy leading-[0.9] mb-6 tracking-tight">
+                <h2 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold text-fluent-navy leading-[0.9] mb-6 tracking-tight">
                   Identifying the <br />
                   <span className="italic font-light text-red-500/80">Quiet Barriers.</span>
                 </h2>
-                <p className="text-lg text-slate-500 leading-relaxed max-w-lg mb-8 font-serif opacity-80">
+                <p className="text-base md:text-lg text-slate-500 leading-relaxed max-w-lg mb-8 font-serif opacity-80">
                   Academic stagnation is rarely a lack of effort. It is almost always a structural failure in confidence and methodology.
                 </p>
-                <div className="p-8 bg-fluent-navy text-white rounded-[32px]">
-                   <h4 className="text-xl font-bold font-serif mb-4 italic">Core Insight</h4>
-                   <p className="text-white/80 leading-relaxed">"Students do not fail due to lack of intelligence—they struggle due to lack of structured learning, confidence training, and effective teaching systems."</p>
+                <div className="p-6 md:p-8 bg-fluent-navy text-white rounded-[24px] md:rounded-[32px]">
+                   <h4 className="text-lg md:text-xl font-bold font-serif mb-4 italic">Core Insight</h4>
+                   <p className="text-white/80 leading-relaxed text-sm md:text-base">"Students do not fail due to lack of intelligence—they struggle due to lack of structured learning, confidence training, and effective teaching systems."</p>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -318,153 +231,34 @@ export const LandingPage = () => {
 
         <section id="differentiation" className="py-24 px-8 bg-slate-50">
            <div className="max-w-7xl mx-auto">
-              <h2 className="text-5xl font-serif font-bold text-fluent-navy text-center mb-20 tracking-tight">The Academy Advantage</h2>
-              <div className="grid md:grid-cols-2 gap-8">
-                 <Card className="p-10 rounded-[32px] shadow-sm">
-                    <h3 className="text-2xl font-bold text-red-500 mb-8 italic">Traditional Platforms</h3>
+              <div className="flex flex-col md:flex-row justify-between items-center mb-24 gap-6">
+                <h2 className="text-5xl font-serif font-bold text-fluent-navy tracking-tight">The Academy Advantage</h2>
+                <div className="h-px bg-fluent-navy/20 flex-grow mx-10" />
+                <div className="text-[10px] font-black text-fluent-teal uppercase tracking-[0.3em]">Systemic Distinction</div>
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-12">
+                 <div className="space-y-8">
+                    <h3 className="text-2xl font-serif font-bold text-slate-900 border-b border-slate-200 pb-4">Traditional Models</h3>
                     <ul className="space-y-4">
-                       {['Content-heavy but outcome-light', 'Minimal, reactive feedback', 'Zero teacher training', 'No performance visibility', 'Individual-based approach'].map(item => (
-                          <li key={item} className="flex gap-3 text-slate-600 font-medium">❌ {item}</li>
+                       {['Content-limited, reactive pedagogy', 'Fragmented feedback loops', 'No systemic teacher training', 'No performance visibility', 'Individual-based approach'].map(item => (
+                          <li key={item} className="flex gap-4 p-4 rounded-xl bg-slate-100 text-slate-500 font-medium text-sm"><span>❌</span> {item}</li>
                        ))}
                     </ul>
-                 </Card>
-                 <Card className="p-10 rounded-[32px] shadow-xl border-t-4 border-fluent-teal">
-                    <h3 className="text-2xl font-bold text-fluent-teal mb-8 italic">Fluent Academy</h3>
+                 </div>
+                 <div className="space-y-8 p-10 rounded-[32px] bg-fluent-navy text-white">
+                    <h3 className="text-2xl font-serif font-bold text-white border-b border-white/20 pb-4">Fluent Academy</h3>
                     <ul className="space-y-4">
-                       {['Learning + Training Integrated', 'Data-driven, proactive feedback', 'Continuous teacher development', 'Full systemic transparency', 'Scalable ecosystem approach'].map(item => (
-                          <li key={item} className="flex gap-3 text-fluent-navy font-bold">✅ {item}</li>
+                       {['Learning + Training Integrated', 'Data-driven, proactive synthesis', 'Continuous faculty evolution', 'Full systemic transparency', 'Scalable ecosystem approach'].map(item => (
+                          <li key={item} className="flex gap-4 p-4 rounded-xl bg-white/10 text-white font-bold text-sm"><span>✅</span> {item}</li>
                        ))}
                     </ul>
-                 </Card>
+                 </div>
               </div>
            </div>
         </section>
 
-        <section id="targeting" className="py-24 px-8 bg-white">
-           <div className="max-w-7xl mx-auto">
-              <h2 className="text-5xl font-serif font-bold text-fluent-navy text-center mb-20 tracking-tight">Ecosystem Participants</h2>
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                 {[
-                    { title: "Students", desc: "Classes 6–12 seeking mastery & confidence." },
-                    { title: "Parents", desc: "Seek visibility, accountability & outcomes." },
-                    { title: "Teachers", desc: "Need structured support & feedback." },
-                    { title: "Schools", desc: "Aim for consistent quality & results." }
-                 ].map(user => (
-                    <Card key={user.title} className="p-8 rounded-[32px] bg-slate-50 border-none">
-                       <h4 className="text-xl font-bold font-serif mb-4 text-fluent-navy">{user.title}</h4>
-                       <p className="text-slate-500 text-sm leading-relaxed">{user.desc}</p>
-                    </Card>
-                 ))}
-              </div>
-           </div>
-        </section>
 
-        <section id="methodology" className="py-24 px-6 bg-fluent-cream/30 relative overflow-hidden">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-24 items-center">
-               <motion.div
-                 initial={{ opacity: 0, x: -30 }}
-                 whileInView={{ opacity: 1, x: 0 }}
-                 viewport={{ once: true }}
-                 transition={{ duration: 1 }}
-               >
-                  <div className="text-[10px] font-black text-fluent-teal uppercase tracking-[0.5em] mb-8 uppercase">The Synthesis Methodology</div>
-                  <h2 className="text-6xl md:text-7xl font-serif font-bold text-fluent-navy mb-10 leading-[0.9] tracking-tight">
-                    A Deep <br />
-                    <span className="italic font-light">Architectural</span> <br />
-                    Shift.
-                  </h2>
-                  <div className="space-y-8">
-                    {[
-                      { icon: <BookOpen size={20} className="text-fluent-teal" />, title: "Conceptual Frameworks", desc: "Moving beyond rote learning into first-principles thinking. We architect understanding from the foundation up." },
-                      { icon: <Zap size={20} className="text-fluent-gold" />, title: "Adaptive Scaffolding", desc: "Our AI-powered engine adjusts the support level in real-time based on the scholar's cognitive load." },
-                      { icon: <Target size={20} className="text-fluent-navy" />, title: "Articulation Protocols", desc: "Structured training to ensure every thought is synthesised into clear, confident communication." }
-                    ].map((item, i) => (
-                      <div key={i} className="flex gap-6 group">
-                         <div className="w-14 h-14 shrink-0 rounded-[24px] bg-white flex items-center justify-center shadow-[0_10px_20px_-5px_rgba(0,0,0,0.05)] border border-black/5 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
-                            {item.icon}
-                         </div>
-                         <div className="pt-1">
-                            <h3 className="font-serif font-bold text-xl text-fluent-navy mb-2">{item.title}</h3>
-                            <p className="text-slate-500 text-sm leading-relaxed max-w-sm opacity-80">{item.desc}</p>
-                         </div>
-                      </div>
-                    ))}
-                  </div>
-               </motion.div>
-               <div className="relative">
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 1.2 }}
-                    className="bg-fluent-navy rounded-[64px] p-4 overflow-hidden shadow-[0_60px_100px_-30px_rgba(13,27,42,0.4)] relative"
-                  >
-                    <div className="absolute inset-0 z-10" />
-                    <img 
-                      src="https://images.unsplash.com/photo-1577880216142-8549e9488ecd?q=80&w=2070&auto=format&fit=crop" 
-                      alt="Indian Student Learning" 
-                      className="rounded-[48px] w-full h-[700px] object-cover relative z-0"
-                      referrerPolicy="no-referrer"
-                    />
-                  </motion.div>
-                  <motion.div 
-                    initial={{ opacity: 0, x: -20, y: 20 }}
-                    whileInView={{ opacity: 1, x: 0, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.8, delay: 0.6 }}
-                    className="absolute -bottom-16 -left-16 bg-white p-12 rounded-[48px] shadow-2xl border border-black/5 max-w-sm backdrop-blur-xl bg-white/90"
-                  >
-                     <p className="italic font-serif text-2xl text-fluent-navy mb-6 leading-relaxed">“Our scholars don't just learn; they find their voice and own the room.”</p>
-                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-fluent-gold/10 flex items-center justify-center text-fluent-gold">
-                           <Award size={20} />
-                        </div>
-                        <div>
-                           <div className="text-[10px] font-black uppercase tracking-[0.2em] text-fluent-navy">Dr. Alistair Sterling</div>
-                           <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Academy Provost</div>
-                        </div>
-                     </div>
-                  </motion.div>
-               </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="vision" className="py-24 px-8 bg-white">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-20">
-               <div className="text-[10px] font-black text-fluent-gold uppercase tracking-[0.5em] mb-6 font-mono">Our Foundation</div>
-               <h2 className="text-6xl font-serif font-bold text-fluent-navy tracking-tight">Vision & Philosophy</h2>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-10">
-               <Card className="p-10 rounded-[32px] border-none shadow-sm hover:shadow-xl transition-shadow bg-white">
-                  <h3 className="text-2xl font-serif font-bold mb-6 text-black">Our Vision</h3>
-                  <p className="text-lg font-serif italic text-black leading-relaxed">"To build the world’s most trusted learning and training platform that improves student outcomes by combining subject mastery, confidence development, and continuous teacher training."</p>
-               </Card>
-               <Card className="p-10 rounded-[32px] border-none shadow-sm hover:shadow-xl transition-shadow bg-fluent-cream">
-                  <h3 className="text-2xl font-serif font-bold mb-6 text-fluent-navy">Our Mission</h3>
-                  <p className="text-lg font-serif italic text-fluent-navy leading-relaxed">"To create a structured, data-driven system where every student improves academically and personally, and every teacher continuously evolves."</p>
-               </Card>
-            </div>
-
-            <div className="mt-16 grid grid-cols-2 lg:grid-cols-4 gap-8">
-               {[
-                 { title: "Subject Mastery", icon: BookOpen },
-                 { title: "Confidence Dev.", icon: Zap },
-                 { title: "Teacher Excellence", icon: Users },
-                 { title: "Data & Accountability", icon: Target },
-               ].map((pillar, i) => (
-                  <div key={i} className="text-center p-8 border border-black/5 rounded-[24px]">
-                     <pillar.icon className="mx-auto mb-6 text-fluent-teal" size={32} />
-                     <h4 className="font-serif font-bold text-fluent-navy text-lg">{pillar.title}</h4>
-                  </div>
-               ))}
-            </div>
-
-          </div>
-        </section>
 
         <section id="how-it-works" className="py-24 px-8 bg-fluent-cream">
           <div className="max-w-7xl mx-auto">
@@ -501,158 +295,8 @@ export const LandingPage = () => {
           </div>
         </section>
 
-        <section id="benefits" className="py-24 px-6 relative overflow-hidden">
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/clean-gray-paper.png')] opacity-20 pointer-events-none" />
-          
-          <div className="max-w-7xl mx-auto border-y border-black/5 py-24 relative z-10">
-            <div className="text-center mb-20">
-              <div className="text-[10px] font-black text-fluent-gold uppercase tracking-[0.5em] mb-6">Competitive Distinction</div>
-              <h2 className="text-5xl font-serif font-bold text-fluent-navy tracking-tight">The British Standard.</h2>
-            </div>
-            
-            <div className="grid md:grid-cols-3 gap-16">
-               {[
-                 { title: "Independant Pedagogy", desc: "Instructional protocols derived from the world's most elite private school systems in the UK." },
-                 { title: "Oxbridge-Calibre Mentors", desc: "Access faculty who have mastered the world's most competitive academic landscapes." },
-                 { title: "Radical Transparency", desc: "Granular mastery audits delivered weekly, ensuring no gap remains unidentified." }
-               ].map((usp, i) => (
-                 <motion.div 
-                   key={i} 
-                   className="text-center group"
-                   initial={{ opacity: 0, y: 20 }}
-                   whileInView={{ opacity: 1, y: 0 }}
-                   viewport={{ once: true }}
-                   transition={{ duration: 0.8, delay: i * 0.1 }}
-                 >
-                    <div className="text-fluent-gold font-serif text-[100px] mb-[-40px] opacity-10 group-hover:opacity-20 transition-opacity duration-700 select-none leading-none">0{i + 1}</div>
-                    <h3 className="text-2xl font-serif font-bold text-fluent-navy mb-4 relative z-10">{usp.title}</h3>
-                    <p className="text-slate-500 leading-relaxed text-base opacity-80 max-w-xs mx-auto">{usp.desc}</p>
-                 </motion.div>
-               ))}
-            </div>
-          </div>
-        </section>
 
-        <section id="programs" className="py-24 px-8 bg-white relative overflow-hidden">
-           <div className="max-w-7xl mx-auto">
-             <div className="flex flex-col md:flex-row justify-between items-end gap-10 mb-20">
-                <div className="max-w-xl">
-                   <div className="text-[10px] font-black text-fluent-gold uppercase tracking-[0.5em] mb-4 font-mono">Academic Offerings</div>
-                   <h2 className="text-6xl md:text-7xl font-serif font-bold text-fluent-navy leading-[0.9] tracking-tight">
-                      Global <br />
-                      <span className="italic font-light text-fluent-navy/40 pr-2">Curriculum</span> <br />
-                      Design.
-                   </h2>
-                </div>
-                <p className="text-lg text-slate-400 font-serif italic max-w-sm mb-4">Elite educational pathways designed for cognitive depth and competitive advantage.</p>
-             </div>
 
-             <div className="grid lg:grid-cols-3 gap-6">
-                {[
-                  { 
-                    title: "Foundation Module", 
-                    level: "Grade 6-8",
-                    icon: <Target className="text-fluent-navy" size={28} />,
-                    desc: "Architecting the core mathematical and scientific foundations required for advanced British pedagogical success.",
-                    features: ["First-Principles Thinking", "Conceptual Mathematics", "Scientific Literacy"]
-                  },
-                  { 
-                    title: "Advanced Secondary", 
-                    level: "Grade 9-10",
-                    icon: <Zap className="text-fluent-gold" size={28} />,
-                    desc: "Pre-IGCSE and secondary rigorous synthesis, focusing on articulation protocols and deep conceptual clarity.",
-                    features: ["Articulation Training", "Oxbridge-Style Socratic Seminars", "Adaptive Scaffolding"]
-                  },
-                  { 
-                    title: "Elite Collegiate", 
-                    level: "Grade 11-12",
-                    icon: <Award className="text-fluent-teal" size={28} />,
-                    desc: "Preparation for the world's most competitive universities with 1:1 faculty mentorship and scholarship strategy.",
-                    features: ["University Entrance Strategy", "1:1 Faculty Mentorship", "Peer Synthesis Labs"]
-                  }
-                ].map((program, i) => (
-                  <motion.div 
-                    key={i}
-                    initial={{ opacity: 0, y: 15 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.1 }}
-                  >
-                    <Card className="p-10 h-full rounded-[48px] border-black/5 bg-slate-50/20 group hover:bg-white hover:shadow-2xl transition-all duration-700">
-                       <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-8 shadow-sm border border-black/5 group-hover:scale-110 group-hover:rotate-3 transition-all">
-                          {program.icon}
-                       </div>
-                       <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{program.level}</div>
-                       <h3 className="text-2xl font-serif font-bold text-fluent-navy mb-4">{program.title}</h3>
-                       <p className="text-[13px] text-slate-500 mb-8 leading-relaxed font-medium">{program.desc}</p>
-                       
-                       <ul className="space-y-3 pt-6 border-t border-black/5">
-                          {program.features.map(f => (
-                            <li key={f} className="flex items-center gap-3 text-[9px] font-black text-fluent-navy/60 uppercase tracking-widest">
-                               <div className="w-1 h-1 rounded-full bg-fluent-teal" />
-                               {f}
-                            </li>
-                          ))}
-                       </ul>
-                    </Card>
-                  </motion.div>
-                ))}
-             </div>
-           </div>
-        </section>
-
-        <section id="portals" className="py-24 px-6 bg-fluent-cream/40 relative overflow-hidden">
-           <div className="absolute top-0 right-0 w-full h-[300px] bg-gradient-to-b from-white to-transparent pointer-events-none" />
-           
-          <div className="max-w-7xl mx-auto relative z-10">
-            <div className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-10">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-              >
-                <div className="text-[10px] font-black text-fluent-navy uppercase tracking-[0.5em] mb-6">Unified Infrastructure</div>
-                <h2 className="text-[60px] md:text-[100px] font-serif font-bold tracking-tight text-fluent-navy mb-0 leading-[0.8] mix-blend-multiply opacity-5">PORTALS</h2>
-                <h2 className="text-6xl font-serif font-bold tracking-tight text-fluent-navy mt-[-30px]">
-                  The <span className="italic font-light">Academic</span> Hub.
-                </h2>
-              </motion.div>
-              <p className="text-slate-400 text-base max-w-sm mb-4">A unified command center for scholars, faculty, and guardians to synchronise on the mastery path.</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[
-                { title: 'Student Node', icon: <GraduationCap size={24} />, color: 'bg-fluent-navy', desc: 'Personalised practice, content mastery, and live peer synthesis.' },
-                { title: 'Guardian View', icon: <UserCheck size={24} />, color: 'bg-fluent-teal', desc: 'Real-time transparency on marks, attendance, and behavioral audits.' },
-                { title: 'Faculty Sync', icon: <BookOpen size={24} />, color: 'bg-fluent-gold', desc: 'Instructional management, mastery marking, and feedback loops.' },
-                { title: 'Command Base', icon: <Settings size={24} />, color: 'bg-fluent-navy', desc: 'Global academy administrative control and scholarship oversight.' }
-              ].map((portal, idx) => (
-                <motion.div
-                  key={portal.title}
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: idx * 0.05 }}
-                >
-                  <Card hover className="p-10 flex flex-col h-full rounded-[48px] border-none shadow-none hover:shadow-2xl transition-all duration-700 bg-white group overflow-hidden relative" onClick={handleLogin}>
-                    <div className="absolute -top-12 -right-12 w-40 h-40 bg-slate-50 rounded-full group-hover:scale-[3] transition-transform duration-1000 -z-10" />
-                    
-                    <div className={`w-14 h-14 ${portal.color} text-white rounded-[20px] flex items-center justify-center mb-10 shadow-xl group-hover:scale-110 transition-transform duration-500`}>
-                      {portal.icon}
-                    </div>
-                    <h3 className="text-2xl font-serif font-bold text-fluent-navy mb-4 leading-tight">{portal.title}</h3>
-                    <p className="text-[13px] text-slate-400 mb-10 flex-1 leading-relaxed">{portal.desc}</p>
-                    
-                    <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.3em] text-fluent-navy group cursor-pointer mt-auto border-t border-black/5 pt-6">
-                      <span>Enter Interface</span>
-                      <div className="w-6 h-px bg-fluent-navy group-hover:w-10 transition-all" />
-                    </div>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
 
         <section id="pricing" className="py-24 px-8 bg-white relative">
           <div className="max-w-7xl mx-auto">
@@ -824,7 +468,7 @@ export const LandingPage = () => {
         )}
       </AnimatePresence>
 
-      <footer className="py-20 px-8 border-t border-black/5 bg-white relative overflow-hidden">
+      <footer className="py-20 px-8 border-t border-black/5 bg-fluent-navy text-white relative overflow-hidden">
         {/* Decorative corner element */}
         <div className="absolute bottom-0 right-0 w-64 h-64 bg-slate-50 -skew-x-12 translate-x-32 translate-y-32 z-0" />
         
