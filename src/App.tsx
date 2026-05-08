@@ -15,6 +15,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from
 import { LandingPage } from './components/LandingPage';
 import { OnboardingFlow } from './components/OnboardingFlow';
 import { FacultyHub } from './components/FacultyHub';
+import { TeacherDashboard } from './components/TeacherDashboard';
 import { StudentDashboard } from './components/StudentDashboard';
 import { ParentDashboard } from './components/ParentDashboard';
 import { AdminDashboard } from './components/AdminCommand';
@@ -122,6 +123,7 @@ function AppContent() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/onboarding" element={<OnboardingFlow onComplete={handleOnboardingComplete} onBack={() => auth.signOut()} />} />
       <Route path="/teacher-dashboard" element={<FacultyHub profile={profile} onBack={() => auth.signOut()} />} />
+      <Route path="/teacher-dashboard-v2" element={<TeacherDashboard />} />
       <Route path="/student-dashboard" element={<StudentDashboard profile={profile} onBack={() => auth.signOut()} />} />
       <Route path="/parent-dashboard" element={<ParentDashboard profile={profile} onBack={() => auth.signOut()} />} />
       <Route path="/admin-dashboard" element={<AdminDashboard onBack={() => auth.signOut()} />} />

@@ -340,7 +340,7 @@ export const LandingPage = () => {
                   >
                     <div className="absolute inset-0 bg-fluent-navy/20 z-10" />
                     <img 
-                      src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=2070&auto=format&fit=crop" 
+                      src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=2070&auto=format&fit=crop" 
                       alt="Collaborative Learning" 
                       className="rounded-[48px] w-full h-[700px] object-cover"
                       referrerPolicy="no-referrer"
@@ -365,6 +365,41 @@ export const LandingPage = () => {
                      </div>
                   </motion.div>
                </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="how-it-works" className="py-24 px-8 bg-fluent-cream">
+          <div className="max-w-7xl mx-auto">
+            <h2 className="text-6xl font-serif font-bold text-fluent-navy mb-20 tracking-tight">How it works</h2>
+            <div className="grid md:grid-cols-4 gap-8">
+              {[
+                { n: "1", title: "Learn", desc: "Concept-first lessons with UK educators." },
+                { n: "2", title: "Practice", desc: "AI tutor adapts daily to your child's level." },
+                { n: "3", title: "Test", desc: "Weekly assessments — written and oral." },
+                { n: "4", title: "Report", desc: "Parents receive a Sunday progress brief." }
+              ].map((step, i) => (
+                <Card key={i} className="p-10 rounded-[32px] border-none shadow-sm hover:shadow-xl transition-shadow">
+                  <div className="w-16 h-16 rounded-full bg-fluent-navy text-white flex items-center justify-center text-2xl font-bold mb-8">{step.n}</div>
+                  <h3 className="text-2xl font-serif font-bold text-fluent-navy mb-4">{step.title}</h3>
+                  <p className="text-slate-500 leading-relaxed">{step.desc}</p>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="outcome" className="py-24 px-8 bg-white">
+          <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-20 items-center">
+            <img src="https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=2070&auto=format&fit=crop" className="rounded-[40px]" alt="Confidence" referrerPolicy="no-referrer" />
+            <div>
+              <h2 className="text-6xl font-serif font-bold text-fluent-navy mb-10 tracking-tight">We build <span className="italic">confidence</span> — not just marks.</h2>
+              <ul className="space-y-4 mb-10">
+                {['Answer confidently', 'Speak clearly', 'Present ideas', 'Think independently'].map(f => (
+                  <li key={f} className="flex items-center gap-3 text-lg text-fluent-navy font-medium"><div className="w-2 h-2 rounded-full bg-fluent-teal" /> {f}</li>
+                ))}
+              </ul>
+              <p className="italic font-serif text-xl border-l-4 border-fluent-gold pl-6 py-2">“Your child won't just learn — they'll speak, present and lead with confidence.”</p>
             </div>
           </div>
         </section>
@@ -522,7 +557,7 @@ export const LandingPage = () => {
           </div>
         </section>
 
-        <section id="investment" className="py-24 px-8 bg-white relative">
+        <section id="pricing" className="py-24 px-8 bg-white relative">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-24">
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.5em] mb-4 font-mono">Academic Investment</div>
@@ -569,6 +604,26 @@ export const LandingPage = () => {
                    </Card>
                  </motion.div>
                ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="testimonials" className="py-24 px-8 bg-fluent-navy text-white relative overflow-hidden">
+          <div className="max-w-7xl mx-auto">
+            <h2 className="text-6xl font-serif font-bold mb-20 tracking-tight">What parents <span className="italic font-light text-fluent-gold">say.</span></h2>
+            <div className="grid md:grid-cols-3 gap-8">
+              {[
+                { quote: "My child gained real confidence in just four weeks. He now volunteers in class.", name: "Priya M.", role: "Parent · Mumbai" },
+                { quote: "Marks improved, but more importantly her thinking is sharper. Worth every rupee.", name: "Rahul K.", role: "Parent · Bengaluru" },
+                { quote: "Best decision we made for our daughter's education. The Sunday reports are gold.", name: "Anita S.", role: "Parent · Delhi" }
+              ].map((t, i) => (
+                <Card key={i} className="p-10 rounded-[32px] bg-white/5 border-white/10">
+                  <div className="text-fluent-gold mb-6">★★★★★</div>
+                  <p className="text-lg font-serif italic mb-8 leading-relaxed">“{t.quote}”</p>
+                  <div className="font-bold">{t.name}</div>
+                  <div className="text-slate-400 text-sm">{t.role}</div>
+                </Card>
+              ))}
             </div>
           </div>
         </section>
