@@ -157,20 +157,9 @@ export const LandingPage = () => {
               </motion.div>
             </motion.div>
 
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 1, delay: 0.2 }}
-              className="relative"
-            >
-                  <img 
-                    src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop" 
-                    alt="Scholar Excellence" 
-                    className="rounded-[64px] w-full h-[500px] lg:h-[600px] object-cover shadow-2xl"
-                    referrerPolicy="no-referrer"
-                  />
-            </motion.div>
+            <div className="relative flex items-center justify-center h-[500px] lg:h-[600px] rounded-[64px] bg-fluent-navy/5 border-2 border-dashed border-fluent-navy/20">
+                <p className="text-fluent-navy/40 font-serif italic text-xl">Architecting Excellence</p>
+            </div>
           </div>
         </section>
 
@@ -229,7 +218,7 @@ export const LandingPage = () => {
           </div>
         </section>
 
-        <section id="differentiation" className="py-24 px-8 bg-slate-50">
+        <section id="benefits" className="py-24 px-8 bg-slate-50">
            <div className="max-w-7xl mx-auto">
               <div className="flex flex-col md:flex-row justify-between items-center mb-24 gap-6">
                 <h2 className="text-5xl font-serif font-bold text-fluent-navy tracking-tight">The Academy Advantage</h2>
@@ -260,7 +249,7 @@ export const LandingPage = () => {
 
 
 
-        <section id="how-it-works" className="py-24 px-8 bg-fluent-cream">
+        <section id="methodology" className="py-24 px-8 bg-fluent-cream">
           <div className="max-w-7xl mx-auto">
             <h2 className="text-6xl font-serif font-bold text-fluent-navy mb-20 tracking-tight">How it works</h2>
             <div className="grid md:grid-cols-4 gap-8">
@@ -282,7 +271,9 @@ export const LandingPage = () => {
 
         <section id="outcome" className="py-24 px-8 bg-white">
           <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-20 items-center">
-            <img src="https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=2070&auto=format&fit=crop" className="rounded-[40px]" alt="Confidence" referrerPolicy="no-referrer" />
+            <div className="rounded-[40px] bg-slate-100 p-12 flex items-center justify-center aspect-square">
+                <p className="text-slate-400 font-serif italic text-2xl text-center">Confidence Builder</p>
+            </div>
             <div>
               <h2 className="text-6xl font-serif font-bold text-fluent-navy mb-10 tracking-tight">We build <span className="italic">confidence</span> — not just marks.</h2>
               <ul className="space-y-4 mb-10">
@@ -303,8 +294,7 @@ export const LandingPage = () => {
             <div className="text-center mb-24">
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.5em] mb-4 font-mono">Academic Investment</div>
               <h2 className="text-6xl md:text-8xl font-serif font-bold text-fluent-navy tracking-tighter leading-[0.8] mb-10">
-                <span className="italic font-light opacity-30">The</span> <br /> 
-                <span className="text-fluent-navy">Standard.</span>
+                The Standard.
               </h2>
               <p className="text-base text-slate-400 max-w-sm mx-auto font-serif italic">Sustainable excellence requires institutional commitment.</p>
             </div>
@@ -381,7 +371,7 @@ export const LandingPage = () => {
             viewport={{ once: true }}
           >
             <h2 className="text-5xl md:text-7xl font-serif font-bold mb-10 leading-tight tracking-tight">
-              Architecting <br /> <span className="text-fluent-gold italic font-light">Success,</span> <br /> One Scholar at a Time.
+              Architecting <span className="text-fluent-gold italic font-light">Success,</span> <br /> One Scholar at a Time.
             </h2>
             <p className="text-white/50 text-lg mb-12 max-w-2xl mx-auto font-serif italic">“The future belongs to those who bridge the gap between effort and excellence.”</p>
             <Btn variant="gold" size="lg" className="px-16 py-6 shadow-[0_30px_60px_-15px_rgba(180,140,84,0.4)] rounded-full text-[11px] font-black uppercase tracking-[0.3em] hover:tracking-[0.4em] transition-all duration-700" onClick={() => setShowLeadModal(true)}>
@@ -475,13 +465,13 @@ export const LandingPage = () => {
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-16 mb-20">
              <div className="col-span-2">
-                <Logo className="mb-10" />
-                <p className="text-slate-400 text-lg max-w-sm leading-relaxed font-serif italic mb-12 opacity-80">
+                <Logo className="mb-10" variant="light" />
+                <p className="text-white/60 text-lg max-w-sm leading-relaxed font-serif italic mb-12 opacity-80">
                    "Synthesising British instructional excellence with adaptive technology for global academic mastery."
                 </p>
                 <div className="flex gap-4">
                    {['fb', 'tw', 'ig', 'li'].map(social => (
-                     <div key={social} className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-fluent-navy hover:text-white transition-all cursor-pointer border border-black/5">
+                     <div key={social} className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white/40 hover:bg-white hover:text-fluent-navy transition-all cursor-pointer border border-white/10">
                         <Zap size={18} />
                      </div>
                    ))}
@@ -489,49 +479,47 @@ export const LandingPage = () => {
              </div>
              
              <div>
-                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-fluent-navy/30 mb-10">Institution</h4>
+                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30 mb-10">Institution</h4>
                 <ul className="space-y-5">
                    {[
-                     { label: 'Strategy', href: '#' },
-                     { label: 'Diagnosis', href: '#diagnosis' },
                      { label: 'Methodology', href: '#methodology' },
                      { label: 'Mastery', href: '#programs' }
                    ].map(item => (
                      <li key={item.label}>
-                       <a href={item.href} className="text-sm font-bold text-slate-500 hover:text-fluent-navy transition-colors tracking-wide">{item.label}</a>
+                       <a href={item.href} className="text-sm font-bold text-white/80 hover:text-white transition-colors tracking-wide">{item.label}</a>
                      </li>
                    ))}
                 </ul>
              </div>
   
              <div>
-                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-fluent-navy/30 mb-10">Infrastructure</h4>
+                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30 mb-10">Infrastructure</h4>
                 <ul className="space-y-5">
-                   {['Student Node', 'Faculty Hub', 'Guardian View', 'Command Base'].map(item => (
+                   {['Student Node', 'Faculty Hub', 'Guardian View'].map(item => (
                      <li key={item}>
-                       <a href="#portals" className="text-sm font-bold text-slate-500 hover:text-fluent-navy transition-colors tracking-wide">{item}</a>
+                       <a href="#portals" className="text-sm font-bold text-white/80 hover:text-white transition-colors tracking-wide">{item}</a>
                      </li>
                    ))}
                 </ul>
              </div>
   
              <div>
-                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-fluent-navy/30 mb-10">Contact</h4>
+                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30 mb-10">Contact</h4>
                 <ul className="space-y-5">
-                   <li className="text-sm font-bold text-slate-500 tracking-wide">London, United Kingdom</li>
-                   <li className="text-sm font-bold text-slate-500 tracking-wide">07553886303</li>
-                   <li className="text-sm font-bold text-fluent-teal tracking-wide">infofluent.academy@gmail.com</li>
+                   <li className="text-sm font-bold text-white/80 tracking-wide">London, United Kingdom</li>
+                   <li className="text-sm font-bold text-white/80 tracking-wide">07553886303</li>
+                   <li className="text-sm font-bold text-fluent-gold tracking-wide">infofluent.academy@gmail.com</li>
                 </ul>
              </div>
           </div>
   
-          <div className="pt-12 border-t border-black/5 flex flex-col md:flex-row justify-between items-center gap-8">
-             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">
+          <div className="pt-12 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-8">
+             <div className="text-[10px] font-bold text-white/50 uppercase tracking-[0.3em]">
                 © 2026 Accountable Hindustan Institutional Trust. All Rights Reserved.
              </div>
              <div className="flex gap-10">
                 {['Privacy Protocol', 'Service Standard', 'Cookies'].map(item => (
-                  <a key={item} href="#" className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-fluent-navy transition-colors">{item}</a>
+                  <a key={item} href="#" className="text-[10px] font-black uppercase tracking-[0.3em] text-white/70 hover:text-white transition-colors">{item}</a>
                 ))}
             </div>
           </div>
