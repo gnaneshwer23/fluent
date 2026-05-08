@@ -59,13 +59,13 @@ export const DashboardShell = ({ role, title, children, navItems, activeNav, set
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-xs group relative ${
                 activeNav === item.id 
                   ? 'text-white font-bold' 
-                  : 'text-white/40 hover:text-white/80'
+                  : 'text-white/60 hover:text-white/90'
               }`}
             >
               {activeNav === item.id && (
                 <motion.div layoutId="nav-glow" className="absolute inset-0 bg-white/5 rounded-xl border border-white/10" />
               )}
-              <item.icon size={16} className={`relative z-10 ${activeNav === item.id ? 'text-fluent-gold' : 'text-white/20 group-hover:text-white/40'}`} />
+              <item.icon size={16} className={`relative z-10 ${activeNav === item.id ? 'text-fluent-gold' : 'text-white/30 group-hover:text-white/50'}`} />
               <span className="relative z-10 tracking-tight">{item.label}</span>
               {item.badge && (
                 <span className="relative z-10 ml-auto bg-fluent-gold text-fluent-navy text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter">

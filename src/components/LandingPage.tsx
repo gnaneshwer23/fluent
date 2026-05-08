@@ -380,7 +380,7 @@ export const LandingPage = () => {
             
             <div className="grid md:grid-cols-3 gap-16">
                {[
-                 { title: "Independant Pedagogy", desc: "Instructional protocols derived from the world's most elite private school systems in the UK." },
+                 { title: "Independent Pedagogy", desc: "Instructional protocols derived from the world's most elite private school systems in the UK." },
                  { title: "Oxbridge-Calibre Mentors", desc: "Access faculty who have mastered the world's most competitive academic landscapes." },
                  { title: "Radical Transparency", desc: "Granular mastery audits delivered weekly, ensuring no gap remains unidentified." }
                ].map((usp, i) => (
@@ -731,7 +731,7 @@ export const LandingPage = () => {
   
           <div className="pt-12 border-t border-black/5 flex flex-col md:flex-row justify-between items-center gap-8">
              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">
-                © 2026 Accountable Hindustan Institutional Trust. All Rights Reserved.
+                © 2026 Synthesis Academy. All Rights Reserved.
              </div>
              <div className="flex gap-10">
                 {['Privacy Protocol', 'Service Standard', 'Cookies'].map(item => (
