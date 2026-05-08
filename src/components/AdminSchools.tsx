@@ -33,9 +33,12 @@ export default function AdminSchools() {
     e.preventDefault();
     if (!form.name || !form.adminEmail) return;
 
+    const normalizedEmail = form.adminEmail.toLowerCase().trim();
+
     try {
-      await addDoc(collection(db, 'schools'), {
+      const schoolRef = await addDoc(collection(db, 'schools'), {
         ...form,
+        adminEmail: normalizedEmail,
         status: 'onboarding',
         setupProgress: {
           studentsUploaded: false,
@@ -44,31 +47,75 @@ export default function AdminSchools() {
         },
         createdAt: serverTimestamp()
       });
+      
+      // Automatically provision the admin
+      await provisionAdmin({ id: schoolRef.id, name: form.name, adminEmail: normalizedEmail });
+      
       setIsAdding(false);
       setForm({ name: "", adminEmail: "", location: "London, UK", studentCount: 0 });
     } catch (err) {
       console.error("Failed to create institution", err);
+      handleFirestoreError(err, OperationType.WRITE, 'schools');
     }
   };
 
   const provisionAdmin = async (school: any) => {
+    if (!school?.id || !school?.adminEmail) {
+      console.error("Invalid school data for provisioning");
+      return;
+    }
+
     try {
-      // Find if user already exists
-      const q = query(collection(db, 'users'), where('email', '==', school.adminEmail));
+      const email = school.adminEmail.toLowerCase().trim();
+      console.log(`Starting provisioning protocol for ${email} @ ${school.name}`);
+      
+      // Step 1: Detect existing user to prevent registration duplicates
+      const q = query(collection(db, 'users'), where('email', '==', email));
       const snap = await getDocs(q);
       
+      let adminId;
+
       if (!snap.empty) {
+        // User exists - promote their profile to administrator
         const userDoc = snap.docs[0];
-        await updateDoc(doc(db, 'users', userDoc.id), {
+        adminId = userDoc.id;
+        
+        console.log(`Existing user identified [UID: ${adminId}]. Upgrading permissions.`);
+        
+        await updateDoc(doc(db, 'users', adminId), {
           role: 'school_admin',
-          schoolId: school.id
+          schoolId: school.id,
+          school: school.name || "",
+          updatedAt: serverTimestamp()
         });
       } else {
-        // Invite system would go here, for now we'll just track that it's pending
-        alert(`Admin user with email ${school.adminEmail} must register first. After registration, their account will be automatically linked if the email matches.`);
+        // Create a bootstrap user record for new administrators
+        console.log(`No existing user record found for ${email}. Initializing new administrative identity.`);
+        
+        const userRef = await addDoc(collection(db, 'users'), {
+          email: email,
+          name: "Institutional Admin",
+          role: 'school_admin',
+          schoolId: school.id,
+          school: school.name || "",
+          onboarded: false,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        adminId = userRef.id;
       }
+
+      // Step 2: Establish the relational link in the institutional node
+      await updateDoc(doc(db, 'schools', school.id), {
+        adminId: adminId,
+        'setupProgress.adminAssigned': true,
+        updatedAt: serverTimestamp()
+      });
+
+      console.log("Provisioning successful. Administrative node linked.");
     } catch (e) {
-      handleFirestoreError(e, OperationType.UPDATE, `users/provision`);
+      console.error("Critical Provisioning Failure:", e);
+      handleFirestoreError(e, OperationType.WRITE, `users/provision/${school.id}`);
     }
   };
 
@@ -142,7 +189,7 @@ export default function AdminSchools() {
                      <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Region / Location</label>
                         <input 
-                          placeholder="e.g. Dubai, UAE"
+                          placeholder="e.g. London, UK"
                           className="w-full bg-slate-50 border border-black/5 rounded-2xl px-6 py-4 text-sm font-bold text-fluent-navy focus:outline-none focus:ring-2 focus:ring-fluent-gold/20"
                           value={form.location}
                           onChange={(e) => setForm({...form, location: e.target.value})}

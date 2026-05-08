@@ -90,7 +90,7 @@ export default function AdminAnalytics({ schoolId }: { schoolId?: string }) {
            <div className="space-y-8">
               {[
                 { label: "London Hub", value: 65, color: "bg-fluent-teal" },
-                { label: "Dubai Satellite", value: 25, color: "bg-fluent-gold" },
+                { label: "London Satellite", value: 25, color: "bg-fluent-gold" },
                 { label: "Singapore Node", value: 10, color: "bg-slate-200" }
               ].map(hub => (
                 <div key={hub.label}>

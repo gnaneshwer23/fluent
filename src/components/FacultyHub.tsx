@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Home, Users, Database, Calendar, Play, BookOpen, Settings, Plus, Search, 
   Trash2, Edit2, BarChart3, TrendingUp, Zap, CheckCircle2, ArrowRight, X, Mail, Phone, Shield, ShieldCheck, Lock, Check,
-  ClipboardList, FileText, CalendarDays, LogOut
+  ClipboardList, FileText, CalendarDays, LogOut, Library, MessageSquare
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, deleteDoc, serverTimestamp, orderBy, limit, collectionGroup, setDoc } from 'firebase/firestore';
@@ -11,6 +11,8 @@ import { handleFirestoreError, OperationType } from '../lib/errorHandling';
 import { Badge, Card, Avatar, MetricTile, ProgressBar, Btn } from './UI';
 import { DashboardShell } from './DashboardShell';
 import { LiveLab } from './LiveLab';
+import { Forum } from './Forum';
+import { MasteryLedger } from './MasteryLedger';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
 import TeacherAssignments from './TeacherAssignments';
@@ -46,12 +48,36 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
   const [studentSearch, setStudentSearch] = useState("");
   const [studentSort, setStudentSort] = useState("name-asc");
   const [feedbackCategory, setFeedbackCategory] = useState("Academic Improvement");
+  const [feedbackText, setFeedbackText] = useState("");
   const [feedbackFilter, setFeedbackFilter] = useState("All");
   const [feedbackSort, setFeedbackSort] = useState("newest");
   const [feedbackDate, setFeedbackDate] = useState(new Date().toISOString().split('T')[0]);
   const [viewingHistory, setViewingHistory] = useState<any>(null);
   const [editingStudent, setEditingStudent] = useState<any>(null);
   const [viewingStudentDetail, setViewingStudentDetail] = useState<any>(null);
+  const [studentModalTab, setStudentModalTab] = useState<'overview' | 'history'>('overview');
+  const [studentHistory, setStudentHistory] = useState<any[]>([]);
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+
+  useEffect(() => {
+    if (!viewingStudentDetail?.id || studentModalTab !== 'history') return;
+    
+    // Students might be identified by sid or id in progress collection
+    const sid = viewingStudentDetail.id;
+    const q = query(
+      collection(db, 'progress'), 
+      where('studentId', '==', sid),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const unsub = onSnapshot(q, (snap) => {
+      setStudentHistory(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'progress');
+    });
+    
+    return () => unsub();
+  }, [viewingStudentDetail?.id, studentModalTab]);
   const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [bulkText, setBulkText] = useState("");
   const [unassignedStudents, setUnassignedStudents] = useState<any[]>([]);
@@ -152,6 +178,8 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
     { id: "cohorts", label: "Cohorts", icon: Users },
     { id: "assignments", label: "Assignments", icon: ClipboardList },
     { id: "analytics", label: "Analytics", icon: BarChart3, badge: "AI" },
+    { id: "ledger", label: "Mastery Ledger", icon: Library },
+    { id: "forum", label: "Global Forum", icon: MessageSquare, badge: "Comm" },
     { id: "reports", label: "Accountability", icon: FileText, badge: "Weekly" },
     { id: "attendance", label: "Roll Call", icon: CalendarDays },
     { id: "live", label: "Live Lab", icon: Play, badge: "Live" },
@@ -252,7 +280,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
         id: sessionId,
         className: cls.name,
         subject: cls.subject,
-        topic: `Live ${cls.subject} Synthesis`,
+        topic: cls.topic || `Live ${cls.subject} Synthesis`,
         teacherId: auth.currentUser.uid,
         teacherName,
         activeCount: 0,
@@ -267,32 +295,31 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
 
   return (
     <DashboardShell role="teacher" title={teacherName} navItems={navItems} activeNav={activeNav} setActiveNav={setActiveNav} onBack={onBack}>
-      <div className="p-10 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <header className="flex flex-col md:flex-row justify-between items-start gap-8 mb-12">
+      <div className="p-6 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <header className="flex flex-col md:flex-row justify-between items-start gap-6 mb-10">
           <div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-1.5">
               <Badge color="teal">Expert Faculty</Badge>
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-[10px] text-green-600 font-bold uppercase tracking-wider">• {department} Department Access</span>
+              <span className="text-[9px] text-green-600 font-bold uppercase tracking-wider">• {department} Department Access</span>
             </div>
-            <h1 className="text-4xl font-serif font-bold tracking-tight">
+            <h1 className="text-3xl font-serif font-bold tracking-tight">
               Welcome, <span className="text-fluent-teal italic font-normal">{teacherName.split(' ')[0]}</span> ✦
             </h1>
-            <p className="text-slate-500 mt-1">
+            <p className="text-slate-500 mt-1 text-sm">
               Focusing on <span className="font-bold text-fluent-navy">{profile?.goal || "British Scaffolding"}</span> • {classes.length} cohorts active.
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2">
              <Btn variant="outline" size="sm" icon={Plus} onClick={() => setShowCreateModal(true)}>New Cohort</Btn>
-             {activeNav === 'overview' && <Btn variant="gold" size="sm" icon={Play}>Enter {department} Lab</Btn>}
-             <Btn variant="ghost" size="sm" className="text-red-500 hover:bg-red-50" icon={LogOut} onClick={onBack}>Sign Out</Btn>
+             {activeNav === 'overview' && <Btn variant="gold" size="sm" icon={Play} onClick={() => setActiveNav("live")}>Enter Lab</Btn>}
           </div>
         </header>
 
         {activeNav === 'overview' ? (
-          <div className="grid lg:grid-cols-12 gap-8 items-start">
+          <div className="grid lg:grid-cols-12 gap-6 items-start">
             {/* Main Command Console */}
-            <div className="lg:col-span-8 space-y-8">
+            <div className="lg:col-span-8 space-y-6">
               <div className="grid sm:grid-cols-4 gap-4">
                 <MetricTile label="Total Cohorts" value={classes.length.toString()} icon={Users} color="#1B4F5E" />
                 <MetricTile label="Avg Mastery" value="84%" delta="+4.2%" icon={TrendingUp} color="#0D1B2A" />
@@ -304,21 +331,21 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
               {alerts.length > 0 && (
                 <Card className="border-red-400/20 bg-red-400/5 overflow-hidden shadow-none ring-1 ring-red-400/10">
                   <div className="p-4 border-b border-red-400/10 bg-red-400/10 flex items-center justify-between">
-                     <div className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em] flex items-center gap-2">
+                     <div className="text-[9px] font-black text-red-500 uppercase tracking-[0.3em] flex items-center gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                        Critical Scaffolding Warnings
+                        Scaffolding Warnings
                      </div>
-                     <span className="text-[9px] font-bold text-red-400/60 uppercase">Impact Level: High</span>
+                     <span className="text-[8px] font-bold text-red-400/60 uppercase">Impact: High</span>
                   </div>
                   <div className="divide-y divide-red-400/10">
                     {alerts.map((a, i) => (
-                      <div key={i} className="p-6 flex justify-between items-center group hover:bg-red-400/5 transition-all">
+                      <div key={i} className="p-4 flex justify-between items-center group hover:bg-red-400/5 transition-all">
                         <div>
-                          <div className="text-[10px] font-bold text-red-400/60 uppercase mb-1">{a.class}</div>
-                          <div className="text-lg font-bold text-fluent-navy tracking-tight">{a.student}</div>
-                          <p className="text-xs text-slate-500 mt-1 italic">{a.msg}</p>
+                          <div className="text-[9px] font-bold text-red-400/60 uppercase mb-1">{a.class}</div>
+                          <div className="text-base font-bold text-fluent-navy tracking-tight">{a.student}</div>
+                          <p className="text-xs text-slate-500 mt-0.5 italic">{a.msg}</p>
                         </div>
-                        <Btn variant="primary" size="sm" className="bg-red-500 hover:bg-red-600 border-none shadow-lg shadow-red-500/20 text-[10px] px-6">Intervene</Btn>
+                        <Btn variant="primary" size="sm" className="bg-red-500 hover:bg-red-600 border-none shadow-lg shadow-red-500/20 text-[9px] px-4">Intervene</Btn>
                       </div>
                     ))}
                   </div>
@@ -327,44 +354,55 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
 
               {/* Orchestration Feed - Technical Grid */}
               <Card className="overflow-hidden border-black/5 shadow-none ring-1 ring-black/5">
-                <div className="p-6 border-b border-black/5 bg-gray-50/50 flex justify-between items-center">
-                   <h3 className="text-sm font-bold text-fluent-navy uppercase tracking-widest flex items-center gap-2">
-                      <Database size={16} className="text-slate-400" />
+                <div className="p-4 border-b border-black/5 bg-gray-50/50 flex justify-between items-center">
+                   <h3 className="text-xs font-bold text-fluent-navy uppercase tracking-widest flex items-center gap-2">
+                      <Database size={14} className="text-slate-400" />
                       Synthetic Delivery Feed
                    </h3>
                    <div className="flex gap-2">
-                      <Badge color="navy" className="text-[9px]">Filter: Active</Badge>
+                      <Badge color="navy" className="text-[8px]">Active</Badge>
                    </div>
                 </div>
                 <div className="divide-y divide-black/5">
                   {sessions.map((s, i) => (
                     <div key={i} className="flex hover:bg-slate-50 transition-all group">
-                      <div className="w-24 p-6 border-r border-black/5 flex flex-col items-center justify-center bg-gray-50/30 group-hover:bg-white transition-colors">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">{s.time.split(' - ')[0]}</span>
-                        <div className="h-4 w-px bg-slate-200 my-1" />
-                        <span className="text-[10px] font-bold text-slate-400 uppercase leading-none">{s.time.split(' - ')[1]}</span>
+                      <div className="w-20 p-4 border-r border-black/5 flex flex-col items-center justify-center bg-gray-50/30 group-hover:bg-white transition-colors">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase leading-none mb-1">{s.time.split(' - ')[0]}</span>
+                        <div className="h-3 w-px bg-slate-200 my-1" />
+                        <span className="text-[9px] font-bold text-slate-400 uppercase leading-none">{s.time.split(' - ')[1]}</span>
                       </div>
-                      <div className="flex-1 p-6 flex justify-between items-center">
+                      <div className="flex-1 p-4 flex justify-between items-center">
                         <div>
-                          <div className="flex items-center gap-3 mb-1">
-                            <span className="text-[11px] font-black text-fluent-navy uppercase tracking-[0.15em]">{s.class}</span>
-                            <span className="text-[10px] text-slate-400 font-medium">// {s.subject} Unit</span>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-[10px] font-black text-fluent-navy uppercase tracking-[0.15em]">{s.class}</span>
+                            <span className="text-[9px] text-slate-400 font-medium">// {s.subject} Unit</span>
                           </div>
-                          <div className="text-lg font-serif font-bold text-fluent-navy">{s.topic}</div>
+                          <div className="text-base font-serif font-bold text-fluent-navy">{s.topic}</div>
                         </div>
-                        <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-4">
                            <div className="text-right">
                               {s.status === 'live' ? (
-                                <div className="flex items-center gap-2 text-fluent-teal font-black text-[10px] uppercase tracking-widest">
+                                <div className="flex items-center gap-1.5 text-fluent-teal font-black text-[9px] uppercase tracking-widest">
                                    <div className="w-1.5 h-1.5 rounded-full bg-fluent-teal animate-pulse" />
                                    Transmitting
                                 </div>
                               ) : (
-                                <div className="text-slate-300 font-bold text-[10px] uppercase tracking-widest">{s.status}</div>
+                                <Badge color={s.status === 'completed' ? 'gray' : 'gold'} className="text-[8px] uppercase tracking-widest">{s.status}</Badge>
                               )}
                            </div>
-                           <Btn variant="outline" size="sm" className="p-3" onClick={() => s.status === 'live' && handleStartSession({id: s.class, name: s.class, subject: s.subject})}>
-                              {s.status === 'live' ? <Play size={14} className="fill-current" /> : <ArrowRight size={14} />}
+                           <Btn 
+                             variant={s.status === 'upcoming' ? 'primary' : 'outline'} 
+                             size="sm" 
+                             className={`min-w-[100px] text-[9px] font-black uppercase tracking-widest ${s.status === 'upcoming' ? 'shadow-lg shadow-fluent-teal/10' : ''}`}
+                             icon={Play} 
+                             onClick={() => handleStartSession({
+                               id: s.class.replace(/\s+/g, '-').toLowerCase(), 
+                               name: s.class, 
+                               subject: s.subject,
+                               topic: s.topic
+                             })}
+                           >
+                             {s.status === 'live' ? 'Re-Enter' : s.status === 'completed' ? 'Review' : 'Initialize'}
                            </Btn>
                         </div>
                       </div>
@@ -372,27 +410,41 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                   ))}
                 </div>
               </Card>
+
+              {/* Assignment Overview Section */}
+              <Card className="overflow-hidden border-black/5 shadow-none ring-1 ring-black/5">
+                <div className="p-4 border-b border-black/5 bg-gray-50/50 flex justify-between items-center">
+                   <h3 className="text-xs font-bold text-fluent-navy uppercase tracking-widest flex items-center gap-2">
+                      <ClipboardList size={14} className="text-slate-400" />
+                      Challenges
+                   </h3>
+                   <Btn variant="ghost" size="sm" className="text-[9px] font-bold uppercase tracking-widest" onClick={() => setActiveNav("assignments")}>View All</Btn>
+                </div>
+                <div className="p-0">
+                   <TeacherAssignments mini />
+                </div>
+              </Card>
             </div>
 
             {/* Right Side: Registry & Quick Stats */}
-            <div className="lg:col-span-4 space-y-8">
-              <Card className="p-10 bg-fluent-navy text-white relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-12 opacity-10 rotate-12">
-                   <ShieldCheck size={160} />
+            <div className="lg:col-span-4 space-y-6">
+              <Card className="p-8 bg-fluent-navy text-white relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12">
+                   <ShieldCheck size={120} />
                 </div>
                 <div className="relative z-10">
-                   <h3 className="text-2xl font-serif font-bold mb-2 italic">Institutional Reach</h3>
-                   <div className="text-white/40 text-[10px] font-bold uppercase tracking-[0.3em] mb-10">Department Analytics</div>
+                   <h3 className="text-xl font-serif font-bold mb-1 italic">Institutional Reach</h3>
+                   <div className="text-white/40 text-[9px] font-bold uppercase tracking-[0.3em] mb-6">Analytic Summary</div>
                    
-                   <div className="space-y-10">
+                   <div className="space-y-6">
                       {classes.slice(0, 3).map((c, i) => (
-                        <div key={i} className="space-y-3">
+                        <div key={i} className="space-y-2">
                            <div className="flex justify-between items-end">
                               <div>
-                                 <div className="text-[11px] font-bold text-fluent-gold uppercase tracking-widest">{c.name}</div>
-                                 <div className="text-[10px] text-white/40 font-mono mt-1">{c.students} active scholars</div>
+                                 <div className="text-[10px] font-bold text-fluent-gold uppercase tracking-widest">{c.name}</div>
+                                 <div className="text-[9px] text-white/40 font-mono mt-0.5">{c.students} active scholars</div>
                               </div>
-                              <div className="text-2xl font-mono font-medium tracking-tighter">{c.avgScore}%</div>
+                              <div className="text-xl font-mono font-medium tracking-tighter">{c.avgScore}%</div>
                            </div>
                            <div className="h-1 bg-white/5 rounded-full overflow-hidden">
                               <motion.div 
@@ -405,30 +457,25 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                       ))}
                    </div>
                    
-                   <Btn variant="gold" size="md" className="w-full mt-12 py-5 text-[10px] font-black tracking-[0.2em]" onClick={() => setActiveNav("cohorts")}>FULL COHORT AUDIT</Btn>
+                   <Btn variant="gold" size="md" className="w-full mt-8 py-4 text-[9px] font-black tracking-[0.2em]" onClick={() => setActiveNav("cohorts")}>FULL AUDIT</Btn>
                 </div>
               </Card>
 
-              <Card className="p-8 border-black/5 group cursor-pointer" onClick={() => setActiveNav("registry")}>
-                 <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-sm font-bold text-fluent-navy uppercase tracking-widest">Registry Intake</h3>
-                    <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-fluent-teal group-hover:text-white transition-all">
-                       <Plus size={14} />
+              <Card className="p-6 border-black/5 group cursor-pointer" onClick={() => setActiveNav("registry")}>
+                 <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-[10px] font-bold text-fluent-navy uppercase tracking-widest">Registry Intake</h3>
+                    <div className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-fluent-teal group-hover:text-white transition-all">
+                       <Plus size={12} />
                     </div>
                  </div>
-                 <div className="space-y-4">
+                 <div className="space-y-3">
                     {unassignedStudents.slice(0, 3).map((s, i) => (
-                       <div key={i} className="flex items-center gap-4">
-                          <Avatar name={s.name} size={32} />
-                          <div className="text-xs font-bold text-slate-600">{s.name}</div>
-                          <Badge color="gray" className="ml-auto text-[9px]">Draft</Badge>
+                       <div key={i} className="flex items-center gap-3">
+                          <Avatar name={s.name} size={28} />
+                          <div className="text-[11px] font-bold text-slate-600">{s.name}</div>
+                          <Badge color="gray" className="ml-auto text-[8px]">Draft</Badge>
                        </div>
                     ))}
-                    {unassignedStudents.length > 3 && (
-                       <div className="text-[10px] text-slate-400 font-bold text-center pt-2 italic">
-                          +{unassignedStudents.length - 3} more awaiting synchronisation
-                       </div>
-                    )}
                  </div>
               </Card>
             </div>
@@ -724,13 +771,17 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
           <TeacherAssignments />
         ) : activeNav === "analytics" ? (
           <TeacherAnalytics teacherId={auth.currentUser?.uid || "system"} />
+        ) : activeNav === "ledger" ? (
+          <MasteryLedger userProfile={profile} />
+        ) : activeNav === "forum" ? (
+          <Forum userProfile={profile} />
         ) : activeNav === "reports" ? (
           <TeacherReports />
         ) : activeNav === "attendance" ? (
           <TeacherAttendance />
         ) : activeNav === "live" ? (
           activeSessionId ? (
-            <LiveLab sessionId={activeSessionId} role="teacher" onExit={() => setActiveNav("overview")} />
+            <LiveLab sessionId={activeSessionId} role="teacher" onExit={() => setActiveNav("overview")} userProfile={profile} />
           ) : (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
                <div className="max-w-2xl">
@@ -925,7 +976,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                       {classStudents
                         .filter(s => s.name.toLowerCase().includes(studentSearch.toLowerCase()))
                         .map(s => (
-                        <div key={s.id} onClick={() => setViewingStudentDetail(s)} className="p-5 border border-black/5 rounded-2xl hover:border-fluent-teal transition-all flex items-center justify-between group cursor-pointer">
+                        <div key={s.id} onClick={() => { setViewingStudentDetail(s); setStudentModalTab('overview'); }} className="p-5 border border-black/5 rounded-2xl hover:border-fluent-teal transition-all flex items-center justify-between group cursor-pointer">
                            <div className="flex items-center gap-4">
                               <Avatar name={s.name} size={44} />
                               <div>
@@ -1013,7 +1064,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                 animate={{ opacity: 1, x: 0 }}
                 className="relative w-full max-w-2xl bg-white rounded-[48px] shadow-2xl overflow-hidden flex flex-col max-h-[95vh]"
               >
-                 <div className="p-10 border-b border-black/5 bg-fluent-navy text-white relative">
+                  <div className="p-10 border-b border-black/5 bg-fluent-navy text-white relative">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-[80px] -mr-32 -mt-32" />
                     <button onClick={() => setViewingStudentDetail(null)} className="absolute top-8 right-8 text-white/40 hover:text-white"><X size={24} /></button>
                     
@@ -1028,69 +1079,212 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                           <p className="text-white/40 text-sm font-medium mt-1">Enrolled: {viewingStudentDetail.enrolledAt ? new Date(viewingStudentDetail.enrolledAt).toLocaleDateString() : "Recent"}</p>
                        </div>
                     </div>
-                 </div>
 
-                 <div className="flex-1 overflow-auto p-10 space-y-10">
-                    <section>
-                       <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Academic Performance Overview</h3>
-                       <div className="grid grid-cols-2 gap-4">
-                          <Card className="bg-gray-50 border-black/5 shadow-none">
-                             <div className="text-[10px] font-bold text-slate-400 uppercase mb-2">Average Mastery</div>
-                             <div className="text-3xl font-mono font-bold text-fluent-navy">{viewingStudentDetail.total > 0 ? Math.round((viewingStudentDetail.attended/viewingStudentDetail.total)*100) : 0}%</div>
-                             <ProgressBar value={viewingStudentDetail.total > 0 ? Math.round((viewingStudentDetail.attended/viewingStudentDetail.total)*100) : 0} showPct={false} />
-                          </Card>
-                          <Card className="bg-gray-50 border-black/5 shadow-none">
-                             <div className="text-[10px] font-bold text-slate-400 uppercase mb-2">Attendance Rate</div>
-                             <div className="text-3xl font-mono font-bold text-fluent-teal">{viewingStudentDetail.total > 0 ? Math.round((viewingStudentDetail.attended/viewingStudentDetail.total)*100) : 100}%</div>
-                             <div className="text-[10px] text-slate-400 font-bold uppercase mt-2">{viewingStudentDetail.attended} / {viewingStudentDetail.total} Sessions</div>
-                          </Card>
-                       </div>
-                    </section>
+                    <div className="flex gap-8 mt-8 relative z-10">
+                       <button 
+                         onClick={() => setStudentModalTab('overview')}
+                         className={`text-[10px] font-black uppercase tracking-[0.2em] pb-2 transition-all ${studentModalTab === 'overview' ? 'text-fluent-gold border-b-2 border-fluent-gold' : 'text-white/40 hover:text-white'}`}
+                       >
+                         Overview
+                       </button>
+                       <button 
+                         onClick={() => setStudentModalTab('history')}
+                         className={`text-[10px] font-black uppercase tracking-[0.2em] pb-2 transition-all ${studentModalTab === 'history' ? 'text-fluent-gold border-b-2 border-fluent-gold' : 'text-white/40 hover:text-white'}`}
+                       >
+                         Performance History
+                       </button>
+                    </div>
+                  </div>
 
-                    <section>
-                       <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Contact Intelligence</h3>
-                       <div className="space-y-4">
-                          <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-black/5">
-                             <div className="w-10 h-10 rounded-xl bg-white border border-black/5 flex items-center justify-center text-slate-400"><Mail size={18} /></div>
-                             <div className="flex-1">
-                                <div className="text-[9px] font-bold text-slate-400 uppercase">Guardian Contact</div>
-                                <input className="w-full bg-transparent font-bold text-sm text-fluent-navy outline-none" defaultValue={viewingStudentDetail.email || "notset@student.com"} />
+                  <div className="flex-1 overflow-auto p-10 space-y-10">
+                    {studentModalTab === 'overview' ? (
+                      <>
+                        <section>
+                           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Academic Performance Overview</h3>
+                           <div className="grid grid-cols-2 gap-4">
+                              <Card className="bg-gray-50 border-black/5 shadow-none">
+                                 <div className="text-[10px] font-bold text-slate-400 uppercase mb-2">Average Mastery</div>
+                                 <div className="text-3xl font-mono font-bold text-fluent-navy">{viewingStudentDetail.total > 0 ? Math.round((viewingStudentDetail.attended/viewingStudentDetail.total)*100) : 0}%</div>
+                                 <ProgressBar value={viewingStudentDetail.total > 0 ? Math.round((viewingStudentDetail.attended/viewingStudentDetail.total)*100) : 0} showPct={false} />
+                              </Card>
+                              <Card className="bg-gray-50 border-black/5 shadow-none">
+                                 <div className="text-[10px] font-bold text-slate-400 uppercase mb-2">Attendance Rate</div>
+                                 <div className="text-3xl font-mono font-bold text-fluent-teal">{viewingStudentDetail.total > 0 ? Math.round((viewingStudentDetail.attended/viewingStudentDetail.total)*100) : 100}%</div>
+                                 <div className="text-[10px] text-slate-400 font-bold uppercase mt-2">{viewingStudentDetail.attended} / {viewingStudentDetail.total} Sessions</div>
+                              </Card>
+                           </div>
+                        </section>
+
+                        <section>
+                           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Contact Intelligence</h3>
+                           <div className="space-y-4">
+                              <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-black/5">
+                                 <div className="w-10 h-10 rounded-xl bg-white border border-black/5 flex items-center justify-center text-slate-400"><Mail size={18} /></div>
+                                 <div className="flex-1">
+                                    <div className="text-[9px] font-bold text-slate-400 uppercase">Guardian Contact</div>
+                                    <input className="w-full bg-transparent font-bold text-sm text-fluent-navy outline-none" defaultValue={viewingStudentDetail.email || "notset@student.com"} />
+                                 </div>
+                              </div>
+                           </div>
+                         </section>
+                         <section>
+                           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Faculty Assessment</h3>
+                           <div className="space-y-4">
+                              <div className="flex flex-col gap-4">
+                                 <div className="flex flex-col sm:flex-row gap-4 items-start">
+                                   <div className="w-full sm:w-64">
+                                     <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block px-1">Evaluation Category</label>
+                                     <select 
+                                       value={feedbackCategory}
+                                       onChange={(e) => setFeedbackCategory(e.target.value)}
+                                       className="w-full p-3 bg-gray-50 border border-black/5 rounded-xl text-xs font-bold text-fluent-navy outline-none focus:ring-2 focus:ring-fluent-teal/10 transition-all"
+                                     >
+                                       <option value="Academic Improvement">Academic Improvement</option>
+                                       <option value="Behavioral Analysis">Behavioral Analysis</option>
+                                       <option value="Engagement Level">Engagement Level</option>
+                                       <option value="Technical Synthesis">Technical Synthesis</option>
+                                       <option value="Executive Function">Executive Function</option>
+                                     </select>
+                                   </div>
+                                 </div>
+                                 
+                                 <div className="space-y-2">
+                                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block px-1">Private Observations</label>
+                                    <textarea 
+                                      placeholder="Log faculty observations, scaffolding needs, or diagnostic notes..."
+                                      className="w-full p-4 bg-gray-50 border border-black/5 rounded-2xl text-sm min-h-[120px] outline-none focus:bg-white focus:ring-4 focus:ring-fluent-teal/5 focus:border-fluent-teal/20 transition-all"
+                                      value={feedbackText}
+                                      onChange={(e) => setFeedbackText(e.target.value)}
+                                    />
+                                 </div>
+                                 
+                                 <div className="flex justify-end">
+                                    <Btn 
+                                      variant="primary" 
+                                      size="sm" 
+                                      disabled={isSubmittingFeedback || !feedbackText.trim()}
+                                      onClick={async () => {
+                                        if (!feedbackText.trim() || isSubmittingFeedback) return;
+                                        
+                                        setIsSubmittingFeedback(true);
+                                        try {
+                                          // 1. Log to global progress collection for cross-node tracking
+                                          await addDoc(collection(db, 'progress'), {
+                                            studentId: viewingStudentDetail.id,
+                                            studentName: viewingStudentDetail.name,
+                                            teacherId: auth.currentUser?.uid,
+                                            teacherName: teacherName,
+                                            topic: feedbackCategory,
+                                            feedback: feedbackText.trim(),
+                                            marks: 0,
+                                            category: "Faculty Feedback",
+                                            createdAt: serverTimestamp()
+                                          });
+
+                                          // 2. Generate Critical Alert if assessment marks are included (placeholder check)
+                                          // Note: In this view we are logging 'feedback', if we want to log 'marks' we'd use a different flow, 
+                                          // but let's add a generic behavioral alert trigger here for certain phrases.
+                                          if (feedbackText.toLowerCase().includes("at risk") || feedbackText.toLowerCase().includes("urgent")) {
+                                            await addDoc(collection(db, "alerts"), {
+                                              type: "FACULTY_NOTE",
+                                              level: "critical",
+                                              message: `Urgent Faculty Note for ${viewingStudentDetail.name}: ${feedbackText.substring(0, 50)}...`,
+                                              studentId: viewingStudentDetail.id,
+                                              schoolId: profile?.schoolId || "",
+                                              status: "active",
+                                              date: serverTimestamp()
+                                            });
+                                          }
+  
+                                          // 2. Update the specific student document in the class subcollection if possible
+                                          if (selectedClassForStudents?.id) {
+                                            const studentRef = doc(db, 'classes', selectedClassForStudents.id, 'students', viewingStudentDetail.id);
+                                            const newFeedback = {
+                                              id: Date.now().toString(),
+                                              text: feedbackText.trim(),
+                                              category: feedbackCategory,
+                                              date: new Date().toISOString(),
+                                              authorName: teacherName
+                                            };
+                                            const existing = viewingStudentDetail.privateFeedback || [];
+                                            await updateDoc(studentRef, { privateFeedback: [newFeedback, ...existing] });
+                                          }
+                                          
+                                          setFeedbackText("");
+                                          alert("Faculty assessment synchronised successfully.");
+                                        } catch (e) {
+                                           handleFirestoreError(e, OperationType.WRITE, `progress`);
+                                        } finally {
+                                          setIsSubmittingFeedback(false);
+                                        }
+                                     }}>
+                                      {isSubmittingFeedback ? "Synchronising..." : "Log Assessment"}
+                                     </Btn>
+                                 </div>
+                              </div>
+                           </div>
+                        </section>
+                      </>
+                    ) : (
+                      <section className="animate-in fade-in slide-in-from-right-4 duration-500">
+                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Performance & Feedback History</h3>
+                        <div className="space-y-6">
+                           {studentHistory.length === 0 && (viewingStudentDetail.privateFeedback || []).length === 0 ? (
+                             <div className="p-20 text-center border-2 border-dashed border-black/5 rounded-[32px]">
+                                <div className="text-slate-300 mb-2"><ClipboardList size={40} className="mx-auto opacity-20" /></div>
+                                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">No historical logs found</p>
                              </div>
-                          </div>
-                       </div>
-                    </section>
-
-                    <section>
-                       <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Faculty Assessment</h3>
-                       <div className="space-y-4">
-                          <div className="flex gap-4">
-                             <textarea 
-                               placeholder="Add private feedback..."
-                               className="flex-1 p-4 bg-gray-50 border rounded-2xl text-sm min-h-[100px] outline-none"
-                               id="student-feedback-text-profile"
-                             />
-                             <Btn variant="primary" size="sm" onClick={async () => {
-                                const text = (document.getElementById('student-feedback-text-profile') as HTMLTextAreaElement).value;
-                                if (!text.trim()) return;
-                                try {
-                                  const studentRef = doc(db, 'classes', selectedClassForStudents.id, 'students', viewingStudentDetail.id);
-                                  const newFeedback = {
-                                    id: Date.now().toString(),
-                                    text: text.trim(),
-                                    category: "Academic Improvement",
-                                    date: new Date().toISOString()
-                                  };
-                                  const existing = viewingStudentDetail.privateFeedback || [];
-                                  await updateDoc(studentRef, { privateFeedback: [newFeedback, ...existing] });
-                                  (document.getElementById('student-feedback-text-profile') as HTMLTextAreaElement).value = "";
-                                } catch (e) {
-                                   handleFirestoreError(e, OperationType.UPDATE, `classes/${selectedClassForStudents.id}/students/${viewingStudentDetail.id}`);
-                                }
-                             }}>Log</Btn>
-                          </div>
-                       </div>
-                    </section>
-                 </div>
+                           ) : (
+                             <div className="space-y-4">
+                                {[
+                                  ...studentHistory.map(h => ({ 
+                                    ...h, 
+                                    type: h.marks > 0 ? 'report' : 'feedback',
+                                    sortDate: h.createdAt?.toDate ? h.createdAt.toDate() : new Date(h.createdAt || 0) 
+                                  })),
+                                  ...(viewingStudentDetail.privateFeedback || []).map((f: any) => ({ 
+                                    ...f, 
+                                    type: 'feedback', 
+                                    sortDate: new Date(f.date || 0) 
+                                  }))
+                                ]
+                                .filter((v, i, a) => a.findIndex(t => (t.id === v.id || t.text === v.text)) === i) // Deduplicate
+                                .sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime())
+                                .map((item, idx) => (
+                                  <div key={idx} className="p-6 bg-slate-50 rounded-2xl border border-black/5 transition-all hover:bg-white hover:shadow-lg group">
+                                     <div className="flex justify-between items-start mb-3">
+                                        <div className="flex items-center gap-3">
+                                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${item.type === 'report' ? 'bg-fluent-teal/10 text-fluent-teal' : 'bg-fluent-gold/10 text-fluent-gold'}`}>
+                                              {item.type === 'report' ? <TrendingUp size={14} /> : <ClipboardList size={14} />}
+                                           </div>
+                                           <div>
+                                              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.type === 'report' ? 'Assessment Report' : 'Faculty Feedback'}</div>
+                                              <div className="text-xs font-bold text-fluent-navy mt-0.5">{item.topic || item.category || "General Synthesis"}</div>
+                                           </div>
+                                        </div>
+                                        <div className="text-[10px] font-bold text-slate-300">
+                                           {item.sortDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                        </div>
+                                     </div>
+                                     <p className="text-sm text-slate-600 leading-relaxed font-medium">
+                                        {item.feedback || item.text}
+                                     </p>
+                                     {item.marks !== undefined && item.marks > 0 && (
+                                       <div className="mt-4 flex items-center gap-4 pt-4 border-t border-black/5">
+                                          <div className="flex-1 h-1 bg-black/5 rounded-full overflow-hidden">
+                                             <div className="h-full bg-fluent-teal" style={{ width: `${item.marks}%` }} />
+                                          </div>
+                                          <div className="text-xs font-bold text-fluent-teal">{item.marks}% Score</div>
+                                       </div>
+                                     )}
+                                  </div>
+                                ))}
+                             </div>
+                           )}
+                        </div>
+                      </section>
+                    )}
+                  </div>
                  
                  <div className="p-8 bg-gray-50 border-t border-black/5 flex gap-3">
                     <Btn variant="primary" className="flex-1" onClick={() => setViewingStudentDetail(null)}>Close Profile</Btn>

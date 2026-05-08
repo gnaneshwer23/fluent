@@ -281,6 +281,41 @@
         "date": { "type": "string", "format": "date-time" }
       },
       "required": ["teacherId", "month", "avgMarks"]
+    },
+    "ForumMessage": {
+      "title": "Forum Message",
+      "description": "Global communication transmission.",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userRole": { "type": "string" },
+        "topic": { "type": "string" },
+        "schoolId": { "type": "string" },
+        "likes": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["text", "userId", "topic"]
+    },
+    "MasteryResource": {
+      "title": "Mastery Resource",
+      "description": "Synthesized academic node or study material.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "type": { "type": "string", "enum": ["guide", "paper", "video", "interactive"] },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "url": { "type": "string" },
+        "authorName": { "type": "string" },
+        "isAiGenerated": { "type": "boolean" },
+        "tier": { "type": "string", "enum": ["foundation", "advanced", "elite"] },
+        "downloads": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "category", "type", "tier"]
     }
   },
   "firestore": {
@@ -299,6 +334,25 @@
     "users/{userId}/notifications": {
         "schema": "Notification",
         "description": "User notifications."
+    },
+    "forum_messages": {
+        "schema": "ForumMessage",
+        "description": "Global forum messages for community discourse."
+    },
+    "mastery_resources": {
+        "schema": "MasteryResource",
+        "description": "Stored academic resources and synthesized briefs."
+    },
+    "platform": {
+        "schema": {
+            "type": "object",
+            "properties": {
+                "globalChat": { "type": "boolean" },
+                "directive": { "type": "string" },
+                "directiveUpdatedAt": { "type": "string", "format": "date-time" }
+            }
+        },
+        "description": "Global platform configurations and broadcasts."
     },
     "bookings": {
         "schema": "Booking",

@@ -17,7 +17,7 @@ import { OnboardingFlow } from './components/OnboardingFlow';
 import { FacultyHub } from './components/FacultyHub';
 import { StudentDashboard } from './components/StudentDashboard';
 import { ParentDashboard } from './components/ParentDashboard';
-import { AdminCommand } from './components/AdminCommand';
+import { AdminDashboard } from './components/AdminCommand';
 
 function AppContent() {
   const [user, setUser] = useState<User | null>(null);
@@ -124,8 +124,8 @@ function AppContent() {
       <Route path="/teacher-dashboard" element={<FacultyHub profile={profile} onBack={() => auth.signOut()} />} />
       <Route path="/student-dashboard" element={<StudentDashboard profile={profile} onBack={() => auth.signOut()} />} />
       <Route path="/parent-dashboard" element={<ParentDashboard profile={profile} onBack={() => auth.signOut()} />} />
-      <Route path="/admin-dashboard" element={<AdminCommand onBack={() => auth.signOut()} />} />
-      <Route path="/school_admin-dashboard" element={<AdminCommand onBack={() => auth.signOut()} schoolId={profile?.schoolId} />} />
+      <Route path="/admin-dashboard" element={<AdminDashboard onBack={() => auth.signOut()} />} />
+      <Route path="/school_admin-dashboard" element={<AdminDashboard onBack={() => auth.signOut()} schoolId={profile?.schoolId} />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );

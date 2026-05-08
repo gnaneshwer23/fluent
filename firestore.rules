@@ -115,6 +115,27 @@ service cloud.firestore {
         allow read: if isSignedIn();
         allow create: if isSignedIn();
       }
+
+      match /scholars/{scholarId} {
+        allow read: if isSignedIn();
+        allow write: if isSignedIn() && request.auth.uid == scholarId;
+      }
+    }
+
+    match /forum_messages/{msgId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update, delete: if isAdmin() || (isSignedIn() && existing().userId == request.auth.uid);
+    }
+
+    match /mastery_resources/{resourceId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin() || isTeacher();
+    }
+
+    match /platform/{configId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
 
     match /waitlist/{entryId} {

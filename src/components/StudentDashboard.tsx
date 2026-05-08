@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Home, BookOpen, Calendar, BarChart3, Award, Settings, Bell, Play, 
-  Sparkles, Zap, CheckCircle2, ArrowRight, Target, ClipboardList, MessageCircle, LogOut
+  Sparkles, Zap, CheckCircle2, ArrowRight, Target, ClipboardList, MessageCircle, LogOut, Library
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { collectionGroup, query, where, onSnapshot, collection, limit } from 'firebase/firestore';
@@ -12,6 +12,8 @@ import { DashboardShell } from './DashboardShell';
 import { BookingModal } from './BookingModal';
 import { MasteryHeatmap } from './Charts';
 import { LiveLab } from './LiveLab';
+import { Forum } from './Forum';
+import { MasteryLedger } from './MasteryLedger';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from 'recharts';
 
 // New Sub-components
@@ -82,8 +84,10 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
     { id: "overview", label: "Home", icon: Home },
     { id: "sessions", label: "My Classes", icon: Calendar, badge: "Live" },
     { id: "assignments", label: "Assignments", icon: ClipboardList },
+    { id: "ledger", label: "Mastery Ledger", icon: Library, badge: "New" },
     { id: "progress", label: "Progress Report", icon: BarChart3 },
-    { id: "confidence", label: "Confidence", icon: MessageCircle },
+    { id: "forum", label: "Global Forum", icon: MessageCircle, badge: "Comm" },
+    { id: "confidence", label: "Confidence", icon: Sparkles },
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
@@ -136,30 +140,30 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
 
   return (
     <DashboardShell role="student" title={studentName} navItems={navItems} activeNav={activeNav} setActiveNav={setActiveNav} onBack={onBack}>
-      <div className="p-10 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <header className="flex flex-col md:flex-row justify-between items-start gap-8 mb-12">
+      <div className="p-6 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <header className="flex flex-col md:flex-row justify-between items-start gap-6 mb-10">
           <div>
-            <div className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.15em] mb-2">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} • {studentGrade}</div>
-            <h1 className="text-4xl font-serif font-bold tracking-tight">
+            <div className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.15em] mb-1.5">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} • {studentGrade}</div>
+            <h1 className="text-3xl font-serif font-bold tracking-tight">
               Good morning, <span className="text-fluent-teal italic font-normal">{studentName.split(' ')[0]}</span> ✦
             </h1>
             {alerts.length > 0 && (
-              <div className="flex items-center gap-2 mt-4 px-4 py-2 bg-red-50 border border-red-100 rounded-full w-fit animate-pulse">
-                <Zap size={14} className="text-red-500 fill-red-500" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-red-600">{alerts.length} Critical System Warnings</span>
+              <div className="flex items-center gap-2 mt-3 px-3 py-1.5 bg-red-50 border border-red-100 rounded-full w-fit animate-pulse">
+                <Zap size={12} className="text-red-500 fill-red-500" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-red-600">{alerts.length} Critical System Warnings</span>
               </div>
             )}
-            <p className="text-slate-500 mt-2">Targeting {profile?.goal || "Academic Excellence"} • Momentum looks strong.</p>
+            <p className="text-slate-500 mt-1.5 text-sm">Targeting {profile?.goal || "Academic Excellence"} • Momentum looks strong.</p>
           </div>
 
-          <div className="p-6 bg-fluent-teal/5 border border-fluent-teal/10 rounded-2xl">
-            <div className="font-bold text-fluent-teal mb-2 uppercase text-xs tracking-widest flex items-center gap-2">
-              <Sparkles size={14} /> Personalised Focus
+          <div className="p-4 bg-fluent-teal/5 border border-fluent-teal/10 rounded-2xl">
+            <div className="font-bold text-fluent-teal mb-1.5 uppercase text-[9px] tracking-widest flex items-center gap-2">
+              <Sparkles size={12} /> Personalised Focus
             </div>
-            <div className="space-y-1">
-              <p className="text-sm text-slate-600">Goal: <span className="font-bold text-fluent-navy">{profile?.goal || "Academic Excellence"}</span></p>
-              {profile?.learningGoals && <p className="text-[11px] text-slate-500 italic">Objectives: {profile.learningGoals}</p>}
-              {profile?.preferredStudyMethods && <p className="text-[11px] text-slate-400 font-bold uppercase tracking-tighter">Method: {profile.preferredStudyMethods}</p>}
+            <div className="space-y-0.5">
+              <p className="text-xs text-slate-600">Goal: <span className="font-bold text-fluent-navy">{profile?.goal || "Academic Excellence"}</span></p>
+              {profile?.learningGoals && <p className="text-[10px] text-slate-500 italic">Objectives: {profile.learningGoals}</p>}
+              {profile?.preferredStudyMethods && <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Method: {profile.preferredStudyMethods}</p>}
             </div>
           </div>
           
@@ -203,9 +207,9 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
         </header>
 
         {activeNav === "overview" ? (
-          <div className="grid lg:grid-cols-12 gap-8 items-start">
+          <div className="grid lg:grid-cols-12 gap-6 items-start">
             {/* Left Column: Stats & Timetable */}
-            <div className="lg:col-span-8 space-y-8">
+            <div className="lg:col-span-8 space-y-6">
               <div className="grid sm:grid-cols-4 gap-4">
                 <MetricTile label="Mastery Index" value={`${overallMastery}%`} delta="+2.4%" icon={BarChart3} color="#1B4F5E" />
                 <MetricTile label="Live Credits" value={`${totalSessions}`} icon={Calendar} color="#0D1B2A" />
@@ -215,35 +219,35 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
 
               {/* Live Session Timetable - Visible Grid Style */}
               <Card className="overflow-hidden border-black/5 shadow-none ring-1 ring-black/5">
-                <div className="p-6 border-b border-black/5 bg-gray-50/50 flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                <div className="p-4 border-b border-black/5 bg-gray-50/50 flex justify-between items-center text-[9px] font-bold uppercase tracking-widest text-slate-400">
                   <span>Standardised Timetable • Week 18</span>
                   <div className="flex gap-4">
-                    <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-fluent-teal" /> Live</span>
-                    <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-slate-200" /> Planned</span>
+                    <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-fluent-teal" /> Live</span>
+                    <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-slate-200" /> Planned</span>
                   </div>
                 </div>
                 <div className="divide-y divide-black/5">
                   {upcomingSessions.map((s, i) => (
                     <div key={i} className="flex hover:bg-slate-50 transition-all cursor-pointer group">
-                      <div className="w-20 p-6 border-r border-black/5 flex flex-col items-center justify-center bg-gray-50/30 group-hover:bg-white transition-colors">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">{s.time.split(',')[0]}</span>
-                        <span className="text-xl font-serif font-bold text-fluent-navy">16</span>
+                      <div className="w-16 p-4 border-r border-black/5 flex flex-col items-center justify-center bg-gray-50/30 group-hover:bg-white transition-colors">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase">{s.time.split(',')[0]}</span>
+                        <span className="text-lg font-serif font-bold text-fluent-navy leading-none mt-1">16</span>
                       </div>
-                      <div className="flex-1 p-6 flex justify-between items-center">
+                      <div className="flex-1 p-4 flex justify-between items-center">
                         <div>
-                          <div className="flex items-center gap-3 mb-1">
-                            <span className="text-[11px] font-bold text-fluent-teal uppercase tracking-widest">{s.subject}</span>
-                            <Badge color="gold" className="text-[9px] px-1.5 py-0">Main Stage</Badge>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-[10px] font-bold text-fluent-teal uppercase tracking-widest">{s.subject}</span>
+                            <Badge color="gold" className="text-[8px] px-1.5 py-0">Main Stage</Badge>
                           </div>
-                          <div className="text-lg font-bold text-fluent-navy tracking-tight">{s.topic}</div>
+                          <div className="text-base font-bold text-fluent-navy tracking-tight">{s.topic}</div>
                         </div>
                         <div className="text-right">
-                          <div className="text-[11px] font-bold text-slate-600">{s.teacher}</div>
-                          <div className="text-[10px] text-slate-400">British Faculty Board</div>
+                          <div className="text-[10px] font-bold text-slate-600">{s.teacher}</div>
+                          <div className="text-[9px] text-slate-400">British Faculty Board</div>
                         </div>
                       </div>
-                      <div className="w-32 border-l border-black/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                         <Btn variant="primary" size="sm" icon={Play} onClick={handleJoin}>Join Now</Btn>
+                      <div className="w-28 border-l border-black/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                         <Btn variant="primary" size="sm" icon={Play} onClick={handleJoin}>Join</Btn>
                       </div>
                     </div>
                   ))}
@@ -251,38 +255,38 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
               </Card>
 
               {/* Personalised Path */}
-              <Card className="p-10 border-fluent-teal/20 bg-gradient-to-br from-white to-fluent-teal/5 relative overflow-hidden">
-                 <div className="absolute top-0 right-0 p-8 opacity-10">
-                    <Sparkles size={120} className="text-fluent-teal" />
+              <Card className="p-8 border-fluent-teal/20 bg-gradient-to-br from-white to-fluent-teal/5 relative overflow-hidden">
+                 <div className="absolute top-0 right-0 p-6 opacity-10">
+                    <Sparkles size={100} className="text-fluent-teal" />
                  </div>
                  <div className="relative z-10">
-                    <div className="flex justify-between items-start mb-10">
+                    <div className="flex justify-between items-start mb-8">
                        <div>
-                          <h3 className="text-2xl font-serif font-bold tracking-tight">Synthesis Trajectory</h3>
-                          <p className="text-sm text-slate-500 mt-1 italic font-medium leading-relaxed">Generated by Provost Alpheus for {studentName}</p>
+                          <h3 className="text-xl font-serif font-bold tracking-tight">Synthesis Trajectory</h3>
+                          <p className="text-xs text-slate-500 mt-1 italic font-medium leading-relaxed">Generated by Provost Alpheus for {studentName}</p>
                        </div>
-                       <Badge color="teal" className="p-2 px-6 shadow-xl shadow-fluent-teal/10 uppercase tracking-widest text-[9px] font-black">AI Orchestrated</Badge>
+                       <Badge color="teal" className="p-1.5 px-4 shadow-xl shadow-fluent-teal/10 uppercase tracking-widest text-[8px] font-black">AI Orchestrated</Badge>
                     </div>
                     
-                    <div className="grid md:grid-cols-2 gap-10">
-                       <div className="space-y-6">
-                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4">Core Concepts Identified</div>
-                          <div className="space-y-3">
+                    <div className="grid md:grid-cols-2 gap-8">
+                       <div className="space-y-4">
+                          <div className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">Core Concepts Identified</div>
+                          <div className="space-y-2">
                              {(profile?.learningGoals || ["Elite Board Performance", "STEM Logic"]).map((goal: string, idx: number) => (
-                                <div key={idx} className="flex items-center gap-4 group">
-                                   <div className="w-2 h-2 rounded-full border-2 border-fluent-teal group-hover:bg-fluent-teal transition-colors" />
-                                   <span className="text-xs font-bold text-fluent-navy tracking-tight uppercase tracking-widest">{goal}</span>
+                                <div key={idx} className="flex items-center gap-3 group">
+                                   <div className="w-1.5 h-1.5 rounded-full border-2 border-fluent-teal group-hover:bg-fluent-teal transition-colors" />
+                                   <span className="text-[11px] font-bold text-fluent-navy tracking-tight uppercase tracking-widest">{goal}</span>
                                 </div>
                              ))}
                           </div>
                        </div>
-                       <div className="p-8 bg-fluent-navy text-white rounded-3xl shadow-2xl relative overflow-hidden">
-                          <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/5 rounded-full blur-2xl" />
-                          <div className="text-[10px] font-medium text-white/40 uppercase tracking-widest mb-2">Current Protocol</div>
-                          <div className="text-xl font-serif font-medium mb-6">
+                       <div className="p-6 bg-fluent-navy text-white rounded-3xl shadow-2xl relative overflow-hidden">
+                          <div className="absolute -top-4 -right-4 w-20 h-20 bg-white/5 rounded-full blur-xl" />
+                          <div className="text-[9px] font-medium text-white/40 uppercase tracking-widest mb-1.5">Current Protocol</div>
+                          <div className="text-lg font-serif font-medium mb-4">
                              {(profile?.preferredStudyMethods || ["Adaptive Synthesis"]).join(" & ")}
                           </div>
-                          <Btn variant="gold" size="sm" className="w-full py-4 text-[10px] tracking-widest font-black" onClick={() => setActiveNav("sessions")}>RESUME MASTERCLASS</Btn>
+                          <Btn variant="gold" size="sm" className="w-full py-3 text-[9px] tracking-widest font-black" onClick={() => setActiveNav("sessions")}>RESUME MASTERCLASS</Btn>
                        </div>
                     </div>
                  </div>
@@ -290,47 +294,47 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
             </div>
 
             {/* Right Column: Feedback & Progress */}
-            <div className="lg:col-span-4 space-y-8">
-              <Card className="p-8 bg-white border-black/5">
-                <div className="flex justify-between items-center mb-8">
-                  <h3 className="text-lg font-serif font-bold italic">Mastery Matrix</h3>
-                  <div className="text-[10px] font-mono text-slate-400">Ver: 2.0.4</div>
+            <div className="lg:col-span-4 space-y-6">
+              <Card className="p-6 bg-white border-black/5">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-base font-serif font-bold italic">Mastery Matrix</h3>
+                  <div className="text-[9px] font-mono text-slate-400">Ver: 2.0.4</div>
                 </div>
-                <div className="space-y-10">
+                <div className="space-y-8">
                   {subjectProgress.map(s => (
                     <div key={s.name} className="group">
-                      <div className="flex justify-between items-end mb-3">
+                      <div className="flex justify-between items-end mb-2">
                         <div>
-                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 group-hover:text-fluent-teal transition-colors">{s.name}</div>
-                          <div className="text-xs font-bold text-fluent-navy">{s.sessions} Transmission units</div>
+                          <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 group-hover:text-fluent-teal transition-colors">{s.name}</div>
+                          <div className="text-[11px] font-bold text-fluent-navy">{s.sessions} Units</div>
                         </div>
-                        <div className="text-xl font-mono font-medium tracking-tighter">{s.score}%</div>
+                        <div className="text-lg font-mono font-medium tracking-tighter">{s.score}%</div>
                       </div>
                       <ProgressBar value={s.score} color={s.color} showPct={false} />
                     </div>
                   ))}
                 </div>
-                <div className="mt-12 pt-8 border-t border-black/5">
-                   <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
-                      <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
-                         <Target size={18} className="text-fluent-teal" />
+                <div className="mt-8 pt-6 border-t border-black/5">
+                   <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl">
+                      <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm">
+                         <Target size={16} className="text-fluent-teal" />
                       </div>
                       <div>
-                         <div className="text-[10px] font-bold uppercase text-slate-400">Focus Subject</div>
-                         <div className="text-sm font-bold text-fluent-navy">Physics :: Advanced Kinetics</div>
+                         <div className="text-[9px] font-bold uppercase text-slate-400">Focus Subject</div>
+                         <div className="text-xs font-bold text-fluent-navy">Physics :: Kinetics</div>
                       </div>
                    </div>
                 </div>
               </Card>
 
-              <Card className="p-8 border-black/5 bg-fluent-gold/5">
-                <h3 className="text-sm font-bold text-fluent-navy uppercase tracking-widest mb-6">Provost Dispatch</h3>
-                <div className="space-y-4">
+              <Card className="p-6 border-black/5 bg-fluent-gold/5">
+                <h3 className="text-[10px] font-bold text-fluent-navy uppercase tracking-widest mb-4">Provost Dispatch</h3>
+                <div className="space-y-3">
                   {allFeedback.slice(0, 2).map((f: any, idx: number) => (
-                    <div key={idx} className="p-5 bg-white rounded-2xl border border-fluent-gold/10 shadow-sm relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-12 h-12 bg-fluent-gold/5 -mr-6 -mt-6 rounded-full" />
-                      <div className="text-[10px] font-bold text-fluent-gold mb-2 uppercase tracking-tighter">{f.subject} Dispatch</div>
-                      <p className="text-xs text-slate-600 leading-relaxed italic">{f.text}</p>
+                    <div key={idx} className="p-4 bg-white rounded-2xl border border-fluent-gold/10 shadow-sm relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-10 h-10 bg-fluent-gold/5 -mr-5 -mt-5 rounded-full" />
+                      <div className="text-[9px] font-bold text-fluent-gold mb-1.5 uppercase tracking-tighter">{f.subject} Dispatch</div>
+                      <p className="text-[11px] text-slate-600 leading-relaxed italic">{f.text}</p>
                     </div>
                   ))}
                 </div>
@@ -339,13 +343,17 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
           </div>
         ) : activeNav === "assignments" ? (
           <StudentAssignments />
+        ) : activeNav === "ledger" ? (
+          <MasteryLedger userProfile={profile} />
         ) : activeNav === "progress" ? (
           <StudentProgress />
+        ) : activeNav === "forum" ? (
+          <Forum userProfile={profile} />
         ) : activeNav === "confidence" ? (
           <ConfidenceTraining />
         ) : activeNav === "sessions" ? (
           activeSessionId ? (
-            <LiveLab sessionId={activeSessionId} role="student" onExit={() => setActiveNav("overview")} />
+            <LiveLab sessionId={activeSessionId} role="student" onExit={() => setActiveNav("overview")} userProfile={profile} />
           ) : (
             <div className="p-20 text-center">
                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
