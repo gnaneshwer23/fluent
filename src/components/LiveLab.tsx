@@ -581,10 +581,10 @@ export const LiveLab = ({
                         <div className="space-y-2">
                           {session.activePoll.options.map((opt: string) => {
                             const count = pollResults[opt] || 0;
-                            const total = Object.values(pollResults).reduce(
-                              (a, b: any) => a + (Number(b) || 0),
-                              0,
-                            );
+                            const total: number = Object.values(pollResults).reduce(
+                              (a: number, b: number) => a + (Number(b) || 0),
+                              0
+                            ) as number;
                             const pct =
                               total > 0 ? Math.round((count / total) * 100) : 0;
 

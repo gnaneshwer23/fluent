@@ -3,7 +3,7 @@ import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, where,
 import { db, auth } from "../lib/firebaseInit";
 import { handleFirestoreError, OperationType } from "../lib/errorHandling";
 import { Card, Btn, Badge } from "./UI";
-import { PlusCircle, Link as LinkIcon, Calendar, BookOpen, Clock, CheckCircle2, ChevronRight, Trash2, Copy, ExternalLink } from "lucide-react";
+import { Users, PlusCircle, Link as LinkIcon, Calendar, BookOpen, Clock, CheckCircle2, ChevronRight, Trash2, Copy, ExternalLink } from "lucide-react";
 
 export default function TeacherAssignments({ mini = false }: { mini?: boolean }) {
   const [assignments, setAssignments] = useState<any[]>([]);
@@ -237,7 +237,6 @@ export default function TeacherAssignments({ mini = false }: { mini?: boolean })
                               variant="ghost" 
                               className={`p-2 h-auto transition-colors ${copiedId === a.id ? 'text-green-500' : 'text-slate-400 hover:text-fluent-teal'}`}
                               onClick={() => copyToClipboard(a.link, a.id)}
-                              title="Copy Protocol URL"
                             >
                               {copiedId === a.id ? <CheckCircle2 size={14} /> : <Copy size={14} />}
                             </Btn>

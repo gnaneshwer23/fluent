@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Home, BookOpen, Calendar, BarChart3, Award, Settings, Bell, Play, 
-  Sparkles, Zap, CheckCircle2, ArrowRight, Target, ClipboardList, MessageCircle, LogOut, Library
+  Sparkles, Zap, CheckCircle2, ArrowRight, Target, ClipboardList, MessageCircle, LogOut, Library, ChevronRight, MessageSquare
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { collectionGroup, query, where, onSnapshot, collection, limit } from 'firebase/firestore';
 import { db, auth } from '../lib/firebaseInit';
 import { handleFirestoreError, OperationType } from '../lib/errorHandling';
 import { Badge, Card, Avatar, MetricTile, ProgressBar, Btn } from './UI';
+import { FeedbackModal } from './FeedbackModal';
 import { DashboardShell } from './DashboardShell';
 import { BookingModal } from './BookingModal';
 import { MasteryHeatmap } from './Charts';
@@ -24,6 +25,7 @@ import ConfidenceTraining from './ConfidenceTraining';
 export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => void }) => {
   const [activeNav, setActiveNav] = useState("overview");
   const [showBooking, setShowBooking] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [myRecords, setMyRecords] = useState<any[]>([]);
@@ -141,6 +143,15 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
   return (
     <DashboardShell role="student" title={studentName} navItems={navItems} activeNav={activeNav} setActiveNav={setActiveNav} onBack={onBack}>
       <div className="p-6 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="flex items-center gap-2 text-[9px] uppercase font-black text-slate-400 mb-6 tracking-[0.2em] opacity-60">
+          <button onClick={() => setActiveNav("overview")} className="hover:text-fluent-teal transition-colors">Studio</button>
+          {activeNav !== 'overview' && (
+            <>
+              <ChevronRight size={10} className="text-slate-300" />
+              <span className="text-fluent-teal">{navItems.find(i => i.id === activeNav)?.label}</span>
+            </>
+          )}
+        </div>
         <header className="flex flex-col md:flex-row justify-between items-start gap-6 mb-10">
           <div>
             <div className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.15em] mb-1.5">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} • {studentGrade}</div>
@@ -172,6 +183,7 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
             <Btn variant="primary" size="sm" icon={isJoining ? Sparkles : Play} onClick={handleJoin} disabled={isJoining}>
               {isJoining ? "Connecting..." : "Join Session"}
             </Btn>
+            <Btn variant="ghost" size="sm" icon={MessageSquare} onClick={() => setShowFeedback(true)}>Feedback</Btn>
             <Btn variant="ghost" size="sm" className="text-red-500 hover:bg-red-50" icon={LogOut} onClick={onBack}>Sign Out</Btn>
             {showNotification && (
                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="absolute top-full right-0 mt-2 w-80 bg-white border border-black/5 rounded-xl shadow-2xl z-50 p-6">
@@ -373,6 +385,7 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
       </div>
 
       <BookingModal isOpen={showBooking} onClose={() => setShowBooking(false)} profile={profile} />
+      <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
     </DashboardShell>
   );
 };

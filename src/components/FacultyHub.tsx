@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Home, Users, Database, Calendar, Play, BookOpen, Settings, Plus, Search, 
   Trash2, Edit2, BarChart3, TrendingUp, Zap, CheckCircle2, ArrowRight, X, Mail, Phone, Shield, ShieldCheck, Lock, Check,
@@ -84,7 +84,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
   const [classes, setClasses] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [cohortSubjectFilter, setCohortSubjectFilter] = useState(profile?.subjects?.[0] || "All");
+  const [cohortSubjectFilter, setCohortSubjectFilter] = useState<string[]>(profile?.subjects?.[0] ? [profile?.subjects[0]] : ["All"]);
   const [cohortGradeFilter, setCohortGradeFilter] = useState("All");
 
   const teacherName = profile?.name || auth.currentUser?.displayName || "Dr. Sarah Mills";
@@ -130,6 +130,28 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
       unsubBookings();
     };
   }, []);
+
+  const filteredClasses = useMemo(() => {
+    return classes.filter(c => {
+      const subjectMatch = cohortSubjectFilter.includes("All") || cohortSubjectFilter.includes(c.subject);
+      const gradeMatch = cohortGradeFilter === "All" || c.grade === cohortGradeFilter;
+      return subjectMatch && gradeMatch;
+    });
+  }, [classes, cohortSubjectFilter, cohortGradeFilter]);
+
+  const toggleSubjectFilter = (subject: string) => {
+    if (subject === "All") {
+      setCohortSubjectFilter(["All"]);
+    } else {
+      setCohortSubjectFilter(prev => {
+        const withoutAll = prev.filter(s => s !== "All");
+        const next = withoutAll.includes(subject) 
+          ? withoutAll.filter(s => s !== subject) 
+          : [...withoutAll, subject];
+        return next.length === 0 ? ["All"] : next;
+      });
+    }
+  };
 
   const [classStudents, setClassStudents] = useState<any[]>([]);
   useEffect(() => {
@@ -517,19 +539,22 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 block px-1">Subject Filter</label>
                   <div className="flex gap-2 p-1 bg-gray-50 rounded-xl border border-black/5">
-                    {["All", "Mathematics", "Physics", "Chemistry", "Biology", "English"].map(subject => (
-                      <button
-                        key={subject}
-                        onClick={() => setCohortSubjectFilter(subject)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                          cohortSubjectFilter === subject 
-                            ? 'bg-fluent-navy text-white shadow-md' 
-                            : 'text-slate-400 hover:text-fluent-navy hover:bg-white'
-                        }`}
-                      >
-                        {subject}
-                      </button>
-                    ))}
+                    {["All", "Mathematics", "Physics", "Chemistry", "Biology", "English"].map(subject => {
+                      const isActive = cohortSubjectFilter.includes(subject);
+                      return (
+                        <button
+                          key={subject}
+                          onClick={() => toggleSubjectFilter(subject)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                            isActive 
+                              ? 'bg-fluent-navy text-white shadow-md' 
+                              : 'text-slate-400 hover:text-fluent-navy hover:bg-white'
+                          }`}
+                        >
+                          {subject}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -557,27 +582,16 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                 <div className="text-right">
                   <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-1">Impact Score</div>
                   <div className="text-2xl font-serif font-bold text-fluent-navy">
-                    {classes.filter(c => {
-                      const subjectMatch = cohortSubjectFilter === "All" || c.subject === cohortSubjectFilter;
-                      const gradeMatch = cohortGradeFilter === "All" || c.grade === cohortGradeFilter;
-                      return subjectMatch && gradeMatch;
-                    }).reduce((sum, c) => sum + (c.students || 0), 0)} <span className="text-xs text-slate-300 font-sans uppercase">Scholars</span>
+                    {filteredClasses.reduce((sum, c) => sum + (c.students || 0), 0)} <span className="text-xs text-slate-300 font-sans uppercase">Scholars</span>
                   </div>
                 </div>
                 <div className="w-px h-10 bg-slate-100 hidden md:block" />
                 <div className="text-right">
                   <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-1">Global Mastery</div>
                   <div className="text-2xl font-serif font-bold text-fluent-teal text-right">
-                    {(() => {
-                      const filtered = classes.filter(c => {
-                        const subjectMatch = cohortSubjectFilter === "All" || c.subject === cohortSubjectFilter;
-                        const gradeMatch = cohortGradeFilter === "All" || c.grade === cohortGradeFilter;
-                        return subjectMatch && gradeMatch;
-                      });
-                      return filtered.length > 0 
-                        ? Math.round(filtered.reduce((sum, c) => sum + (c.avgScore || 0), 0) / filtered.length) 
-                        : 0;
-                    })()}%
+                    {filteredClasses.length > 0 
+                      ? Math.round(filteredClasses.reduce((sum, c) => sum + (c.avgScore || 0), 0) / filteredClasses.length) 
+                      : 0}%
                   </div>
                 </div>
               </div>
@@ -588,7 +602,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                 <div className="flex justify-between items-center mb-8 relative z-10">
                   <div>
                     <h3 className="text-xl font-serif font-bold">Performance Trajectory</h3>
-                    <p className="text-xs text-slate-400 font-medium">Aggregate mastery trend across {cohortSubjectFilter} {cohortGradeFilter !== 'All' ? `(${cohortGradeFilter})` : ''} cohorts</p>
+                    <p className="text-xs text-slate-400 font-medium">Aggregate mastery trend across {cohortSubjectFilter.join(", ")} {cohortGradeFilter !== 'All' ? `(${cohortGradeFilter})` : ''} cohorts</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-fluent-teal"></div>
@@ -628,31 +642,20 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
               <div className="grid grid-cols-1 gap-6">
                 <MetricTile 
                   label="Avg Attendance" 
-                  value={`${(() => {
-                    const filtered = classes.filter(c => {
-                      const subjectMatch = cohortSubjectFilter === "All" || c.subject === cohortSubjectFilter;
-                      const gradeMatch = cohortGradeFilter === "All" || c.grade === cohortGradeFilter;
-                      return subjectMatch && gradeMatch;
-                    });
-                    return filtered.length > 0 ? Math.round(filtered.reduce((sum, c) => sum + (c.attendance || 0), 0) / filtered.length) : 0;
-                  })()}%`} 
+                  value={`${filteredClasses.length > 0 ? Math.round(filteredClasses.reduce((sum, c) => sum + (c.attendance || 0), 0) / filteredClasses.length) : 0}%`} 
                   icon={CheckCircle2} 
                   color="#1B4F5E" 
                 />
                 <MetricTile 
                   label="Cohorts Tracked" 
-                  value={classes.filter(c => {
-                    const subjectMatch = cohortSubjectFilter === "All" || c.subject === cohortSubjectFilter;
-                    const gradeMatch = cohortGradeFilter === "All" || c.grade === cohortGradeFilter;
-                    return subjectMatch && gradeMatch;
-                  }).length.toString()} 
+                  value={filteredClasses.length.toString()} 
                   icon={BookOpen} 
                   color="#C9A84C" 
                 />
                 <div className="bg-fluent-navy text-white rounded-xl p-6 shadow-lg shadow-fluent-navy/20 flex flex-col justify-center">
                   <div className="text-[10px] font-bold text-fluent-gold uppercase tracking-[0.3em] mb-4">Focus Directive</div>
                   <p className="text-xs text-white/50 leading-relaxed font-medium">
-                    Priority given to <span className="text-white font-bold">{cohortSubjectFilter !== 'All' ? cohortSubjectFilter : 'all subjects'}</span> engagement.
+                    Priority given to <span className="text-white font-bold">{!cohortSubjectFilter.includes('All') ? cohortSubjectFilter.join(", ") : 'all subjects'}</span> engagement.
                   </p>
                   <Btn variant="gold" size="sm" className="mt-6 w-full text-[9px] py-1.5">Download Insights Report</Btn>
                 </div>
@@ -660,13 +663,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {classes
-                .filter(c => {
-                  const subjectMatch = cohortSubjectFilter === "All" || c.subject === cohortSubjectFilter;
-                  const gradeMatch = cohortGradeFilter === "All" || c.grade === cohortGradeFilter;
-                  return subjectMatch && gradeMatch;
-                })
-                .map(c => (
+              {filteredClasses.map(c => (
               <Card key={c.id} className="p-6 flex flex-col" hover onClick={() => setSelectedClassForStudents(c)}>
                 <div className="flex justify-between items-start mb-4">
                   <div className="w-12 h-12 rounded-xl bg-fluent-navy/5 flex items-center justify-center text-fluent-navy">
@@ -865,13 +862,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
         {/* Classes List */}
         {activeNav === "cohorts" && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {classes
-              .filter(c => {
-                const subjectMatch = cohortSubjectFilter === "All" || c.subject === cohortSubjectFilter;
-                const gradeMatch = cohortGradeFilter === "All" || c.grade === cohortGradeFilter;
-                return subjectMatch && gradeMatch;
-              })
-              .map(c => (
+            {filteredClasses.map(c => (
                 <Card key={c.id} className="p-6 flex flex-col" hover onClick={() => setSelectedClassForStudents(c)}>
                   <div className="flex justify-between items-start mb-4">
                     <div className="w-12 h-12 rounded-xl bg-fluent-navy/5 flex items-center justify-center text-fluent-navy">
