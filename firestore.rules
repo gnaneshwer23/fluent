@@ -12,7 +12,10 @@ service cloud.firestore {
     function isAdmin() { 
       return isVerified() && (
         request.auth.token.email == 'drbiryanihelp@gmail.com' ||
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        request.auth.token.email == 'gnaneshwer.jadav@gmail.com' ||
+        request.auth.token.email == 'mindmeshaisolutions@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
       ); 
     }
     

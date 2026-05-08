@@ -119,7 +119,7 @@ export const OnboardingFlow = ({ onComplete, onBack }: { onComplete: (view: stri
     { id: "parent", label: "Academic Parent", icon: Users, desc: "Monitor child and book consultations." },
     { id: "teacher", label: "Expert Faculty", icon: BookOpen, desc: "Cohorts and curriculum tools." },
     { id: "school_admin", label: "Institutional Admin", icon: Building2, desc: "Manage school nodes and students." },
-    ...(auth.currentUser?.email === 'drbiryanihelp@gmail.com' || auth.currentUser?.email === 'gnaneshwer.jadav@gmail.com' ? [
+    ...(auth.currentUser?.email === 'drbiryanihelp@gmail.com' || auth.currentUser?.email === 'gnaneshwer.jadav@gmail.com' || auth.currentUser?.email === 'mindmeshaisolutions@gmail.com' ? [
        { id: "admin", label: "Academy Provost", icon: ShieldCheck, desc: "Global system oversight and nodes." }
     ] : [])
   ];
@@ -159,8 +159,12 @@ export const OnboardingFlow = ({ onComplete, onBack }: { onComplete: (view: stri
   const canProceed = () => {
     if (step === 0) return !!data.role;
     if (step === 1) return data.name.length > 2;
-    if (step === 2) return data.subjects.length > 0;
-    if (step === 3) return !!data.goal;
+    if (step === 2) {
+      if (data.role === 'school_admin') return !!data.schoolId;
+      if (data.role === 'admin') return true; // Just strategic parameters
+      return data.subjects.length > 0;
+    }
+    if (step === 3) return !!data.goal || data.role === 'admin' || data.role === 'school_admin';
     return true;
   };
 
