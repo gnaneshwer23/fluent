@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Home, Users, Database, Calendar, Play, BookOpen, Settings, Plus, Search, 
   Trash2, Edit2, BarChart3, TrendingUp, Zap, CheckCircle2, ArrowRight, X, Mail, Phone, Shield, ShieldCheck, Lock, Check,
-  ClipboardList, FileText, CalendarDays, LogOut, Library, MessageSquare
+  ClipboardList, FileText, CalendarDays, LogOut, Library, MessageSquare, Layers
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, deleteDoc, serverTimestamp, orderBy, limit, collectionGroup, setDoc } from 'firebase/firestore';
@@ -19,6 +19,7 @@ import TeacherAssignments from './TeacherAssignments';
 import TeacherReports from './TeacherReports';
 import TeacherAttendance from './TeacherAttendance';
 import TeacherAnalytics from './TeacherAnalytics';
+import { CurriculumManager } from './CurriculumManager';
 
 export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => void }) => {
   const [activeNav, setActiveNav] = useState("overview");
@@ -94,18 +95,18 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
     if (!auth.currentUser) return;
     const uid = auth.currentUser.uid;
 
-    const classesQuery = query(collection(db, 'classes'), where('ownerId', '==', uid));
+    const classesQuery = query(collection(db, 'cohorts'), where('tutorId', '==', uid));
     const unsubClasses = onSnapshot(classesQuery, (snap) => {
       const classData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setClasses(classData);
       setLoading(false);
     }, (error) => {
       if (auth.currentUser) {
-        handleFirestoreError(error, OperationType.LIST, 'classes');
+        handleFirestoreError(error, OperationType.LIST, 'cohorts');
       }
     });
 
-    const poolQuery = query(collection(db, 'studentPool'), where('ownerId', '==', uid));
+    const poolQuery = query(collection(db, 'studentPool'), where('tutorId', '==', uid));
     const unsubPool = onSnapshot(poolQuery, (snap) => {
       const poolData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setUnassignedStudents(poolData);
@@ -159,13 +160,13 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
       setClassStudents([]);
       return;
     }
-    const studentsRef = collection(db, 'classes', selectedClassForStudents.id, 'students');
+    const studentsRef = collection(db, 'cohorts', selectedClassForStudents.id, 'students');
     const unsub = onSnapshot(studentsRef, (snap) => {
       const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setClassStudents(data);
     }, (error) => {
       if (auth.currentUser) {
-        handleFirestoreError(error, OperationType.LIST, `classes/${selectedClassForStudents.id}/students`);
+        handleFirestoreError(error, OperationType.LIST, `cohorts/${selectedClassForStudents.id}/students`);
       }
     });
     return () => unsub();
@@ -185,15 +186,52 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
     return () => unsub();
   }, []);
 
-  const alerts = allStudents.filter(s => {
-    const rate = s.total > 2 ? (s.attended / s.total) : 1;
-    return rate < 0.6;
-  }).slice(0, 3).map(s => ({
-    type: "Attendance Alert",
-    student: s.name,
-    class: s.className,
-    msg: "Participation dropped below 60%. Scaffolding gap detected."
-  }));
+  const [dbAlerts, setDbAlerts] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    const q = query(
+      collection(db, 'alerts'),
+      where('status', '==', 'active'),
+      orderBy('date', 'desc'),
+      limit(20)
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      setDbAlerts(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (error) => {
+      if (auth.currentUser) {
+        handleFirestoreError(error, OperationType.LIST, 'alerts');
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  const criticalAlerts = useMemo(() => {
+    const teacherStudentIds = new Set(allStudents.map(s => s.id));
+    return dbAlerts
+      .filter(a => teacherStudentIds.has(a.studentId))
+      .slice(0, 3)
+      .map(a => {
+        const student = allStudents.find(s => s.id === a.studentId);
+        return {
+          ...a,
+          studentName: student?.name || "Unknown Scholar",
+          className: student?.cohortName || student?.className || "General Cohort"
+        };
+      });
+  }, [dbAlerts, allStudents]);
+
+  const handleIntervene = async (alertId: string) => {
+    try {
+      await updateDoc(doc(db, 'alerts', alertId), { 
+        status: 'resolved', 
+        resolvedAt: serverTimestamp(),
+        resolvedBy: auth.currentUser?.uid
+      });
+    } catch (e) {
+      handleFirestoreError(e, OperationType.UPDATE, `alerts/${alertId}`);
+    }
+  };
 
   const navItems = [
     { id: "overview", label: "Dashboard", icon: Home },
@@ -206,6 +244,8 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
     { id: "attendance", label: "Roll Call", icon: CalendarDays },
     { id: "live", label: "Live Lab", icon: Play, badge: "Live" },
     { id: "registry", label: "Registry", icon: Database },
+    { id: "curriculum", label: "Curriculum Nodes", icon: Layers, badge: "RAG" },
+    { id: "profile", label: "Profile", icon: Users },
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
@@ -226,14 +266,14 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
       students: 0,
       avgScore: 0,
       attendance: 0,
-      ownerId: auth.currentUser.uid,
+      tutorId: auth.currentUser.uid,
       createdAt: serverTimestamp()
     };
     try {
-      await addDoc(collection(db, 'classes'), newClass);
+      await addDoc(collection(db, 'cohorts'), newClass);
       setShowCreateModal(false);
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'classes');
+      handleFirestoreError(error, OperationType.WRITE, 'cohorts');
     }
   };
 
@@ -242,25 +282,25 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
     if (!editingClass) return;
     const formData = new FormData(e.currentTarget);
     try {
-      await updateDoc(doc(db, 'classes', editingClass.id), {
+      await updateDoc(doc(db, 'cohorts', editingClass.id), {
         name: formData.get('name') as string,
         grade: formData.get('grade') as string,
         subject: formData.get('subject') as string,
       });
       setEditingClass(null);
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `classes/${editingClass.id}`);
+      handleFirestoreError(error, OperationType.UPDATE, `cohorts/${editingClass.id}`);
     }
   };
 
   const handleAddStudent = async (classId: string, name: string) => {
     if (!auth.currentUser) return;
     try {
-      const classRef = doc(db, 'classes', classId);
+      const classRef = doc(db, 'cohorts', classId);
       await addDoc(collection(classRef, 'students'), {
         name,
-        teacherId: auth.currentUser.uid,
-        className: selectedClassForStudents.name,
+        tutorId: auth.currentUser.uid,
+        cohortName: selectedClassForStudents.name,
         subject: selectedClassForStudents.subject,
         grade: selectedClassForStudents.grade,
         attended: 0,
@@ -271,7 +311,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
       // Increment student count
       await updateDoc(classRef, { students: (selectedClassForStudents.students || 0) + 1 });
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, `classes/${classId}/students`);
+      handleFirestoreError(error, OperationType.WRITE, `cohorts/${classId}/students`);
     }
   };
 
@@ -286,11 +326,11 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
   };
 
   const handleDeleteClass = async (classId: string) => {
-    if (!window.confirm("Delete this class?")) return;
+    if (!window.confirm("Delete this cohort?")) return;
     try {
-      await deleteDoc(doc(db, 'classes', classId));
+      await deleteDoc(doc(db, 'cohorts', classId));
     } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `classes/${classId}`);
+      handleFirestoreError(error, OperationType.DELETE, `cohorts/${classId}`);
     }
   };
 
@@ -349,25 +389,35 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                 <MetricTile label="System Pulse" value="Online" icon={Zap} color="#7C3AED" />
               </div>
 
-              {/* Priority Alerts - Red Team Pattern */}
-              {alerts.length > 0 && (
+              {/* Critical Alerts - Priority Synthesis Interventions */}
+              {criticalAlerts.length > 0 && (
                 <Card className="border-red-400/20 bg-red-400/5 overflow-hidden shadow-none ring-1 ring-red-400/10">
                   <div className="p-4 border-b border-red-400/10 bg-red-400/10 flex items-center justify-between">
                      <div className="text-[9px] font-black text-red-500 uppercase tracking-[0.3em] flex items-center gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                        Scaffolding Warnings
+                        Critical Cohort Alerts
                      </div>
-                     <span className="text-[8px] font-bold text-red-400/60 uppercase">Impact: High</span>
+                     <span className="text-[8px] font-bold text-red-400/60 uppercase">Action Required</span>
                   </div>
                   <div className="divide-y divide-red-400/10">
-                    {alerts.map((a, i) => (
-                      <div key={i} className="p-4 flex justify-between items-center group hover:bg-red-400/5 transition-all">
+                    {criticalAlerts.map((a) => (
+                      <div key={a.id} className="p-4 flex justify-between items-center group hover:bg-red-400/5 transition-all">
                         <div>
-                          <div className="text-[9px] font-bold text-red-400/60 uppercase mb-1">{a.class}</div>
-                          <div className="text-base font-bold text-fluent-navy tracking-tight">{a.student}</div>
-                          <p className="text-xs text-slate-500 mt-0.5 italic">{a.msg}</p>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge color="red" className="text-[7px] uppercase tracking-tighter h-4 px-1.5">{a.type}</Badge>
+                            <span className="text-[9px] font-bold text-red-400/60 uppercase">{a.className}</span>
+                          </div>
+                          <div className="text-base font-bold text-fluent-navy tracking-tight">{a.studentName}</div>
+                          <p className="text-xs text-slate-500 mt-0.5 italic">{a.message}</p>
                         </div>
-                        <Btn variant="primary" size="sm" className="bg-red-500 hover:bg-red-600 border-none shadow-lg shadow-red-500/20 text-[9px] px-4">Intervene</Btn>
+                        <Btn 
+                          variant="primary" 
+                          size="sm" 
+                          className="bg-red-500 hover:bg-red-600 border-none shadow-lg shadow-red-500/20 text-[9px] px-4"
+                          onClick={() => handleIntervene(a.id)}
+                        >
+                          Intervene
+                        </Btn>
                       </div>
                     ))}
                   </div>
@@ -529,6 +579,84 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                     {(profile?.subjects || []).includes(s) && <CheckCircle2 size={18} className="text-fluent-teal" />}
                   </div>
                 ))}
+              </div>
+            </Card>
+          </div>
+        ) : activeNav === 'profile' ? (
+          <div className="max-w-3xl">
+            <h2 className="text-3xl font-serif font-bold mb-8">Faculty Profile</h2>
+            <Card className="p-8">
+              <div className="flex flex-col md:flex-row gap-8 items-start">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="relative group">
+                    <Avatar name={teacherName} size={120} />
+                    <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
+                      <Edit2 size={24} className="text-white" />
+                    </div>
+                  </div>
+                  <Badge color="gold">Verified Instructor</Badge>
+                </div>
+                
+                <div className="flex-1 space-y-6 w-full">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 block px-1">Full Name</label>
+                       <input 
+                         type="text" 
+                         defaultValue={profile?.name || ""} 
+                         onBlur={async (e) => {
+                            if (!auth.currentUser) return;
+                            try {
+                              await updateDoc(doc(db, 'users', auth.currentUser.uid), { name: e.target.value });
+                            } catch (err) { handleFirestoreError(err, OperationType.UPDATE, 'users'); }
+                         }}
+                         className="w-full bg-slate-50 border border-black/5 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-fluent-teal outline-none"
+                       />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 block px-1">Primary Subject</label>
+                       <select 
+                         defaultValue={department} 
+                         onChange={async (e) => {
+                            if (!auth.currentUser) return;
+                            const newSubjects = [e.target.value, ...(profile?.subjects || []).filter((s: string) => s !== e.target.value)];
+                            try {
+                              await updateDoc(doc(db, 'users', auth.currentUser.uid), { subjects: Array.from(new Set(newSubjects)) });
+                            } catch (err) { handleFirestoreError(err, OperationType.UPDATE, 'users'); }
+                         }}
+                         className="w-full bg-slate-50 border border-black/5 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-fluent-teal outline-none"
+                       >
+                         {["Mathematics", "Physics", "Chemistry", "Biology", "English", "Science"].map(s => <option key={s} value={s}>{s}</option>)}
+                       </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 block px-1">Professional Bio</label>
+                     <textarea 
+                       rows={4}
+                       defaultValue={profile?.bio || ""} 
+                       placeholder="Tell your students about your instructional methodology and background..."
+                       onBlur={async (e) => {
+                          if (!auth.currentUser) return;
+                          try {
+                            await updateDoc(doc(db, 'users', auth.currentUser.uid), { bio: e.target.value });
+                          } catch (err) { handleFirestoreError(err, OperationType.UPDATE, 'users'); }
+                       }}
+                       className="w-full bg-slate-50 border border-black/5 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-fluent-teal outline-none resize-none"
+                     />
+                  </div>
+
+                  <div className="p-6 bg-fluent-navy/5 border border-fluent-navy/10 rounded-2xl">
+                     <div className="flex items-center gap-3 mb-2">
+                        <ShieldCheck size={18} className="text-fluent-teal" />
+                        <h4 className="text-sm font-bold text-fluent-navy tracking-tight">Institutional Bio Policy</h4>
+                     </div>
+                     <p className="text-[11px] text-slate-500 leading-relaxed italic">
+                        "Bios should reflect the British Scaffolding standard, highlighting global academic mastery and adaptive synthesis techniques."
+                     </p>
+                  </div>
+                </div>
               </div>
             </Card>
           </div>
@@ -764,6 +892,8 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
               </Card>
             </div>
           </div>
+        ) : activeNav === "curriculum" ? (
+          <CurriculumManager />
         ) : activeNav === "assignments" ? (
           <TeacherAssignments />
         ) : activeNav === "analytics" ? (
@@ -1189,7 +1319,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
   
                                           // 2. Update the specific student document in the class subcollection if possible
                                           if (selectedClassForStudents?.id) {
-                                            const studentRef = doc(db, 'classes', selectedClassForStudents.id, 'students', viewingStudentDetail.id);
+                                            const studentRef = doc(db, 'cohorts', selectedClassForStudents.id, 'students', viewingStudentDetail.id);
                                             const newFeedback = {
                                               id: Date.now().toString(),
                                               text: feedbackText.trim(),

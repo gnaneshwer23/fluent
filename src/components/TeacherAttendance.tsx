@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { collection, query, onSnapshot, addDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../lib/firebaseInit";
+import { db, auth } from "../lib/firebaseInit";
 import { handleFirestoreError, OperationType } from "../lib/errorHandling";
 import { Card, Btn, Avatar, Badge } from "./UI";
 import { Users, CalendarDays, CheckCircle, XCircle } from "lucide-react";
@@ -22,8 +22,11 @@ export default function TeacherAttendance() {
 
   const markAttendance = async (studentId: string, status: string) => {
     try {
+      const student = students.find(s => s.id === studentId);
       await addDoc(collection(db, "attendance"), {
         studentId,
+        teacherId: auth.currentUser?.uid,
+        schoolId: student?.schoolId || null,
         status,
         date: new Date().toISOString().split('T')[0],
         createdAt: serverTimestamp()

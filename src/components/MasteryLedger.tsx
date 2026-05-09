@@ -79,10 +79,10 @@ export const MasteryLedger = ({ userProfile }: { userProfile: any }) => {
         <div className="space-y-4">
           <Badge color="gold" icon={Library}>Mastery Ledger v3.0</Badge>
           <h1 className="text-5xl font-serif font-black tracking-tighter text-fluent-navy leading-none">Knowledge Repository</h1>
-          <p className="text-xl text-slate-400 font-serif italic">Synthesized academic nodes and primary research briefs.</p>
+          <p className="text-xl text-slate-600 font-serif italic">Synthesized academic nodes and primary research briefs.</p>
         </div>
         <div className="relative w-full md:w-96">
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
           <input 
             type="text" 
             placeholder="Search by topic, keyword, or node ID..."
@@ -102,7 +102,7 @@ export const MasteryLedger = ({ userProfile }: { userProfile: any }) => {
             className={`px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
               selectedCategory === cat.id 
                 ? "bg-fluent-navy text-white border-fluent-navy shadow-xl shadow-fluent-navy/20" 
-                : "bg-white text-slate-400 border-black/5 hover:border-black/10"
+                : "bg-white text-slate-600 border-black/5 hover:border-black/10"
             }`}
           >
             {cat.label}
@@ -139,12 +139,12 @@ export const MasteryLedger = ({ userProfile }: { userProfile: any }) => {
                   <h3 className="text-xl font-serif font-black text-fluent-navy group-hover:text-fluent-gold transition-colors leading-tight">
                     {resource.title}
                   </h3>
-                  <p className="text-sm text-slate-400 leading-relaxed font-serif italic line-clamp-3">
+                  <p className="text-sm text-slate-600 leading-relaxed font-serif italic line-clamp-3">
                     {resource.description}
                   </p>
                   <div className="flex flex-wrap gap-2 pt-2">
                     {resource.tags.slice(0, 3).map(tag => (
-                      <span key={tag} className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">#{tag}</span>
+                      <span key={tag} className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">#{tag}</span>
                     ))}
                   </div>
                 </div>
@@ -155,7 +155,7 @@ export const MasteryLedger = ({ userProfile }: { userProfile: any }) => {
                     <span className="text-[10px] font-black text-fluent-navy uppercase tracking-widest">{resource.authorName}</span>
                   </div>
                   <div className="flex gap-2">
-                    <Btn variant="ghost" size="sm" icon={Share2} className="p-2 h-auto text-slate-300 hover:text-fluent-teal" />
+                    <Btn variant="ghost" size="sm" icon={Share2} className="p-2 h-auto text-slate-500 hover:text-fluent-teal" />
                     <Btn variant="primary" size="sm" icon={Download} className="rounded-xl px-4 py-2 text-[10px] uppercase font-black">Access</Btn>
                   </div>
                 </div>
@@ -187,7 +187,7 @@ export const MasteryLedger = ({ userProfile }: { userProfile: any }) => {
         <div className="max-w-3xl relative z-10 space-y-8">
            <Badge color="gold" className="bg-fluent-gold/20 text-fluent-gold border-fluent-gold/30">Intelligence Spotlight</Badge>
            <h2 className="text-5xl font-serif font-black tracking-tighter leading-[1.1]">Request a Custom Synthesis Brief</h2>
-           <p className="text-xl text-white/60 font-serif italic leading-relaxed">
+           <p className="text-xl text-white/80 font-serif italic leading-relaxed">
              Leverage the InfoFluent Provincial AI to generate a targeted research paper or study guide based on your current academic gaps and mastery profile.
            </p>
            <div className="flex gap-4 pt-4">

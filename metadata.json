@@ -1,6 +1,6 @@
 {
-  "name": "Fluent Academy - Intelligent Academic Mastery",
-  "description": "An AI-driven academic intervention platform by Fluent Academy. Features real-time scholar growth tracking, faculty performance analytics, automated WhatsApp alerting, and secure Razorpay payment flows.",
+  "name": "FLUENT. ACADEMY. - Class 9-12 Academic Mastery",
+  "description": "An AI-driven academic intervention platform for Class 9-12 (Maths, Physics, Chemistry, Biology, English). Aligned with ICSE/CBSE standards, featuring British-trained faculty, RAG-augmented AI tutoring, and automated parent auditing.",
   "requestFramePermissions": [
     "microphone",
     "camera"

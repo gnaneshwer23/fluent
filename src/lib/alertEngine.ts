@@ -72,8 +72,9 @@ export const checkAttendanceAlerts = async (studentId: string) => {
 
 export const checkTeacherIssues = async (teacherId: string) => {
   // Aggregate feedback for this teacher
-  // In this demo, we assume all current feedback relates to active faculty
-  const snapshot = await getDocs(collection(db, "weeklyReports"));
+  // CRITICAL: Filter by teacherId to match security rules and correct context
+  const q = query(collection(db, "weeklyReports"), where("teacherId", "==", teacherId));
+  const snapshot = await getDocs(q);
   
   let totalMarks = 0;
   let totalConfidence = 0;
@@ -114,7 +115,9 @@ export const checkTeacherIssues = async (teacherId: string) => {
 };
 
 export const calculateTeacherGrowth = async (teacherId: string) => {
-  const snapshot = await getDocs(collection(db, "weeklyReports"));
+  // CRITICAL: Filter by teacherId to match security rules and correct context
+  const q = query(collection(db, "weeklyReports"), where("teacherId", "==", teacherId));
+  const snapshot = await getDocs(q);
   
   let marks: number[] = [];
   let confidence: number[] = [];

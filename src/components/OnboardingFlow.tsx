@@ -33,6 +33,7 @@ export const OnboardingFlow = ({ onComplete, onBack }: { onComplete: (view: stri
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [schools, setSchools] = useState<any[]>([]);
+  const [schoolSearch, setSchoolSearch] = useState("");
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'schools'), (snap) => {
@@ -433,39 +434,71 @@ export const OnboardingFlow = ({ onComplete, onBack }: { onComplete: (view: stri
                                 ? 'Assigned Institutional Node'
                                 : 'Mastery Focus (Subjects)'}
                        </label>
-                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                          {data.role === 'school_admin' ? (
-                            schools.map(s => (
-                              <button 
-                                key={s.id} 
-                                onClick={() => update("schoolId", s.id)}
-                                className={`p-4 rounded-xl border-2 flex items-center justify-between transition-all ${
-                                  data.schoolId === s.id 
-                                    ? "border-fluent-teal bg-fluent-teal/5 text-fluent-navy" 
-                                    : "border-black/5 bg-white text-slate-400"
-                                }`}
-                              >
-                                 <span className="font-bold text-xs tracking-tight">{s.name}</span>
-                                 {data.schoolId === s.id && <CheckCircle2 size={16} className="text-fluent-teal" />}
-                              </button>
-                            ))
-                          ) : (
-                            subjectsList.map(s => (
-                              <button 
-                                key={s} 
-                                onClick={() => toggleSelection("subjects", s)}
-                                className={`p-4 rounded-xl border-2 flex items-center justify-between transition-all ${
-                                  data.subjects.includes(s) 
-                                    ? "border-fluent-teal bg-fluent-teal/5 text-fluent-navy" 
-                                    : "border-black/5 bg-white text-slate-400"
-                                }`}
-                              >
-                                 <span className="font-bold text-xs tracking-tight">{s}</span>
-                                 {data.subjects.includes(s) && <CheckCircle2 size={16} className="text-fluent-teal" />}
-                              </button>
-                            ))
-                          )}
-                       </div>
+                        {data.role === 'school_admin' ? (
+                          <div className="space-y-4">
+                            <div className="relative">
+                               <input 
+                                 type="text"
+                                 placeholder="Search institutional nodes..."
+                                 value={schoolSearch}
+                                 onChange={(e) => setSchoolSearch(e.target.value)}
+                                 className="w-full p-4 bg-white border border-black/5 rounded-xl text-xs font-bold tracking-tight focus:ring-1 focus:ring-fluent-teal outline-none transition-all placeholder:text-slate-300 pl-10"
+                               />
+                               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300">
+                                  <Users size={16} />
+                               </div>
+                            </div>
+                            <div className="grid grid-cols-1 gap-2.5 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                               {schools
+                                 .filter(s => s.name.toLowerCase().includes(schoolSearch.toLowerCase()))
+                                 .map(s => (
+                                   <button 
+                                     key={s.id} 
+                                     onClick={() => update("schoolId", s.id)}
+                                     className={`p-4 rounded-xl border-2 flex items-center justify-between transition-all ${
+                                       data.schoolId === s.id 
+                                         ? "border-fluent-teal bg-fluent-teal/5 text-fluent-navy" 
+                                         : "border-black/5 bg-white text-slate-400 hover:border-black/10"
+                                     }`}
+                                   >
+                                      <div className="flex items-center gap-3">
+                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${data.schoolId === s.id ? 'bg-fluent-teal text-white' : 'bg-slate-50 text-slate-400'}`}>
+                                            <Building2 size={16} />
+                                         </div>
+                                         <div className="text-left">
+                                            <div className="font-bold text-xs tracking-tight">{s.name}</div>
+                                            <div className="text-[9px] opacity-60">{s.location || "Global Synthesis Node"}</div>
+                                         </div>
+                                      </div>
+                                      {data.schoolId === s.id && <CheckCircle2 size={16} className="text-fluent-teal" />}
+                                   </button>
+                                 ))
+                               }
+                               {schools.filter(s => s.name.toLowerCase().includes(schoolSearch.toLowerCase())).length === 0 && (
+                                 <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-black/10">
+                                    <p className="text-xs text-slate-400 font-medium">No schools match your search.</p>
+                                 </div>
+                               )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                             {subjectsList.map(s => (
+                               <button 
+                                 key={s} 
+                                 onClick={() => toggleSelection("subjects", s)}
+                                 className={`p-4 rounded-xl border-2 flex items-center justify-between transition-all ${
+                                   data.subjects.includes(s) 
+                                     ? "border-fluent-teal bg-fluent-teal/5 text-fluent-navy" 
+                                     : "border-black/5 bg-white text-slate-400"
+                                 }`}
+                               >
+                                  <span className="font-bold text-xs tracking-tight">{s}</span>
+                                  {data.subjects.includes(s) && <CheckCircle2 size={16} className="text-fluent-teal" />}
+                               </button>
+                             ))}
+                          </div>
+                        )}
                        {data.role === 'school_admin' && schools.length === 0 && (
                          <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-black/10">
                             <p className="text-xs text-slate-400 font-medium">No schools detected. Please contact the Academy Provost for account provisioning.</p>

@@ -29,7 +29,7 @@ export const initiatePayment = (options: PaymentOptions) => {
     key: "rzp_test_YOUR_KEY_HERE", // Should be in .env but keeping placeholder for demo logic
     amount: options.amount * 100, // in paise
     currency: options.currency,
-    name: "Fluent Academy",
+    name: "FLUENT   ACADEMY.",
     description: options.description,
     image: "https://fluent-academy.com/logo.png",
     handler: function (response: any) {

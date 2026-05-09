@@ -35,14 +35,19 @@ interface AlertItem {
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
-  blue:"#3B82F6", purple:"#8B5CF6", green:"#22C55E",
-  amber:"#F59E0B", red:"#EF4444", gray:"#6B7280",
+  blue:"#2563EB", purple:"#7C3AED", green:"#059669",
+  amber:"#D97706", red:"#DC2626", gray:"#374151",
   blueBg:"#EFF6FF", purpleBg:"#F5F3FF", greenBg:"#F0FDF4",
   amberBg:"#FFFBEB", redBg:"#FEF2F2",
 };
 
 // ─── Seed data — replace with Firestore ──────────────────────────────────────
-const TEACHER = { name:"Ms. Ananya Mehta", subject:"Mathematics", school:"St. Mary's Academy" };
+const TEACHER = { 
+  name:"Ms. Ananya Mehta", 
+  subject:"Mathematics", 
+  school:"St. Mary's Academy",
+  bio: "Expert in Mathematical Synthesis and British Scaffolding techniques. Focused on building architectural confidence through numerical mastery."
+};
 const CLASSES: ClassItem[] = [
   { id:"c1", name:"Class 10-A", subject:"Mathematics", avgScore:78, attendance:92, studentCount:32 },
   { id:"c2", name:"Class 9-B",  subject:"Mathematics", avgScore:71, attendance:88, studentCount:28 },
@@ -85,7 +90,7 @@ function StatCard({ label, value, sub, color, bg, icon }:{ label:string; value:s
       <div>
         <div style={{ fontSize:13, color:C.gray, marginBottom:2 }}>{label}</div>
         <div style={{ fontSize:24, fontWeight:700, color, lineHeight:1.1 }}>{value}</div>
-        {sub && <div style={{ fontSize:12, color:"#9CA3AF", marginTop:2 }}>{sub}</div>}
+        {sub && <div style={{ fontSize:12, color:"#6B7280", marginTop:2 }}>{sub}</div>}
       </div>
     </div>
   );
@@ -203,9 +208,8 @@ export function TeacherDashboard() {
       <div style={{ background:"#fff", borderBottom:"1px solid #E5E7EB", padding:"0 32px" }}>
         <div style={{ maxWidth:1280, margin:"0 auto", display:"flex", alignItems:"center", justifyContent:"space-between", height:64 }}>
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-            <div style={{ width:32, height:32, borderRadius:8, background:"linear-gradient(135deg,#3B82F6,#8B5CF6)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontWeight:800, fontSize:15 }}>F</div>
-            <span style={{ fontWeight:700, fontSize:16, color:"#111827" }}>Fluent Academy</span>
-            <span style={{ background:C.blueBg, color:C.blue, fontSize:11, fontWeight:600, padding:"2px 8px", borderRadius:100 }}>Teacher</span>
+            <span style={{ fontFamily: "serif", fontWeight: 900, fontSize: 18, color: "#0D1B2A", letterSpacing: "-0.05em" }}>FLUENT&nbsp;&nbsp;&nbsp;ACADEMY.</span>
+            <span style={{ background:"#F1F5F9", color:"#1B4F5E", fontSize:10, fontWeight:900, padding:"3px 10px", borderRadius:100, textTransform: "uppercase" }}>Faculty Node</span>
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:16 }}>
             {activeCount>0 && (
@@ -241,8 +245,8 @@ export function TeacherDashboard() {
         {tab==="overview" && (
           <>
             <div style={{ marginBottom:24 }}>
-              <h1 style={{ fontSize:22, fontWeight:700, color:"#111827", margin:"0 0 4px" }}>Good morning, {TEACHER.name.split(" ")[1]} 👋</h1>
-              <p style={{ color:C.gray, fontSize:14 }}>{activeCount} active alert{activeCount!==1?"s":""} · {STUDENTS.length-submitted.length} reports pending this week</p>
+              <h1 className="text-2xl font-serif font-black tracking-tight text-fluent-navy mb-1">Good morning, {TEACHER.name.split(" ")[1]} ✦</h1>
+              <p className="text-slate-700 font-bold text-sm">{activeCount} active alert{activeCount!==1?"s":""} · {STUDENTS.length-submitted.length} reports pending this week</p>
             </div>
 
             {/* Class selector */}

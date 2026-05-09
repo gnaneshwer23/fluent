@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Home, BookOpen, Calendar, BarChart3, Award, Settings, Bell, Play, 
-  Sparkles, Zap, CheckCircle2, ArrowRight, Target, ClipboardList, MessageCircle, LogOut, Library, ChevronRight, MessageSquare
+  Sparkles, Zap, CheckCircle2, ArrowRight, Target, ClipboardList, MessageCircle, LogOut, Library, ChevronRight, MessageSquare, TrendingUp, BrainCircuit
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { collectionGroup, query, where, onSnapshot, collection, limit } from 'firebase/firestore';
 import { db, auth } from '../lib/firebaseInit';
 import { handleFirestoreError, OperationType } from '../lib/errorHandling';
-import { Badge, Card, Avatar, MetricTile, ProgressBar, Btn } from './UI';
+import { Badge, Card, Avatar, MetricTile, ProgressBar, Btn, Modal } from './UI';
 import { FeedbackModal } from './FeedbackModal';
 import { DashboardShell } from './DashboardShell';
 import { BookingModal } from './BookingModal';
@@ -21,6 +21,7 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tool
 import StudentAssignments from './StudentAssignments';
 import StudentProgress from './StudentProgress';
 import ConfidenceTraining from './ConfidenceTraining';
+import { AITutor } from './AITutor';
 
 export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: () => void }) => {
   const [activeNav, setActiveNav] = useState("overview");
@@ -32,6 +33,8 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
   const [loading, setLoading] = useState(true);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [alerts, setAlerts] = useState<any[]>([]);
+  const [teachers, setTeachers] = useState<any[]>([]);
+  const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
 
   const studentName = profile?.name || auth.currentUser?.displayName || "Arjun Sharma";
   const studentGrade = profile?.grade || "Grade 10";
@@ -56,6 +59,7 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
 
   useEffect(() => {
     if (!studentName || !auth.currentUser) return;
+    // Querying cohort students subcollections to find which cohorts the student belongs to
     const q = query(collectionGroup(db, 'students'), where('name', '==', studentName));
     const unsub = onSnapshot(q, (snap) => {
       const records = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -82,8 +86,24 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
     return () => unsub();
   }, []);
 
+  useEffect(() => {
+    if (myRecords.length === 0) return;
+    const tutorIds = Array.from(new Set(myRecords.map(r => r.tutorId).filter(id => !!id)));
+    if (tutorIds.length === 0) return;
+
+    // Fetch tutor details
+    const q = query(collection(db, 'users'), where('role', '==', 'teacher'));
+    const unsub = onSnapshot(q, (snap) => {
+      const allFaculty = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setTeachers(allFaculty.filter(f => tutorIds.includes(f.id)));
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'users/faculty'));
+
+    return () => unsub();
+  }, [myRecords]);
+
   const navItems = [
     { id: "overview", label: "Home", icon: Home },
+    { id: "ai-tutor", label: "AI Tutor", icon: Sparkles, badge: "Mastery" },
     { id: "sessions", label: "My Classes", icon: Calendar, badge: "Live" },
     { id: "assignments", label: "Assignments", icon: ClipboardList },
     { id: "ledger", label: "Mastery Ledger", icon: Library, badge: "New" },
@@ -143,20 +163,46 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
   return (
     <DashboardShell role="student" title={studentName} navItems={navItems} activeNav={activeNav} setActiveNav={setActiveNav} onBack={onBack}>
       <div className="p-6 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="flex items-center gap-2 text-[9px] uppercase font-black text-slate-400 mb-6 tracking-[0.2em] opacity-60">
+        <div className="flex items-center gap-2 text-[9px] uppercase font-black text-slate-500 mb-6 tracking-[0.2em]">
           <button onClick={() => setActiveNav("overview")} className="hover:text-fluent-teal transition-colors">Studio</button>
           {activeNav !== 'overview' && (
             <>
-              <ChevronRight size={10} className="text-slate-300" />
+              <ChevronRight size={10} className="text-slate-400" />
               <span className="text-fluent-teal">{navItems.find(i => i.id === activeNav)?.label}</span>
             </>
           )}
         </div>
+
+        {/* Teacher Profiles Quick Access */}
+        {teachers.length > 0 && activeNav === 'overview' && (
+          <div className="mb-10">
+            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-4">Faculty Nodes</div>
+            <div className="flex flex-wrap gap-4">
+              {teachers.map(t => (
+                <div 
+                  key={t.id} 
+                  onClick={() => setSelectedTeacher(t)}
+                  className="flex items-center gap-3 bg-white border border-black/5 p-3 rounded-2xl hover:shadow-lg hover:border-fluent-teal/20 transition-all cursor-pointer group"
+                >
+                  <Avatar name={t.name} size={40} />
+                  <div>
+                    <div className="text-xs font-bold text-fluent-navy group-hover:text-fluent-teal transition-colors">{t.name}</div>
+                    <div className="text-[9px] text-slate-600 font-bold uppercase tracking-tighter">
+                      {t.subjects?.[0] || 'Faculty'} Specialist
+                    </div>
+                  </div>
+                  <ChevronRight size={14} className="text-slate-400 group-hover:translate-x-1 transition-transform" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <header className="flex flex-col md:flex-row justify-between items-start gap-6 mb-10">
           <div>
-            <div className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.15em] mb-1.5">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} • {studentGrade}</div>
+            <div className="text-[9px] text-gray-700 font-bold uppercase tracking-[0.15em] mb-1.5">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} • {studentGrade}</div>
             <h1 className="text-3xl font-serif font-bold tracking-tight">
-              Good morning, <span className="text-fluent-teal italic font-normal">{studentName.split(' ')[0]}</span> ✦
+              Good morning, <span className="text-fluent-teal font-normal">{studentName.split(' ')[0]}</span> ✦
             </h1>
             {alerts.length > 0 && (
               <div className="flex items-center gap-2 mt-3 px-3 py-1.5 bg-red-50 border border-red-100 rounded-full w-fit animate-pulse">
@@ -164,7 +210,7 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
                 <span className="text-[9px] font-black uppercase tracking-widest text-red-600">{alerts.length} Critical System Warnings</span>
               </div>
             )}
-            <p className="text-slate-500 mt-1.5 text-sm">Targeting {profile?.goal || "Academic Excellence"} • Momentum looks strong.</p>
+            <p className="text-slate-700 mt-1.5 text-sm">Targeting {profile?.goal || "Academic Excellence"} • Momentum looks strong.</p>
           </div>
 
           <div className="p-4 bg-fluent-teal/5 border border-fluent-teal/10 rounded-2xl">
@@ -220,24 +266,88 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
         {activeNav === "overview" ? (
           <div className="space-y-6">
             {/* Welcome + goal */}
-            <div className="bg-gradient-to-br from-indigo-900 to-indigo-800 rounded-2xl p-8 flex flex-wrap justify-between items-center gap-6">
-              <div>
-                <h1 className="text-3xl font-serif font-bold text-white mb-2 tracking-tight">Good morning, {studentName.split(' ')[0]}! 🎯</h1>
-                <p className="text-indigo-200 text-sm">Goal: <strong className="text-white">{profile?.goal || "Academic Excellence"}</strong></p>
-              </div>
-              <div className="bg-white/10 rounded-xl p-5 text-center">
-                <div className="text-4xl font-extrabold text-white">{overallMastery}%</div>
-                <div className="text-xs text-indigo-200">This week's score</div>
-                <div className="text-xs text-emerald-400 mt-1 font-medium">↑ +2.4% from last week</div>
-              </div>
+            <div className="bg-fluent-navy rounded-[32px] p-10 flex flex-wrap justify-between items-center gap-6 relative overflow-hidden">
+               <div className="absolute top-0 right-0 p-10 opacity-10 rotate-12">
+                  <Sparkles size={160} />
+               </div>
+               <div className="relative z-10">
+                  <div className="text-[10px] font-black uppercase text-fluent-gold tracking-[0.4em] mb-4">Aitken Standard v2.1 Sync</div>
+                  <h1 className="text-4xl lg:text-5xl font-serif font-bold text-white mb-2 tracking-tight">Good morning, {studentName.split(' ')[0]}! ✦</h1>
+                  <p className="text-white/70 text-sm font-serif">Focusing on <strong className="text-white not-italic">{profile?.goal || "Academic Excellence"}</strong> today.</p>
+               </div>
+               <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 text-center border border-white/10 min-w-[140px] relative z-10">
+                  <div className="text-5xl font-mono font-black text-white">{overallMastery}%</div>
+                  <div className="text-[9px] font-black uppercase text-white/60 tracking-widest mt-2">Week {new Date().getMonth() + 1} Index</div>
+                  <div className="text-[9px] text-green-400 mt-2 font-black uppercase tracking-tighter flex items-center justify-center gap-1">
+                    <TrendingUp size={10} /> +2.4% Momentum
+                  </div>
+               </div>
             </div>
+
+            {/* AI Call to Action */}
+            <Card 
+              className="p-8 bg-gradient-to-br from-fluent-teal to-fluent-teal/80 text-white cursor-pointer group hover:shadow-2xl hover:shadow-fluent-teal/20 transition-all border-none"
+              onClick={() => setActiveNav("ai-tutor")}
+            >
+               <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+                  <div className="flex items-center gap-6">
+                     <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-white animate-pulse">
+                        <BrainCircuit size={32} />
+                     </div>
+                     <div>
+                        <h3 className="text-2xl font-serif font-bold text-white">Neural Scaffolding Protocol</h3>
+                        <p className="text-white/60 text-sm mt-1">Your AI Persona is ready for today's mastery dialogue. Initialise synthesis?</p>
+                     </div>
+                  </div>
+                  <Btn variant="primary" className="bg-white text-fluent-teal hover:bg-white/90 px-8 py-5 text-sm tracking-[0.2em] font-black">START STUDIING ✦</Btn>
+               </div>
+            </Card>
 
             {/* Stat row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               <MetricTile label="Mastery Index" value={`${overallMastery}%`} delta="+2.4%" icon={BarChart3} color="#1B4F5E" />
-              <MetricTile label="Live Credits" value={`${totalSessions}`} icon={Calendar} color="#0D1B2A" />
+              <MetricTile label="Academic Points" value="1,240 XP" delta="Top 10%" icon={Star} color="#C9A84C" />
               <MetricTile label="Current Streak" value="5 Days" icon={Zap} color="#7C3AED" />
-              <MetricTile label="Leaderboard" value="#04" icon={Award} color="#C9A84C" />
+              <MetricTile label="Global Rank" value="#04" icon={Award} color="#C9A84C" />
+            </div>
+
+            {/* Next Milestone Section */}
+            <div className="grid lg:grid-cols-3 gap-6">
+              <Card className="lg:col-span-2 p-8 border-none bg-white shadow-xl flex gap-8 items-center overflow-hidden relative">
+                 <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                    <Target size={120} />
+                 </div>
+                 <div className="w-20 h-20 bg-fluent-teal/10 rounded-full flex items-center justify-center text-fluent-teal shrink-0">
+                    <CheckCircle2 size={40} />
+                 </div>
+                 <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-2">Next Recommended Concept</div>
+                    <h3 className="text-2xl font-serif font-black text-fluent-navy mb-2">Bernoulli's Principle: Synthesis Lab</h3>
+                    <p className="text-sm text-slate-500 font-serif italic mb-6">"Masters expect you to synthesise this with your recent Maths Logic quiz results."</p>
+                    <div className="flex gap-4">
+                       <Btn variant="primary" size="sm" onClick={() => setActiveNav("ai-tutor")} className="text-[9px] px-6">Initialise AI Prep</Btn>
+                       <Btn variant="outline" size="sm" className="text-[9px] px-6">View Theory</Btn>
+                    </div>
+                 </div>
+              </Card>
+
+              <Card className="p-8 border-none bg-fluent-gold/5 shadow-xl flex flex-col justify-between">
+                 <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.3em] text-fluent-gold mb-6">Achievement Pulse</div>
+                    <div className="flex gap-4 mb-4">
+                       {[1, 2, 3].map(i => (
+                          <div key={i} className={`w-10 h-10 rounded-xl flex items-center justify-center ${i === 1 ? 'bg-fluent-gold text-white shadow-lg' : 'bg-white text-slate-300 opacity-40'}`}>
+                             <Award size={20} />
+                          </div>
+                       ))}
+                    </div>
+                    <div className="text-sm font-bold text-fluent-navy">Concept Crusader</div>
+                    <div className="text-[10px] text-slate-500 mt-1 uppercase font-black tracking-widest">2/5 Labs Completed</div>
+                 </div>
+                 <div className="mt-8">
+                    <ProgressBar progress={40} color="#C9A84C" />
+                 </div>
+              </Card>
             </div>
 
             {/* Growth chart */}
@@ -276,6 +386,8 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
               </div>
             </div>
           </div>
+        ) : activeNav === "ai-tutor" ? (
+          <AITutor profile={profile} />
         ) : activeNav === "assignments" ? (
           <StudentAssignments />
         ) : activeNav === "ledger" ? (
@@ -309,6 +421,49 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
 
       <BookingModal isOpen={showBooking} onClose={() => setShowBooking(false)} profile={profile} />
       <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
+
+      {/* Teacher Profile Modal */}
+      <Modal 
+        isOpen={!!selectedTeacher} 
+        onClose={() => setSelectedTeacher(null)} 
+        title="Faculty Profile"
+      >
+        <div className="space-y-6">
+          <div className="flex items-center gap-6 p-6 bg-slate-50 rounded-3xl border border-black/5">
+             <Avatar name={selectedTeacher?.name || ""} size={80} />
+             <div>
+                <h4 className="text-2xl font-serif font-bold text-fluent-navy">{selectedTeacher?.name}</h4>
+                <div className="flex flex-wrap gap-2 mt-2">
+                   {selectedTeacher?.subjects?.map((s: string) => (
+                      <span key={s}>
+                        <Badge color="teal">{s}</Badge>
+                      </span>
+                   ))}
+                </div>
+             </div>
+          </div>
+
+          <div className="space-y-2 px-2">
+             <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">Professional Bio</div>
+             <p className="text-sm text-slate-700 leading-relaxed italic font-serif">
+                {selectedTeacher?.bio || "This faculty node focuses on high-performance British instruction and adaptive synthesis. Bio currently being synchronised."}
+             </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+             <div className="p-4 bg-fluent-teal/5 rounded-2xl border border-fluent-teal/10">
+                <div className="text-[9px] font-black text-fluent-teal uppercase tracking-widest mb-1">Status</div>
+                <div className="text-sm font-bold text-fluent-navy">Active Faculty</div>
+             </div>
+             <div className="p-4 bg-fluent-gold/5 rounded-2xl border border-fluent-gold/10">
+                <div className="text-[9px] font-black text-fluent-gold uppercase tracking-widest mb-1">Standard</div>
+                <div className="text-sm font-bold text-fluent-navy">British Synthesis</div>
+             </div>
+          </div>
+
+          <Btn variant="primary" className="w-full mt-4" onClick={() => setSelectedTeacher(null)}>Close Profile</Btn>
+        </div>
+      </Modal>
     </DashboardShell>
   );
 };

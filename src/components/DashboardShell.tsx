@@ -50,7 +50,7 @@ export const DashboardShell = ({ role, title, children, navItems, activeNav, set
           </div>
         </div>
         
-        <div className="px-6 py-2 text-[9px] font-bold text-white/20 uppercase tracking-[0.3em] mb-1">Command Center</div>
+        <div className="px-6 py-2 text-[9px] font-bold text-white/50 uppercase tracking-[0.3em] mb-1">Command Center</div>
         <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
           {navItems.map(item => (
             <button
@@ -59,13 +59,13 @@ export const DashboardShell = ({ role, title, children, navItems, activeNav, set
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-xs group relative ${
                 activeNav === item.id 
                   ? 'text-white font-bold' 
-                  : 'text-white/40 hover:text-white/80'
+                  : 'text-white/70 hover:text-white/80'
               }`}
             >
               {activeNav === item.id && (
                 <motion.div layoutId="nav-glow" className="absolute inset-0 bg-white/5 rounded-xl border border-white/10" />
               )}
-              <item.icon size={16} className={`relative z-10 ${activeNav === item.id ? 'text-fluent-gold' : 'text-white/20 group-hover:text-white/40'}`} />
+              <item.icon size={16} className={`relative z-10 ${activeNav === item.id ? 'text-fluent-gold' : 'text-white/40 group-hover:text-white/70'}`} />
               <span className="relative z-10 tracking-tight">{item.label}</span>
               {item.badge && (
                 <span className="relative z-10 ml-auto bg-fluent-gold text-fluent-navy text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter">
@@ -100,7 +100,7 @@ export const DashboardShell = ({ role, title, children, navItems, activeNav, set
                    </div>
                    <div className="text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap">Provincial Directive</div>
                    <div className="w-px h-4 bg-fluent-navy/10 mx-2" />
-                   <p className="text-xs font-bold tracking-tight italic">"{directive}"</p>
+                   <p className="text-xs font-bold tracking-tight">"{directive}"</p>
                 </div>
                 <button 
                   onClick={() => setShowDirective(false)}

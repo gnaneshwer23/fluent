@@ -9,7 +9,7 @@ export const Badge = ({ children, color = "navy", className = "", icon: Icon }: 
     teal: "bg-fluent-teal/5 text-fluent-teal border-fluent-teal/10",
     green: "bg-green-50 text-green-700 border-green-100",
     red: "bg-red-50 text-red-700 border-red-100",
-    gray: "bg-slate-50 text-slate-500 border-slate-200",
+    gray: "bg-slate-50 text-slate-700 border-slate-200",
   };
   return (
     <span className={`text-[9px] font-black tracking-[0.2em] px-2.5 py-1 rounded-full uppercase whitespace-nowrap flex items-center gap-1.5 border ${colors[color]} ${className} font-mono`}>
@@ -47,7 +47,7 @@ export const ProgressBar = ({ value, max = 100, color = "#2A9D8F", label, showPc
   <div className="w-full">
     {(label || showPct) && (
       <div className="flex justify-between mb-2">
-        {label && <span className="text-xs font-medium text-gray-500">{label}</span>}
+        {label && <span className="text-xs font-semibold text-gray-700">{label}</span>}
         {showPct && <span className="text-xs font-bold text-fluent-navy">{Math.round((value / max) * 100)}%</span>}
       </div>
     )}
@@ -64,13 +64,14 @@ export const ProgressBar = ({ value, max = 100, color = "#2A9D8F", label, showPc
 );
 
 export const Logo = ({ className = "", variant = "dark", onClick, animate = false }: { className?: string, variant?: "dark" | "light", onClick?: () => void, animate?: boolean }) => (
-  <div onClick={onClick} className={`flex items-center gap-4 cursor-pointer group ${className} ${animate ? 'animate-pulse' : ''}`}>
-    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-700 group-hover:rotate-12 group-hover:scale-110 shadow-xl ${variant === 'dark' ? 'bg-fluent-navy shadow-fluent-navy/10' : 'bg-white shadow-white/20'}`}>
-      <BookOpen size={20} className={variant === 'dark' ? 'text-fluent-gold' : 'text-fluent-navy'} />
+  <div onClick={onClick} className={`flex items-center gap-3 cursor-pointer group ${className} ${animate ? 'animate-pulse' : ''}`}>
+    <div className={`w-10 h-10 flex items-center justify-center transition-all duration-700 group-hover:scale-110 ${variant === 'dark' ? 'text-fluent-navy' : 'text-fluent-gold'}`}>
+      <BookOpen size={24} strokeWidth={1.5} />
     </div>
-    <div className="flex flex-col -space-y-1">
-      <span className={`font-serif font-black text-2xl tracking-tighter transition-colors ${variant === 'dark' ? 'text-fluent-navy' : 'text-white group-hover:text-fluent-gold'}`}>FLUENT.</span>
-      <span className={`text-[8px] font-black uppercase tracking-[0.4em] ${variant === 'dark' ? 'text-fluent-navy/40' : 'text-white/40'}`}>Academy</span>
+    <div className="border-l border-black/10 pl-4 py-1">
+      <span className={`font-serif font-black text-xl md:text-2xl tracking-tighter transition-colors ${variant === 'dark' ? 'text-fluent-navy' : 'text-white'}`}>
+        FLUENT&nbsp;&nbsp;&nbsp;ACADEMY.
+      </span>
     </div>
   </div>
 );
@@ -84,7 +85,7 @@ export const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean, o
         animate={{ opacity: 1, scale: 1 }}
         className="bg-white rounded-[40px] p-10 max-w-xl w-full shadow-2xl relative border border-white/20"
       >
-        <button onClick={onClose} className="absolute top-8 right-8 p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
+        <button onClick={onClose} className="absolute top-8 right-8 p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-600">
            <ArrowRight className="rotate-45" size={20} />
         </button>
         <h3 className="text-3xl font-serif font-black tracking-tight text-fluent-navy mb-8">{title}</h3>
@@ -107,7 +108,7 @@ export const MetricTile = ({ label, value, delta, icon: Icon, color = "#0D1B2A" 
       >
         <Icon size={22} className="group-hover:text-white transition-colors" />
       </div>
-      <div className="text-[10px] font-black text-slate-400 group-hover:text-white/40 uppercase tracking-[0.3em] mb-2">{label}</div>
+      <div className="text-[10px] font-black text-slate-600 group-hover:text-white/70 uppercase tracking-[0.3em] mb-2">{label}</div>
       <div className="flex items-baseline gap-3 relative z-10">
         <div className="text-4xl font-serif font-bold tracking-tight">{value}</div>
         {delta && (
@@ -124,7 +125,7 @@ export const Btn = ({ children, variant = "primary", onClick, className = "", si
     primary: "bg-fluent-navy text-white hover:bg-fluent-teal shadow-xl shadow-fluent-navy/10 border-transparent",
     gold: "bg-fluent-gold text-white hover:bg-fluent-gold/90 shadow-xl shadow-fluent-gold/20 border-transparent",
     outline: "bg-transparent text-fluent-navy border-2 border-fluent-navy/10 hover:border-fluent-navy/30",
-    ghost: "bg-transparent text-slate-500 hover:bg-slate-100 border-transparent",
+    ghost: "bg-transparent text-slate-700 hover:bg-slate-100 border-transparent",
     danger: "bg-red-50 text-red-700 border border-red-100 hover:bg-red-100",
     success: "bg-green-50 text-green-700 border border-green-100 hover:bg-green-100",
   };

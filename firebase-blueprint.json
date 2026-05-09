@@ -78,19 +78,46 @@
       },
       "required": ["name", "adminEmail", "status"]
     },
-    "Class": {
-      "title": "Class Cohort",
-      "description": "A group of students assigned to a specific subject and grade.",
+    "Cohort": {
+      "title": "Academic Cohort",
+      "description": "A group of students (20-30) assigned to a specific subject and grade for weekly live classes.",
       "type": "object",
       "properties": {
         "name": { "type": "string" },
         "grade": { "type": "string" },
         "subject": { "type": "string" },
-        "ownerId": { "type": "string" },
+        "tutorId": { "type": "string" },
+        "maxStudents": { "type": "number", "default": 30 },
+        "schedule": { "type": "object" },
         "avgScore": { "type": "number" },
         "attendance": { "type": "number" }
       },
-      "required": ["name", "grade", "subject", "ownerId"]
+      "required": ["name", "grade", "subject", "tutorId"]
+    },
+    "Enrollment": {
+      "title": "Cohort Enrollment",
+      "description": "Linking a student to a specific academic cohort.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "cohortId": { "type": "string" },
+        "joinedAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["active", "completed", "dropped"] }
+      },
+      "required": ["studentId", "cohortId", "status"]
+    },
+    "LessonSession": {
+        "title": "Lesson Session",
+        "description": "A specific live class session within a cohort.",
+        "type": "object",
+        "properties": {
+            "cohortId": { "type": "string" },
+            "title": { "type": "string" },
+            "date": { "type": "string", "format": "date-time" },
+            "recordingUrl": { "type": "string" },
+            "attendance": { "type": "object" }
+        },
+        "required": ["cohortId", "date"]
     },
     "Student": {
       "title": "Student Record",
@@ -219,11 +246,15 @@
     },
     "ProgressReport": {
       "title": "Progress Record",
-      "description": "Topic-wise marks and feedback.",
+      "description": "Topic-wise marks and feedback with confidence metrics.",
       "type": "object",
       "properties": {
         "studentId": { "type": "string" },
+        "cohortId": { "type": "string" },
+        "sessionId": { "type": "string" },
         "marks": { "type": "number" },
+        "confidenceScore": { "type": "number" },
+        "communicationScore": { "type": "number" },
         "topic": { "type": "string" },
         "feedback": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
@@ -316,6 +347,22 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["title", "category", "type", "tier"]
+    },
+    "CurriculumChunk": {
+      "title": "Curriculum Chunk",
+      "description": "Knowledge unit for RAG system grounding.",
+      "type": "object",
+      "properties": {
+        "subject": { "type": "string" },
+        "grade": { "type": "string" },
+        "chapter": { "type": "string" },
+        "topic": { "type": "string" },
+        "content": { "type": "string" },
+        "metadata": { "type": "object" },
+        "embedding": { "type": "array", "items": { "type": "number" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["subject", "grade", "content"]
     }
   },
   "firestore": {
@@ -358,13 +405,21 @@
         "schema": "Booking",
         "description": "Consultation bookings with faculty."
     },
-    "classes": {
-        "schema": "Class",
+    "cohorts": {
+        "schema": "Cohort",
         "description": "Class cohorts managed by faculty."
     },
-    "classes/{classId}/students": {
+    "cohorts/{cohortId}/students": {
         "schema": "Student",
-        "description": "Students enrolled in a specific class."
+        "description": "Students enrolled in a specific cohort."
+    },
+    "enrollments": {
+        "schema": "Enrollment",
+        "description": "Student enrollment tracking."
+    },
+    "lessonSessions": {
+        "schema": "LessonSession",
+        "description": "Specific class sessions and recordings."
     },
     "studentPool": {
         "schema": "PoolStudent",
@@ -433,6 +488,10 @@
     "schoolLeads": {
         "schema": "SchoolLead",
         "description": "B2B institutional partnership leads."
+    },
+    "curriculum_chunks": {
+        "schema": "CurriculumChunk",
+        "description": "Source knowledge for AI grounding."
     },
     "admins": {
         "schema": {

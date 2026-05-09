@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Users,
@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   ChevronRight,
   PlusCircle,
+  Database,
 } from "lucide-react";
 import { Badge, Btn, Card, Avatar } from "./UI";
 import { db, auth } from "../lib/firebaseInit";
@@ -30,6 +31,8 @@ import {
   getDoc,
   collection,
   query,
+  where,
+  getDocs,
   orderBy,
   limit,
   addDoc,
@@ -50,6 +53,8 @@ export const LiveLab = ({
   onExit: () => void;
   userProfile?: any;
 }) => {
+  const [localTopic, setLocalTopic] = useState("");
+  const [nodeSearchTerm, setNodeSearchTerm] = useState("");
   const [session, setSession] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<
     "scaffolding" | "scholars" | "feed"
@@ -58,7 +63,16 @@ export const LiveLab = ({
   const [messages, setMessages] = useState<any[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [scholars, setScholars] = useState<any[]>([]);
+  const [curriculumNodes, setCurriculumNodes] = useState<any[]>([]);
+  const [isFetchingNodes, setIsFetchingNodes] = useState(false);
   const [showPollCreator, setShowPollCreator] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current && activeTab === "feed") {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, activeTab]);
   const [pollForm, setPollForm] = useState({ question: "", options: ["", ""] });
   const [pollResults, setPollResults] = useState<Record<string, number>>({});
   const [hasVoted, setHasVoted] = useState(false);
@@ -237,6 +251,92 @@ export const LiveLab = ({
     }
   }, [role, !!session]);
 
+  useEffect(() => {
+    if (session?.topic && !localTopic) {
+      setLocalTopic(session.topic);
+    }
+  }, [session?.topic]);
+
+  useEffect(() => {
+    if (localTopic === session?.topic || role !== "teacher") return;
+    const timeout = setTimeout(() => {
+      handleUpdateTopic(localTopic);
+    }, 1500);
+    return () => clearTimeout(timeout);
+  }, [localTopic]);
+
+  useEffect(() => {
+    if (!session?.topic || !session?.subject) return;
+
+    const fetchNodes = async () => {
+      setIsFetchingNodes(true);
+      try {
+        // Step 1: Use Gemini to extract high-quality keywords if the topic is complex
+        let keywords = [session.topic];
+        if (session.topic.length > 10) {
+           try {
+              const res = await ai.models.generateContent({
+                model: "gemini-3-flash-preview",
+                contents: `Extract 3-5 core academic keywords or phrases for the topic "${session.topic}". Output as comma-separated values only.`,
+              });
+              const extracted = res.text;
+              if (extracted) {
+                 keywords = [...keywords, ...extracted.split(",").map(k => k.trim())];
+              }
+           } catch (e) {
+              console.warn("AI keyword extraction failed", e);
+           }
+        }
+
+        const chunksRef = collection(db, "curriculum_chunks");
+        const q = query(
+          chunksRef,
+          where("subject", "==", session.subject),
+          limit(100) // Increase window for better RAG mapping
+        );
+        const snap = await getDocs(q);
+        const allNodes = snap.docs.map((d) => ({ id: d.id, ...d.data() })) as any[];
+
+        // Step 2: Complex scoring based on AI keywords and search term
+        const searchString = `${localTopic} ${nodeSearchTerm}`.toLowerCase();
+        const searchTerms = Array.from(new Set([...keywords, ...searchString.split(/\W+/)].filter(t => t.length > 2)));
+
+        const nodesWithScore = allNodes.map(n => {
+          let score = 0;
+          const nodeText = `${n.topic} ${n.content} ${n.chapter}`.toLowerCase();
+          
+          searchTerms.forEach(term => {
+             const lowerTerm = term.toLowerCase();
+             if (nodeText.includes(lowerTerm)) {
+                score += lowerTerm.length; // Reward longer matches
+                if (n.topic?.toLowerCase().includes(lowerTerm)) score += 5;
+             }
+          });
+
+          // Manual search term boost
+          if (nodeSearchTerm && nodeText.includes(nodeSearchTerm.toLowerCase())) {
+             score += 20;
+          }
+
+          return { ...n, relevance: score };
+        });
+
+        const sorted = nodesWithScore
+          .filter(n => n.relevance > 0)
+          .sort((a, b) => b.relevance - a.relevance)
+          .slice(0, 8);
+
+        setCurriculumNodes(sorted);
+      } catch (err) {
+        console.error("Error fetching curriculum nodes:", err);
+      } finally {
+        setIsFetchingNodes(false);
+      }
+    };
+
+    fetchNodes();
+  }, [session?.topic, session?.subject, nodeSearchTerm]);
+
   const handleUpdateProtocol = async (protocol: string) => {
     if (role !== "teacher") return;
     try {
@@ -316,9 +416,7 @@ export const LiveLab = ({
       await addDoc(collection(db, "liveSessions", sessionId, "messages"), {
         text: inputMessage,
         senderId: auth.currentUser.uid,
-        senderName:
-          auth.currentUser.displayName ||
-          (role === "teacher" ? "Faculty" : "Scholar"),
+        senderName: userProfile?.name || auth.currentUser.displayName || (role === "teacher" ? "Faculty" : "Scholar"),
         role,
         createdAt: serverTimestamp(),
       });
@@ -329,6 +427,25 @@ export const LiveLab = ({
         OperationType.WRITE,
         `liveSessions/${sessionId}/messages`,
       );
+    }
+  };
+
+  const handleReferenceNode = async (node: any) => {
+    if (!auth.currentUser) return;
+    const referenceText = `[KNOWLEDGE NODE RECAP] Topic: ${node.topic} — ${node.content.substring(0, 180)}...`;
+    try {
+      await addDoc(collection(db, "liveSessions", sessionId, "messages"), {
+        text: referenceText,
+        senderId: auth.currentUser.uid,
+        senderName: userProfile?.name || auth.currentUser.displayName || (role === "teacher" ? "Faculty" : "Scholar"),
+        role,
+        isReference: true,
+        nodeId: node.id,
+        createdAt: serverTimestamp(),
+      });
+      setActiveTab("feed");
+    } catch (e) {
+      console.error("Reference error:", e);
     }
   };
 
@@ -422,8 +539,8 @@ export const LiveLab = ({
             <div className="flex items-center gap-2">
               {role === "teacher" ? (
                 <input
-                  value={session.topic}
-                  onChange={(e) => handleUpdateTopic(e.target.value)}
+                  value={localTopic}
+                  onChange={(e) => setLocalTopic(e.target.value)}
                   className="bg-transparent border-b border-white/20 focus:border-fluent-teal outline-none font-serif font-bold text-lg px-0 py-0 min-w-[200px]"
                 />
               ) : (
@@ -564,6 +681,82 @@ export const LiveLab = ({
                     </div>
                   </div>
                 </Card>
+
+                {/* RAG Knowledge Nodes */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                       <Database className="text-fluent-gold" size={16} />
+                       <h5 className="font-serif font-black text-fluent-navy uppercase tracking-tight">Curriculum Anchor Nodes</h5>
+                       {isFetchingNodes && <div className="w-3 h-3 border-2 border-t-fluent-gold rounded-full animate-spin" />}
+                    </div>
+                    <div className="flex items-center gap-3">
+                       <div className="relative">
+                          <PlusCircle size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" />
+                          <input 
+                            value={nodeSearchTerm}
+                            onChange={(e) => setNodeSearchTerm(e.target.value)}
+                            placeholder="Search nodes..."
+                            className="pl-8 pr-3 py-1.5 bg-white border border-black/5 rounded-full text-[10px] outline-none focus:ring-1 focus:ring-fluent-gold/20"
+                          />
+                       </div>
+                       <Badge color="gold">RAG Grounded</Badge>
+                    </div>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {curriculumNodes.map(node => {
+                      const isHighlyRelevant = node.relevance > 5;
+                      return (
+                        <Card 
+                          key={node.id} 
+                          className={`p-5 transition-all group relative overflow-hidden ${
+                            isHighlyRelevant 
+                              ? "border-fluent-gold/50 bg-fluent-gold/[0.03] shadow-lg shadow-fluent-gold/5 ring-1 ring-fluent-gold/20" 
+                              : "border-black/5 bg-white hover:border-fluent-gold/30"
+                          }`}
+                        >
+                          {isHighlyRelevant && (
+                            <div className="absolute top-0 right-0 py-1 px-3 bg-fluent-gold text-[8px] font-black text-white rounded-bl-xl uppercase tracking-widest flex items-center gap-1 z-10">
+                              <Sparkles size={10} /> Peak Relevance
+                            </div>
+                          )}
+                          <div className="flex justify-between items-start mb-2">
+                             <h6 className={`font-bold text-xs line-clamp-1 ${isHighlyRelevant ? 'text-fluent-navy' : 'text-fluent-navy/80'}`}>
+                               {node.topic}
+                             </h6>
+                             <Btn 
+                               variant="ghost" 
+                               size="sm" 
+                               className={`h-6 px-2 text-[8px] font-black tracking-widest transition-all ${
+                                 isHighlyRelevant 
+                                   ? 'text-fluent-navy hover:text-fluent-gold opacity-100' 
+                                   : 'text-fluent-gold md:opacity-0 md:group-hover:opacity-100'
+                               }`}
+                               onClick={() => handleReferenceNode(node)}
+                             >
+                               REFERENCE
+                             </Btn>
+                          </div>
+                          <p className="text-[10px] leading-relaxed text-slate-500 italic font-serif line-clamp-2 mb-3">
+                            "{node.content}"
+                          </p>
+                          <div className="flex justify-between items-center text-[8px] font-bold uppercase tracking-widest">
+                             <span className="text-slate-300">{node.chapter}</span>
+                             <span className={isHighlyRelevant ? "text-fluent-gold" : "text-fluent-teal"}>
+                               {isHighlyRelevant ? "Active Context" : "Verified Node"}
+                             </span>
+                          </div>
+                        </Card>
+                      );
+                    })}
+                    {curriculumNodes.length === 0 && !isFetchingNodes && (
+                      <div className="col-span-2 p-8 text-center bg-gray-50 border border-dashed border-black/5 rounded-3xl">
+                         <p className="text-xs text-slate-400 font-serif italic">No exact curriculum nodes mapped for this synthesis path yet.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="p-6 bg-fluent-navy text-white rounded-[24px]">
@@ -738,10 +931,17 @@ export const LiveLab = ({
                       Synthesis Feed
                     </span>
                   </div>
-                  <Badge color="gray">{messages.length} Active Concepts</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge color="gray">{messages.length} Active Concepts</Badge>
+                    {curriculumNodes.length > 0 && (
+                      <Badge color="gold" className="hidden sm:flex gap-1 items-center">
+                        <Database size={8} /> {curriculumNodes.length} Verified Nodes
+                      </Badge>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex-1 overflow-auto p-6 space-y-4">
+                <div className="flex-1 overflow-auto p-6 space-y-6" ref={scrollRef}>
                   {messages.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-center p-8">
                       <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-200 mb-4">
@@ -752,35 +952,48 @@ export const LiveLab = ({
                       </p>
                     </div>
                   ) : (
-                    messages.map((m) => (
-                      <div
-                        key={m.id}
-                        className={`flex flex-col ${m.senderId === auth.currentUser?.uid ? "items-end" : "items-start"}`}
-                      >
-                        <div className="flex items-center gap-2 mb-1 px-2">
-                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
-                            {m.senderName}
-                          </span>
-                          {m.role === "teacher" && (
-                            <Badge
-                              color="gold"
-                              className="text-[8px] px-1 py-0 uppercase"
-                            >
-                              Faculty
-                            </Badge>
-                          )}
-                        </div>
+                    messages.map((m) => {
+                      const isMe = m.senderId === auth.currentUser?.uid;
+                      return (
                         <div
-                          className={`max-w-[80%] p-4 rounded-2xl text-sm ${
-                            m.senderId === auth.currentUser?.uid
-                              ? "bg-fluent-teal text-white rounded-tr-none shadow-sm"
-                              : "bg-gray-100 text-fluent-navy rounded-tl-none"
-                          }`}
+                          key={m.id}
+                          className={`flex gap-3 ${isMe ? "flex-row-reverse" : "flex-row"}`}
                         >
-                          {m.text}
+                          {!isMe && <Avatar name={m.senderName} size={32} />}
+                          <div className={`flex flex-col ${isMe ? "items-end" : "items-start"} max-w-[75%]`}>
+                            <div className="flex items-center gap-2 mb-1 px-1">
+                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">
+                                {m.senderName}
+                              </span>
+                              {m.role === "teacher" && (
+                                <span className="bg-fluent-gold/10 text-fluent-gold text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest border border-fluent-gold/20">
+                                  Faculty
+                                </span>
+                              )}
+                            </div>
+                            <div
+                              className={`p-4 rounded-2xl text-sm leading-relaxed shadow-sm ${
+                                isMe
+                                  ? "bg-fluent-navy text-white rounded-tr-none"
+                                  : "bg-white border border-black/5 text-fluent-navy rounded-tl-none"
+                              } ${m.isReference ? 'border-2 border-fluent-gold/30 italic font-serif' : ''}`}
+                            >
+                              {m.text}
+                              {m.isReference && (
+                                <div className="mt-2 pt-2 border-t border-black/10 flex items-center gap-2">
+                                  <Database size={10} className="text-fluent-gold" />
+                                  <span className="text-[8px] font-black uppercase tracking-widest opacity-60">Verified Curriculum Context</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="mt-1 px-1 text-[8px] text-slate-300 font-bold uppercase">
+                              {m.createdAt?.toDate ? m.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Syncing..."}
+                            </div>
+                          </div>
+                          {isMe && <Avatar name={m.senderName} size={32} />}
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
 

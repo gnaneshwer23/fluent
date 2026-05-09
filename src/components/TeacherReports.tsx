@@ -56,6 +56,8 @@ export default function TeacherReports() {
       const reportData = {
         ...data,
         studentName: selectedStudent?.name || "Student",
+        teacherId: auth.currentUser?.uid,
+        schoolId: selectedStudent?.schoolId || null,
         marks: Number(data.marks),
         confidenceScore: Number(data.confidenceScore),
         participationScore: Number(data.participationScore),
@@ -68,6 +70,8 @@ export default function TeacherReports() {
       // Also add to generic progress collection for student dashboard
       await addDoc(collection(db, "progress"), {
         studentId: data.studentId,
+        teacherId: auth.currentUser?.uid,
+        schoolId: selectedStudent?.schoolId || null,
         topic: `Weekly Review: ${data.week}`,
         marks: Number(data.marks),
         feedback: data.teacherComment,
@@ -110,15 +114,118 @@ export default function TeacherReports() {
     }
   };
 
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [bulkData, setBulkData] = useState("");
+
+  const handleBulkSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bulkData.trim()) return;
+
+    setLoading(true);
+    try {
+      // Expected format: Student Name, Marks, Grade/Week
+      // Example: John Doe, 85, Week 1
+      const lines = bulkData.split("\n").filter(l => l.trim() !== "");
+      let successCount = 0;
+
+      for (const line of lines) {
+        const [name, marks, week] = line.split(",").map(s => s.trim());
+        if (!name || !marks) continue;
+
+        const student = students.find(s => s.name.toLowerCase().includes(name.toLowerCase()));
+        if (!student) continue;
+
+        const reportData = {
+          studentId: student.id,
+          studentName: student.name,
+          parentEmail: student.parentEmail || "",
+          week: week || data.week,
+          marks: Number(marks),
+          confidenceScore: 7, // Default
+          participationScore: 8, // Default
+          strengths: "Bulk uploaded",
+          weaknesses: "Bulk uploaded",
+          confidenceNote: "Standard assessment",
+          communicationNote: "Standard participation",
+          teacherComment: "Academic performance verified via bulk processing.",
+          actionPlan: "Continue standard curriculum nodes.",
+          attendance: "Present",
+          date: new Date().toISOString().split("T")[0],
+          createdAt: serverTimestamp()
+        };
+
+        await addDoc(collection(db, "weeklyReports"), reportData);
+        await addDoc(collection(db, "progress"), {
+          studentId: student.id,
+          topic: `Weekly Review: ${reportData.week}`,
+          marks: Number(marks),
+          feedback: reportData.teacherComment,
+          confidence: 7,
+          createdAt: serverTimestamp()
+        });
+
+        await checkAndCreateAlerts(reportData);
+        successCount++;
+      }
+
+      alert(`Success: ${successCount} reports synthesised and published.`);
+      setBulkData("");
+      setShowBulkUpload(false);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, "weeklyReports (bulk)");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-10">
-      <div className="text-center">
-        <div className="text-[10px] font-black text-fluent-gold uppercase tracking-[0.6em] mb-4 font-mono">Accountability Protocol</div>
-        <h2 className="text-5xl font-serif font-bold text-fluent-navy">Synthesise Weekly Feedback</h2>
-        <p className="text-slate-400 mt-2 italic font-serif">Your insights are the primary bridge between the academy and the home.</p>
+      <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="text-center md:text-left">
+          <div className="text-[10px] font-black text-fluent-gold uppercase tracking-[0.6em] mb-4 font-mono">Accountability Protocol</div>
+          <h2 className="text-5xl font-serif font-bold text-fluent-navy">Synthesise Feedback</h2>
+          <p className="text-slate-400 mt-2 italic font-serif text-sm">Your insights are the primary bridge between the academy and the home.</p>
+        </div>
+        <div className="flex gap-2">
+          <Btn 
+            variant={showBulkUpload ? "outline" : "gold"} 
+            size="sm" 
+            className="text-[9px] px-6"
+            onClick={() => setShowBulkUpload(!showBulkUpload)}
+          >
+            {showBulkUpload ? "CANCEL" : "BULK UPLOAD"}
+          </Btn>
+        </div>
       </div>
 
-      <Card className="p-12 border-black/5 bg-white shadow-2xl relative overflow-hidden rounded-[40px]">
+      {showBulkUpload ? (
+        <Card className="p-12 border-fluent-gold/20 bg-fluent-gold/[0.02] shadow-2xl rounded-[40px] border-dashed border-2">
+           <div className="text-center mb-8">
+              <h3 className="text-2xl font-serif font-bold text-fluent-navy">Batch Synthesis Portal</h3>
+              <p className="text-xs text-slate-500 mt-1">Format: <span className="font-mono bg-slate-100 px-2 py-0.5 rounded">Student Name, Marks, Week</span> (one per line)</p>
+           </div>
+           
+           <form onSubmit={handleBulkSubmit} className="space-y-6">
+              <textarea 
+                className="w-full h-64 p-8 bg-white border border-black/5 rounded-[32px] font-mono text-xs focus:ring-2 focus:ring-fluent-gold/20 outline-none resize-none shadow-inner"
+                placeholder="John Doe, 85, Week 1\nSarah Smith, 92, Week 1..."
+                value={bulkData}
+                onChange={(e) => setBulkData(e.target.value)}
+              />
+              <div className="flex justify-center">
+                 <Btn 
+                   type="submit" 
+                   variant="gold" 
+                   className="px-20 py-6 text-[10px] font-black tracking-widest"
+                   disabled={loading || !bulkData.trim()}
+                 >
+                   {loading ? "PROCESSING..." : "EXECUTE BATCH UPLOAD"}
+                 </Btn>
+              </div>
+           </form>
+        </Card>
+      ) : (
+        <Card className="p-12 border-black/5 bg-white shadow-2xl relative overflow-hidden rounded-[40px]">
         <div className="absolute top-0 right-0 p-12 opacity-5 -rotate-12 pointer-events-none">
           <ShieldCheck size={200} />
         </div>
@@ -302,6 +409,7 @@ export default function TeacherReports() {
           </div>
         </form>
       </Card>
+      )}
     </div>
   );
 }

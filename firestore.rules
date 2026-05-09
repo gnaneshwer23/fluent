@@ -10,19 +10,30 @@ service cloud.firestore {
     
     // Bootstrapped Admin check
     function isAdmin() { 
-      return isVerified() && (
-        request.auth.token.email == 'drbiryanihelp@gmail.com' ||
-        request.auth.token.email == 'gnaneshwer.jadav@gmail.com' ||
-        request.auth.token.email == 'mindmeshaisolutions@gmail.com' ||
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      return isSignedIn() && (
+        request.auth.token.email_verified == true && (
+          request.auth.token.email == 'drbiryanihelp@gmail.com' ||
+          request.auth.token.email == 'gnaneshwer.jadav@gmail.com' ||
+          request.auth.token.email == 'mindmeshaisolutions@gmail.com' ||
+          exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+        )
       ); 
     }
     
     function isTeacher() { 
-      return isVerified() && (
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher') ||
-        isAdmin() 
+      return isSignedIn() && (
+        isAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher')
+      );
+    }
+
+    function isSchoolAdmin(schoolId) {
+      return isSignedIn() && (
+        isAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'school_admin' && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.schoolId == schoolId)
       );
     }
     
@@ -67,15 +78,26 @@ service cloud.firestore {
       }
     }
 
-    // --- Classes & Roster (Hardened) ---
-    match /classes/{classId} {
+    // --- Cohorts & Roster (Hardened) ---
+    match /cohorts/{cohortId} {
       allow read: if isSignedIn();
-      // Only owner can write
+      // Only tutor can write
       allow write: if isSignedIn() && (
-        (exists(/databases/$(database)/documents/classes/$(classId)) && get(/databases/$(database)/documents/classes/$(classId)).data.ownerId == request.auth.uid) ||
-        (!exists(/databases/$(database)/documents/classes/$(classId)) && incoming().ownerId == request.auth.uid) ||
+        (exists(/databases/$(database)/documents/cohorts/$(cohortId)) && get(/databases/$(database)/documents/cohorts/$(cohortId)).data.tutorId == request.auth.uid) ||
+        (!exists(/databases/$(database)/documents/cohorts/$(cohortId)) && incoming().tutorId == request.auth.uid) ||
         isAdmin()
       );
+    }
+
+    match /enrollments/{enrollmentId} {
+      allow read: if isSignedIn() && (resource.data.studentId == request.auth.uid || isTeacher() || isAdmin());
+      allow create: if isTeacher() || isAdmin() || (isSignedIn() && incoming().studentId == request.auth.uid);
+      allow update, delete: if isTeacher() || isAdmin();
+    }
+
+    match /lessonSessions/{sessionId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isTeacher() || isAdmin();
     }
 
     // --- Collection Group: Students (Enables specialized dashboards) ---
@@ -113,7 +135,10 @@ service cloud.firestore {
 
       match /messages/{messageId} {
         allow read: if isSignedIn();
-        allow create: if isSignedIn();
+        allow create: if isSignedIn() 
+          && incoming().senderId == request.auth.uid
+          && incoming().text is string && incoming().text.size() > 0 && incoming().text.size() <= 1000
+          && incoming().createdAt == request.time;
       }
 
       match /scholars/{scholarId} {
@@ -167,13 +192,24 @@ service cloud.firestore {
 
     // --- Weekly Reports ---
     match /weeklyReports/{reportId} {
-      allow read: if isSignedIn() && (request.auth.token.email == resource.data.parentEmail || isTeacher() || isAdmin());
+      allow read: if isSignedIn() && (
+        resource.data.teacherId == request.auth.uid || 
+        resource.data.studentId == request.auth.uid ||
+        request.auth.token.email == resource.data.parentEmail || 
+        isAdmin() ||
+        isSchoolAdmin(resource.data.schoolId)
+      );
       allow create, update, delete: if isTeacher() || isAdmin();
     }
 
     // --- Attendance ---
     match /attendance/{attendanceId} {
-      allow read: if isSignedIn() && (resource.data.studentId == request.auth.uid || isTeacher() || isAdmin());
+      allow read: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid || 
+        resource.data.teacherId == request.auth.uid || 
+        isAdmin() ||
+        isSchoolAdmin(resource.data.schoolId)
+      );
       allow create, update, delete: if isTeacher() || isAdmin();
     }
 
@@ -202,6 +238,12 @@ service cloud.firestore {
       allow create: if true; // Allows the system/app to log notifications sent
     }
 
+    // --- RAG Curriculum Chunks ---
+    match /curriculum_chunks/{chunkId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() || isTeacher();
+    }
+
     // --- Schools ---
     match /schools/{schoolId} {
       allow read: if isSignedIn();
@@ -214,6 +256,13 @@ service cloud.firestore {
           (existing().status != 'active' || incoming().status == 'active')
         ));
       allow delete: if isAdmin();
+    }
+
+    // --- Payments ---
+    match /payments/{paymentId} {
+      allow read: if isAdmin() || (isSignedIn() && (resource.data.studentId == request.auth.uid || resource.data.parentEmail == request.auth.token.email));
+      allow create: if isSignedIn(); // Usually system or user during checkout
+      allow update, delete: if isAdmin();
     }
   }
 }

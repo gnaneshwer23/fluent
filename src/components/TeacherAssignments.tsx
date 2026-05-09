@@ -1,15 +1,21 @@
-import React, { useState, useEffect } from "react";
-import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, where, deleteDoc, doc, limit } from "firebase/firestore";
+import React, { useState, useEffect, useRef } from "react";
+import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, where, deleteDoc, doc, limit, writeBatch } from "firebase/firestore";
 import { db, auth } from "../lib/firebaseInit";
 import { handleFirestoreError, OperationType } from "../lib/errorHandling";
 import { Card, Btn, Badge } from "./UI";
-import { Users, PlusCircle, Link as LinkIcon, Calendar, BookOpen, Clock, CheckCircle2, ChevronRight, Trash2, Copy, ExternalLink } from "lucide-react";
+import { Users, PlusCircle, Link as LinkIcon, Calendar, BookOpen, Clock, CheckCircle2, ChevronRight, Trash2, Copy, ExternalLink, FileUp, FileText, Upload, AlertCircle, Check } from "lucide-react";
+import Papa from "papaparse";
 
 export default function TeacherAssignments({ mini = false }: { mini?: boolean }) {
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isBulk, setIsBulk] = useState(false);
+  const [bulkFile, setBulkFile] = useState<File | null>(null);
+  const [bulkPreview, setBulkPreview] = useState<any[]>([]);
+  const [bulkError, setBulkError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -37,7 +43,9 @@ export default function TeacherAssignments({ mini = false }: { mini?: boolean })
       setAssignments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setFetching(false);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, "assignments");
+      if (auth.currentUser) {
+        handleFirestoreError(error, OperationType.LIST, "assignments");
+      }
     });
 
     return () => unsub();
@@ -58,6 +66,71 @@ export default function TeacherAssignments({ mini = false }: { mini?: boolean })
       setForm({ title: "", link: "", dueDate: "", batch: "" });
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, "assignments");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setBulkFile(file);
+    setBulkError(null);
+    
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        if (results.errors.length > 0) {
+          setBulkError("Parsing error: " + results.errors[0].message);
+          return;
+        }
+        
+        const data = results.data as any[];
+        // Validate headers
+        const required = ['title', 'dueDate'];
+        const headers = results.meta.fields || [];
+        const missing = required.filter(h => !headers.includes(h));
+        
+        if (missing.length > 0) {
+          setBulkError(`Missing required columns: ${missing.join(", ")}`);
+          return;
+        }
+        
+        setBulkPreview(data);
+      }
+    });
+  };
+
+  const handleBulkSubmit = async () => {
+    if (bulkPreview.length === 0 || !auth.currentUser) return;
+    
+    setLoading(true);
+    try {
+      const batch = writeBatch(db);
+      const assignmentsRef = collection(db, "assignments");
+      
+      bulkPreview.forEach(item => {
+        const docRef = doc(assignmentsRef);
+        batch.set(docRef, {
+          title: item.title || "Untitled Assignment",
+          dueDate: item.dueDate || new Date().toISOString().split('T')[0],
+          batch: item.batch || "",
+          link: item.link || "",
+          teacherId: auth.currentUser?.uid,
+          status: "active",
+          createdAt: serverTimestamp()
+        });
+      });
+      
+      await batch.commit();
+      setBulkFile(null);
+      setBulkPreview([]);
+      setIsBulk(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, "assignments (bulk)");
     } finally {
       setLoading(false);
     }
@@ -103,75 +176,165 @@ export default function TeacherAssignments({ mini = false }: { mini?: boolean })
       <div className="grid lg:grid-cols-5 gap-12">
         {/* Left: Create Form */}
         <div className="lg:col-span-2 space-y-8">
-          <div>
-            <h2 className="text-3xl font-serif font-black text-fluent-navy tracking-tight">Issue Assignment</h2>
-            <p className="text-slate-500 mt-2 text-sm italic font-serif">Distribute logic challenges to specific scholar cohorts.</p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-3xl font-serif font-black text-fluent-navy tracking-tight">Issue Assignment</h2>
+              <p className="text-slate-500 mt-2 text-sm italic font-serif">Distribute logic challenges to specific scholar cohorts.</p>
+            </div>
+            <Btn 
+              variant="outline" 
+              size="sm" 
+              icon={isBulk ? PlusCircle : FileUp} 
+              onClick={() => setIsBulk(!isBulk)}
+              className="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 h-auto rounded-full border-black/5 bg-white shadow-sm"
+            >
+              {isBulk ? "Single Mode" : "Bulk Upload"}
+            </Btn>
           </div>
 
-          <Card className="p-8 border-black/5 bg-white shadow-xl shadow-fluent-navy/5 rounded-[32px]">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Challenge Title</label>
-                <div className="relative">
-                  <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-                  <input
-                    required
-                    className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-fluent-teal/20 transition-all font-bold text-fluent-navy placeholder:text-slate-300"
-                    placeholder="e.g. Quantum Logic Sync I"
-                    value={form.title}
-                    onChange={(e) => setForm({...form, title: e.target.value})}
-                  />
-                </div>
-              </div>
+          <Card className="p-8 border-black/5 bg-white shadow-xl shadow-fluent-navy/5 rounded-[32px] overflow-hidden relative">
+            {isBulk ? (
+              <div className="space-y-6">
+                 <div>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 px-1">Institutional Bulk Protocol</div>
+                    <div 
+                      className={`border-2 border-dashed rounded-[24px] p-8 text-center transition-all cursor-pointer ${
+                        bulkFile ? 'border-fluent-teal bg-fluent-teal/5' : 'border-slate-100 hover:border-fluent-gold/30 hover:bg-slate-50/50'
+                      }`}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                       <input 
+                         type="file" 
+                         ref={fileInputRef} 
+                         onChange={handleFileChange} 
+                         accept=".csv,.txt" 
+                         className="hidden" 
+                       />
+                       {bulkFile ? (
+                         <div className="space-y-3">
+                            <div className="w-12 h-12 bg-fluent-teal/10 rounded-full flex items-center justify-center text-fluent-teal mx-auto">
+                               <FileText size={24} />
+                            </div>
+                            <div className="text-sm font-bold text-fluent-navy">{bulkFile.name}</div>
+                            <div className="text-[10px] text-slate-400 uppercase font-black">{bulkPreview.length} Entires Detected</div>
+                         </div>
+                       ) : (
+                         <div className="space-y-3">
+                            <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mx-auto group-hover:text-fluent-gold transition-colors">
+                               <Upload size={24} />
+                            </div>
+                            <div className="text-sm font-bold text-slate-400">Click to Synchronise CSV/TXT</div>
+                            <div className="text-[9px] text-slate-300 uppercase tracking-widest leading-relaxed">
+                               Required Headers:<br /> 
+                               <span className="text-slate-400 font-black">title, dueDate, batch (opt), link (opt)</span>
+                            </div>
+                         </div>
+                       )}
+                    </div>
+                 </div>
 
-              <div className="space-y-4">
+                 {bulkError && (
+                   <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex gap-3 text-red-600">
+                      <AlertCircle size={18} className="shrink-0" />
+                      <div className="text-[11px] font-bold leading-relaxed">{bulkError}</div>
+                   </div>
+                 )}
+
+                 {bulkPreview.length > 0 && !bulkError && (
+                   <div className="space-y-4">
+                      <div className="max-h-[200px] overflow-y-auto custom-scrollbar border border-black/5 rounded-2xl bg-slate-50/50 p-2">
+                        {bulkPreview.map((item, i) => (
+                          <div key={i} className="p-3 border-b border-black/5 last:border-0 flex justify-between items-center text-[10px] font-bold">
+                             <div className="text-fluent-navy truncate max-w-[120px]">{item.title}</div>
+                             <div className="text-slate-400">{item.dueDate}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <Btn 
+                        onClick={handleBulkSubmit}
+                        variant="primary" 
+                        disabled={loading}
+                        className="w-full py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-fluent-navy/20"
+                      >
+                        {loading ? "Committing Bulk Sequence..." : `Issue ${bulkPreview.length} Challenges`}
+                      </Btn>
+                   </div>
+                 )}
+                 
+                 <div className="pt-4 border-t border-black/5 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-fluent-gold/10 flex items-center justify-center text-fluent-gold shrink-0">
+                       <Check size={14} />
+                    </div>
+                    <div className="text-[9px] text-slate-400 leading-relaxed font-serif italic">
+                       "Bulk issuance respects specific cohort logic and regional date protocols."
+                    </div>
+                 </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Due Date</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Challenge Title</label>
                   <div className="relative">
-                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                    <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
                     <input
-                      type="date"
                       required
-                      className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-fluent-teal/20 transition-all font-bold text-fluent-navy"
-                      value={form.dueDate}
-                      onChange={(e) => setForm({...form, dueDate: e.target.value})}
+                      className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-fluent-teal/20 transition-all font-bold text-fluent-navy placeholder:text-slate-300"
+                      placeholder="e.g. Quantum Logic Sync I"
+                      value={form.title}
+                      onChange={(e) => setForm({...form, title: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Due Date</label>
+                    <div className="relative">
+                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                      <input
+                        type="date"
+                        required
+                        className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-fluent-teal/20 transition-all font-bold text-fluent-navy"
+                        value={form.dueDate}
+                        onChange={(e) => setForm({...form, dueDate: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Target Cohort/Batch</label>
+                    <input
+                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-fluent-teal/20 transition-all font-bold text-fluent-navy placeholder:text-slate-300"
+                      placeholder="e.g. Batch 2026-Alpha"
+                      value={form.batch}
+                      onChange={(e) => setForm({...form, batch: e.target.value})}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Target Cohort/Batch</label>
-                  <input
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-fluent-teal/20 transition-all font-bold text-fluent-navy placeholder:text-slate-300"
-                    placeholder="e.g. Batch 2026-Alpha"
-                    value={form.batch}
-                    onChange={(e) => setForm({...form, batch: e.target.value})}
-                  />
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Protocol URL (Optional)</label>
+                  <div className="relative">
+                    <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                    <input
+                      className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-fluent-teal/20 transition-all font-bold text-fluent-navy placeholder:text-slate-300"
+                      placeholder="https://resource.ac.uk/..."
+                      value={form.link}
+                      onChange={(e) => setForm({...form, link: e.target.value})}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Protocol URL (Optional)</label>
-                <div className="relative">
-                  <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-                  <input
-                    className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-fluent-teal/20 transition-all font-bold text-fluent-navy placeholder:text-slate-300"
-                    placeholder="https://resource.ac.uk/..."
-                    value={form.link}
-                    onChange={(e) => setForm({...form, link: e.target.value})}
-                  />
-                </div>
-              </div>
-
-              <Btn 
-                type="submit" 
-                variant="primary" 
-                className="w-full py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-fluent-navy/20"
-                disabled={loading}
-              >
-                {loading ? "Synchronizing..." : "Publish to Registry"}
-              </Btn>
-            </form>
+                <Btn 
+                  type="submit" 
+                  variant="primary" 
+                  className="w-full py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-fluent-navy/20"
+                  disabled={loading}
+                >
+                  {loading ? "Synchronizing..." : "Publish to Registry"}
+                </Btn>
+              </form>
+            )}
           </Card>
         </div>
 
