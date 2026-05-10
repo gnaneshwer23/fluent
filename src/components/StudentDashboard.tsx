@@ -162,227 +162,203 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
 
   return (
     <DashboardShell role="student" title={studentName} navItems={navItems} activeNav={activeNav} setActiveNav={setActiveNav} onBack={onBack}>
-      <div className="p-6 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="flex items-center gap-2 text-[9px] uppercase font-black text-slate-500 mb-6 tracking-[0.2em]">
-          <button onClick={() => setActiveNav("overview")} className="hover:text-fluent-teal transition-colors">Studio</button>
-          {activeNav !== 'overview' && (
-            <>
-              <ChevronRight size={10} className="text-slate-400" />
-              <span className="text-fluent-teal">{navItems.find(i => i.id === activeNav)?.label}</span>
-            </>
-          )}
-        </div>
+      <div className="p-8">
+        {activeNav === "overview" ? (
+          <div className="space-y-6">
+            {/* Hero Section */}
+            <div className="bg-fluent-midnight rounded-xl p-10 relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-8 border border-fluent-gold/20">
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_50%,rgba(184,151,58,0.12)_0%,transparent_60%),radial-gradient(ellipse_at_80%_20%,rgba(184,151,58,0.06)_0%,transparent_50%)] pointer-events-none" />
+              <div 
+                className="absolute inset-0 opacity-[0.04] pointer-events-none"
+                style={{
+                  backgroundImage: "linear-gradient(rgba(184,151,58,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(184,151,58,0.06) 1px, transparent 1px)",
+                  backgroundSize: "40px 40px",
+                }}
+              />
+              
+              <div className="relative z-10 flex-1">
+                <div className="flex items-center gap-3 font-display text-[8px] tracking-[0.3em] uppercase text-fluent-gold mb-4">
+                  <div className="w-6 h-px bg-fluent-gold" />
+                  Aitken Standard V2.1 Sync
+                </div>
+                <h2 className="font-serif text-3xl md:text-4xl font-semibold text-fluent-cream leading-tight mb-2">
+                  Good morning, <em>{studentName.split(' ')[0]}!</em> ✦
+                </h2>
+                <p className="text-stone-400 text-sm font-serif italic max-w-md">
+                  Focusing on <strong className="text-fluent-gold font-normal not-italic">{profile?.goal || "Board Exam Elite Performance (95%+)"}</strong> today.
+                </p>
+              </div>
 
-        {/* Teacher Profiles Quick Access */}
-        {teachers.length > 0 && activeNav === 'overview' && (
-          <div className="mb-10">
-            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-4">Faculty Nodes</div>
-            <div className="flex flex-wrap gap-4">
-              {teachers.map(t => (
-                <div 
-                  key={t.id} 
-                  onClick={() => setSelectedTeacher(t)}
-                  className="flex items-center gap-3 bg-white border border-black/5 p-3 rounded-2xl hover:shadow-lg hover:border-fluent-teal/20 transition-all cursor-pointer group"
-                >
-                  <Avatar name={t.name} size={40} />
-                  <div>
-                    <div className="text-xs font-bold text-fluent-navy group-hover:text-fluent-teal transition-colors">{t.name}</div>
-                    <div className="text-[9px] text-slate-600 font-bold uppercase tracking-tighter">
-                      {t.subjects?.[0] || 'Faculty'} Specialist
-                    </div>
-                  </div>
-                  <ChevronRight size={14} className="text-slate-400 group-hover:translate-x-1 transition-transform" />
+              <div className="relative z-10 bg-white/5 backdrop-blur-md border border-fluent-gold/25 p-7 rounded-lg text-center min-w-[200px]">
+                <div className="font-serif text-5xl font-semibold text-fluent-cream leading-none">
+                  {overallMastery}<span className="text-fluent-gold">%</span>
+                </div>
+                <div className="font-display text-[8px] tracking-[0.2em] uppercase text-fluent-gold mt-3">Week 5 Index</div>
+                <div className="text-[10px] text-green-400 font-medium uppercase tracking-tighter mt-1 flex items-center justify-center gap-1">
+                  ▲ +2.4% Momentum
+                </div>
+              </div>
+            </div>
+
+            {/* Stats Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { label: "Mastery Index", val: `${overallMastery}%`, delta: "+2.4%", icon: "▦", color: "text-fluent-gold" },
+                { label: "Academic Points", val: "1,240 XP", delta: "Top 10%", icon: "★", color: "text-blue-500" },
+                { label: "Current Streak", val: "5 Days", delta: "Personal Best", icon: "⚡", color: "text-purple-500" },
+                { label: "Global Rank", val: "#04", delta: "Up 2 places", icon: "🏅", color: "text-green-500" },
+              ].map((stat, i) => (
+                <div key={i} className="bg-white border border-black/5 p-6 rounded-lg group hover:border-fluent-gold/30 transition-all">
+                  <div className={`w-9 h-9 rounded-lg bg-stone-50 flex items-center justify-center text-lg mb-4 ${stat.color}`}>{stat.icon}</div>
+                  <div className="font-display text-[7px] tracking-[0.2em] uppercase text-stone-400 mb-1">{stat.label}</div>
+                  <div className="font-serif text-3xl font-semibold text-fluent-ink leading-none">{stat.val}</div>
+                  <div className="text-[11px] font-medium text-green-600 mt-2">▲ {stat.delta}</div>
                 </div>
               ))}
             </div>
-          </div>
-        )}
 
-        <header className="flex flex-col md:flex-row justify-between items-start gap-6 mb-10">
-          <div>
-            <div className="text-[9px] text-gray-700 font-bold uppercase tracking-[0.15em] mb-1.5">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} • {studentGrade}</div>
-            <h1 className="text-3xl font-serif font-bold tracking-tight">
-              Good morning, <span className="text-fluent-teal font-normal">{studentName.split(' ')[0]}</span> ✦
-            </h1>
-            {alerts.length > 0 && (
-              <div className="flex items-center gap-2 mt-3 px-3 py-1.5 bg-red-50 border border-red-100 rounded-full w-fit animate-pulse">
-                <Zap size={12} className="text-red-500 fill-red-500" />
-                <span className="text-[9px] font-black uppercase tracking-widest text-red-600">{alerts.length} Critical System Warnings</span>
-              </div>
-            )}
-            <p className="text-slate-700 mt-1.5 text-sm">Targeting {profile?.goal || "Academic Excellence"} • Momentum looks strong.</p>
-          </div>
+            {/* Main Grid */}
+            <div className="grid lg:grid-cols-[1fr_340px] gap-6 items-start">
+              <div className="space-y-6">
+                {/* Recommended Concept */}
+                <div className="bg-white border border-black/5 p-8 rounded-lg">
+                  <div className="font-display text-[8px] tracking-[0.2em] uppercase text-fluent-gold mb-4">Next Recommended Concept</div>
+                  <h3 className="font-serif text-2xl font-semibold text-fluent-ink mb-2">Bernoulli's Principle: Synthesis Lab</h3>
+                  <p className="font-serif text-sm italic text-stone-500 mb-6">"Masters expect you to synthesise this with your recent Maths Logic quiz results."</p>
+                  <div className="flex flex-wrap gap-2 mb-8">
+                    <span className="text-[8px] font-display tracking-[0.1em] uppercase px-3 py-1 bg-stone-100 text-stone-600">Physics</span>
+                    <span className="text-[8px] font-display tracking-[0.1em] uppercase px-3 py-1 bg-fluent-gold/10 text-fluent-gold">Synthesis Lab</span>
+                    <span className="text-[8px] font-display tracking-[0.1em] uppercase px-3 py-1 text-stone-400">Estimated 45 min</span>
+                  </div>
+                  <div className="flex gap-4">
+                    <button className="bg-fluent-midnight text-fluent-cream px-8 py-3.5 font-display text-[9px] tracking-[0.15em] uppercase hover:bg-fluent-gold hover:text-fluent-midnight transition-all">Initialise AI Prep</button>
+                    <button className="bg-transparent border border-black/5 px-8 py-3.5 font-display text-[9px] tracking-[0.15em] uppercase hover:border-fluent-ink transition-all">View Theory</button>
+                  </div>
+                </div>
 
-          <div className="p-4 bg-fluent-teal/5 border border-fluent-teal/10 rounded-2xl">
-            <div className="font-bold text-fluent-teal mb-1.5 uppercase text-[9px] tracking-widest flex items-center gap-2">
-              <Sparkles size={12} /> Personalised Focus
-            </div>
-            <div className="space-y-0.5">
-              <p className="text-xs text-slate-600">Goal: <span className="font-bold text-fluent-navy">{profile?.goal || "Academic Excellence"}</span></p>
-              {profile?.learningGoals && <p className="text-[10px] text-slate-500 italic">Objectives: {profile.learningGoals}</p>}
-              {profile?.preferredStudyMethods && <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Method: {profile.preferredStudyMethods}</p>}
-            </div>
-          </div>
-          
-          <div className="flex gap-3 relative">
-            <Btn variant="outline" size="sm" icon={Bell} onClick={() => setShowNotification(!showNotification)}>Notifications</Btn>
-            <Btn variant="primary" size="sm" icon={isJoining ? Sparkles : Play} onClick={handleJoin} disabled={isJoining}>
-              {isJoining ? "Connecting..." : "Join Session"}
-            </Btn>
-            <Btn variant="ghost" size="sm" icon={MessageSquare} onClick={() => setShowFeedback(true)}>Feedback</Btn>
-            {showNotification && (
-               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="absolute top-full right-0 mt-2 w-80 bg-white border border-black/5 rounded-xl shadow-2xl z-50 p-6">
-                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6">Dispatch Ledger</div>
-                  
-                  {alerts.length > 0 && (
-                    <div className="mb-6 space-y-3">
-                      <div className="text-[9px] font-bold text-red-500 uppercase tracking-widest">Active Alerts</div>
-                      {alerts.map(a => (
-                        <div key={a.id} className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3">
-                          <Zap size={14} className="text-red-500 mt-0.5 shrink-0" />
-                          <div>
-                            <div className="text-[10px] font-bold text-red-600 uppercase tracking-tight">{a.type}</div>
-                            <div className="text-[10px] text-red-400 leading-tight mt-0.5">{a.message}</div>
-                          </div>
-                        </div>
-                      ))}
+                {/* Score Journey */}
+                <div className="bg-white border border-black/5 p-8 rounded-lg">
+                  <div className="font-display text-[8px] tracking-[0.25em] uppercase text-stone-400 mb-6 flex items-center gap-4">
+                    My Score Journey — Last 5 Weeks
+                    <div className="flex-1 h-px bg-stone-100" />
+                  </div>
+                  <div className="h-[200px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={[
+                        { week: 'W1', score: 65 },
+                        { week: 'W2', score: 72 },
+                        { week: 'W3', score: 70 },
+                        { week: 'W4', score: 85 },
+                        { week: 'W5', score: 92 },
+                      ]}>
+                        <defs>
+                          <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#b8973a" stopOpacity={0.15} />
+                            <stop offset="95%" stopColor="#b8973a" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <XAxis dataKey="week" tick={{fontSize: 10, fontFamily: 'DM Sans', fill: '#8896aa'}} axisLine={false} tickLine={false} />
+                        <YAxis tick={{fontSize: 10, fontFamily: 'DM Sans', fill: '#8896aa'}} axisLine={false} tickLine={false} domain={[0, 100]} />
+                        <Tooltip contentStyle={{borderRadius: 8, border: '1px solid rgba(0,0,0,0.05)', fontSize: 10}} />
+                        <Area type="monotone" dataKey="score" stroke="#b8973a" strokeWidth={2} fill="url(#scoreGrad)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex items-center gap-4 mt-4">
+                    <div className="flex items-center gap-2 text-[10px] text-stone-400">
+                      <div className="w-2 h-2 rounded-full bg-fluent-gold" />
+                      Score Trajectory
                     </div>
-                  )}
+                  </div>
+                </div>
 
-                  <div className="space-y-4">
-                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Faculty Feedback</div>
-                    {allFeedback.slice(0, 3).map((f: any, idx: number) => (
-                      <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                        <div className="text-xs font-bold text-fluent-teal">{f.category || f.subject}</div>
-                        <div className="text-[10px] text-slate-600 mt-1">{f.text}</div>
+                {/* Action Plan */}
+                <div className="bg-white border border-black/5 p-8 rounded-lg">
+                  <div className="font-display text-[8px] tracking-[0.25em] uppercase text-stone-400 mb-6">AI-Generated Action Plan · This Week</div>
+                  <div className="space-y-2">
+                    {[
+                      "Practice 5 word problems daily — your biggest gap this week",
+                      "Revisit Chapter 4 geometry theorems before Thursday's test",
+                      "Book a 15-min session with Ms. Mehta on construction problems"
+                    ].map((plan, i) => (
+                      <div key={i} className="flex gap-4 p-4 bg-stone-50 rounded border-l-2 border-fluent-gold text-sm text-fluent-ink">
+                        <span className="text-fluent-gold py-0.5">◆</span>
+                        {plan}
                       </div>
                     ))}
                   </div>
-               </motion.div>
-            )}
-          </div>
-        </header>
-
-        {activeNav === "overview" ? (
-          <div className="space-y-6">
-            {/* Welcome + goal */}
-            <div className="bg-fluent-navy rounded-[32px] p-10 flex flex-wrap justify-between items-center gap-6 relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-10 opacity-10 rotate-12">
-                  <Sparkles size={160} />
-               </div>
-               <div className="relative z-10">
-                  <div className="text-[10px] font-black uppercase text-fluent-gold tracking-[0.4em] mb-4">Aitken Standard v2.1 Sync</div>
-                  <h1 className="text-4xl lg:text-5xl font-serif font-bold text-white mb-2 tracking-tight">Good morning, {studentName.split(' ')[0]}! ✦</h1>
-                  <p className="text-white/70 text-sm font-serif">Focusing on <strong className="text-white not-italic">{profile?.goal || "Academic Excellence"}</strong> today.</p>
-               </div>
-               <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 text-center border border-white/10 min-w-[140px] relative z-10">
-                  <div className="text-5xl font-mono font-black text-white">{overallMastery}%</div>
-                  <div className="text-[9px] font-black uppercase text-white/60 tracking-widest mt-2">Week {new Date().getMonth() + 1} Index</div>
-                  <div className="text-[9px] text-green-400 mt-2 font-black uppercase tracking-tighter flex items-center justify-center gap-1">
-                    <TrendingUp size={10} /> +2.4% Momentum
-                  </div>
-               </div>
-            </div>
-
-            {/* AI Call to Action */}
-            <Card 
-              className="p-8 bg-gradient-to-br from-fluent-teal to-fluent-teal/80 text-white cursor-pointer group hover:shadow-2xl hover:shadow-fluent-teal/20 transition-all border-none"
-              onClick={() => setActiveNav("ai-tutor")}
-            >
-               <div className="flex flex-col md:flex-row justify-between items-center gap-8">
-                  <div className="flex items-center gap-6">
-                     <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-white animate-pulse">
-                        <BrainCircuit size={32} />
-                     </div>
-                     <div>
-                        <h3 className="text-2xl font-serif font-bold text-white">Neural Scaffolding Protocol</h3>
-                        <p className="text-white/60 text-sm mt-1">Your AI Persona is ready for today's mastery dialogue. Initialise synthesis?</p>
-                     </div>
-                  </div>
-                  <Btn variant="primary" className="bg-white text-fluent-teal hover:bg-white/90 px-8 py-5 text-sm tracking-[0.2em] font-black">START STUDIING ✦</Btn>
-               </div>
-            </Card>
-
-            {/* Stat row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <MetricTile label="Mastery Index" value={`${overallMastery}%`} delta="+2.4%" icon={BarChart3} color="#1B4F5E" />
-              <MetricTile label="Academic Points" value="1,240 XP" delta="Top 10%" icon={Star} color="#C9A84C" />
-              <MetricTile label="Current Streak" value="5 Days" icon={Zap} color="#7C3AED" />
-              <MetricTile label="Global Rank" value="#04" icon={Award} color="#C9A84C" />
-            </div>
-
-            {/* Next Milestone Section */}
-            <div className="grid lg:grid-cols-3 gap-6">
-              <Card className="lg:col-span-2 p-8 border-none bg-white shadow-xl flex gap-8 items-center overflow-hidden relative">
-                 <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-                    <Target size={120} />
-                 </div>
-                 <div className="w-20 h-20 bg-fluent-teal/10 rounded-full flex items-center justify-center text-fluent-teal shrink-0">
-                    <CheckCircle2 size={40} />
-                 </div>
-                 <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-2">Next Recommended Concept</div>
-                    <h3 className="text-2xl font-serif font-black text-fluent-navy mb-2">Bernoulli's Principle: Synthesis Lab</h3>
-                    <p className="text-sm text-slate-500 font-serif italic mb-6">"Masters expect you to synthesise this with your recent Maths Logic quiz results."</p>
-                    <div className="flex gap-4">
-                       <Btn variant="primary" size="sm" onClick={() => setActiveNav("ai-tutor")} className="text-[9px] px-6">Initialise AI Prep</Btn>
-                       <Btn variant="outline" size="sm" className="text-[9px] px-6">View Theory</Btn>
-                    </div>
-                 </div>
-              </Card>
-
-              <Card className="p-8 border-none bg-fluent-gold/5 shadow-xl flex flex-col justify-between">
-                 <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.3em] text-fluent-gold mb-6">Achievement Pulse</div>
-                    <div className="flex gap-4 mb-4">
-                       {[1, 2, 3].map(i => (
-                          <div key={i} className={`w-10 h-10 rounded-xl flex items-center justify-center ${i === 1 ? 'bg-fluent-gold text-white shadow-lg' : 'bg-white text-slate-300 opacity-40'}`}>
-                             <Award size={20} />
-                          </div>
-                       ))}
-                    </div>
-                    <div className="text-sm font-bold text-fluent-navy">Concept Crusader</div>
-                    <div className="text-[10px] text-slate-500 mt-1 uppercase font-black tracking-widest">2/5 Labs Completed</div>
-                 </div>
-                 <div className="mt-8">
-                    <ProgressBar value={40} color="#C9A84C" />
-                 </div>
-              </Card>
-            </div>
-
-            {/* Growth chart */}
-            <Card className="p-6">
-              <h3 className="text-lg font-serif font-bold text-slate-900 mb-6">My Score Journey — Last 5 Weeks</h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <AreaChart data={subjectProgress[0]?.history || []}>
-                  <defs>
-                    <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
-                  <XAxis dataKey="week" tick={{fontSize: 12}} />
-                  <YAxis tick={{fontSize: 12}} domain={[50, 100]} />
-                  <Tooltip contentStyle={{borderRadius: 12}} />
-                  <Area type="monotone" dataKey="score" stroke="#3B82F6" strokeWidth={3} fill="url(#scoreGrad)" name="Score" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </Card>
-
-            {/* AI Action plan */}
-            <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <span className="text-3xl">🤖</span>
-                <h3 className="text-lg font-serif font-bold text-slate-900">AI-Generated Action Plan for This Week</h3>
+                </div>
               </div>
-              <div className="grid md:grid-cols-3 gap-4">
-                {["Practice 5 word problems daily — your biggest gap this week","Revisit Chapter 4 geometry theorems before Thursday's test","Book a 15-min session with Ms. Mehta on construction problems"].map((item,i)=>(
-                  <div key={i} className="bg-white rounded-xl p-4 flex items-start gap-3 shadow-sm border border-slate-100">
-                    <span className="text-xl">{"🎯📚💬"[i]}</span>
-                    <p className="text-sm text-slate-600 leading-relaxed">{item}</p>
+
+              {/* Sidebar Widgets */}
+              <div className="space-y-6">
+                {/* Achievement Pulse */}
+                <div className="bg-white border border-black/5 p-6 rounded-lg">
+                  <div className="font-display text-[8px] tracking-[0.25em] uppercase text-stone-400 mb-6">Achievement Pulse</div>
+                  <div className="flex gap-2 mb-6">
+                    <div className="w-11 h-11 rounded-full bg-fluent-gold/10 border border-fluent-gold/20 flex items-center justify-center text-xl">🏅</div>
+                    <div className="w-11 h-11 rounded-full bg-stone-50 text-stone-300 opacity-40 flex items-center justify-center text-xl grayscale">⭐</div>
+                    <div className="w-11 h-11 rounded-full bg-stone-50 text-stone-300 opacity-40 flex items-center justify-center text-xl grayscale">🎯</div>
                   </div>
-                ))}
+                  <div className="font-medium text-sm text-fluent-ink">Concept Crusader</div>
+                  <div className="text-[10px] text-stone-500 mt-1 uppercase font-display tracking-widest">2/5 Labs Completed</div>
+                  <div className="h-1 bg-stone-100 rounded-full mt-4 overflow-hidden">
+                    <div className="h-full bg-fluent-gold" style={{ width: '40%' }} />
+                  </div>
+                  <div className="text-[10px] text-stone-400 mt-2 font-medium">40% · 3 labs to next badge</div>
+                </div>
+
+                {/* Weekly Pulse */}
+                <div className="bg-white border border-black/5 p-6 rounded-lg">
+                  <div className="font-display text-[8px] tracking-[0.25em] uppercase text-stone-400 mb-6">This Week's Pulse</div>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-end">
+                      <div className="text-[12px] text-stone-600">Sessions attended</div>
+                      <div className="font-serif text-lg font-semibold leading-none">3/5</div>
+                    </div>
+                    <div className="h-1 bg-stone-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-green-500" style={{ width: '60%' }} />
+                    </div>
+                    <div className="flex justify-between items-end">
+                      <div className="text-[12px] text-stone-600">Assignments submitted</div>
+                      <div className="font-serif text-lg font-semibold leading-none">0/2</div>
+                    </div>
+                    <div className="h-1 bg-stone-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-red-500" style={{ width: '0%' }} />
+                    </div>
+                    <div className="flex justify-between items-end">
+                      <div className="text-[12px] text-stone-600">AI Tutor queries</div>
+                      <div className="font-serif text-lg font-semibold leading-none">12</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Navigate */}
+                <div className="bg-white border border-black/5 p-6 rounded-lg">
+                  <div className="font-display text-[8px] tracking-[0.25em] uppercase text-stone-400 mb-6">Quick Navigate</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { icon: "✦", label: "AI Tutor", id: "ai-tutor" },
+                      { icon: "↗", label: "Progress", id: "progress" },
+                      { icon: "≡", label: "Assignments", id: "assignments" },
+                      { icon: "◎", label: "Forum", id: "forum" },
+                    ].map(nav => (
+                      <button key={nav.id} onClick={() => setActiveNav(nav.id)} className="p-4 bg-stone-50 rounded hover:bg-fluent-gold/5 border border-transparent hover:border-fluent-gold/20 transition-all text-center group">
+                        <div className="text-lg mb-1.5 group-hover:scale-110 transition-transform">{nav.icon}</div>
+                        <div className="text-[10px] text-stone-400 group-hover:text-fluent-midnight font-medium">{nav.label}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Next Session */}
+                <div className="bg-white border-l-4 border-fluent-gold border-y border-r border-black/5 p-6 rounded-lg">
+                  <div className="font-display text-[8px] tracking-[0.25em] uppercase text-stone-400 mb-4">Next Session</div>
+                  <h4 className="font-serif text-xl font-bold text-fluent-ink">Physics · Mechanics</h4>
+                  <div className="text-xs text-stone-400 mt-1 mb-1">Tomorrow · 10:00 AM</div>
+                  <div className="text-xs text-stone-400 mb-6 italic">Ms. Priya Mehta · British Trained</div>
+                  <button className="w-full py-3 border border-black/10 rounded font-display text-[9px] tracking-[0.2em] uppercase hover:border-fluent-ink transition-all">Add to Calendar</button>
+                </div>
               </div>
             </div>
           </div>
@@ -402,19 +378,18 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
           activeSessionId ? (
             <LiveLab sessionId={activeSessionId} role="student" onExit={() => setActiveNav("overview")} userProfile={profile} />
           ) : (
-            <div className="p-20 text-center">
-               <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
-                  <Play size={24} />
-               </div>
-               <h3 className="text-xl font-serif font-bold text-fluent-navy">No Active Synthesis</h3>
-               <p className="text-sm text-slate-400 mt-2">Check your timetable for upcoming scheduled sessions.</p>
+            <div className="p-20 text-center flex flex-col items-center">
+               <div className="w-16 h-16 bg-white border border-black/5 rounded-full flex items-center justify-center mb-6 text-2xl opacity-20">▶</div>
+               <h3 className="text-2xl font-serif font-bold text-fluent-midnight">No Active Synthesis</h3>
+               <p className="text-sm text-stone-400 mt-2 font-serif italic">Check your timetable for upcoming scheduled sessions.</p>
+               <button onClick={() => setActiveNav('overview')} className="mt-8 bg-fluent-midnight text-fluent-cream px-10 py-4 font-display text-[10px] tracking-[0.2em] uppercase hover:bg-fluent-gold transition-all">View Full Schedule</button>
             </div>
           )
         ) : (
-          <div className="py-20 text-center">
-            <h3 className="text-2xl font-serif font-bold mb-4 uppercase tracking-tighter opacity-20">{activeNav} Module</h3>
-            <p className="text-slate-400">This feature is currently in refinement.</p>
-            <Btn variant="outline" className="mt-8" onClick={() => setActiveNav("overview")}>Return Overview</Btn>
+          <div className="py-20 text-center flex flex-col items-center">
+            <h3 className="text-3xl font-serif font-bold mb-4 uppercase tracking-tighter opacity-10">{activeNav} Module</h3>
+            <p className="text-stone-400 italic font-serif">This feature is currently in refinement.</p>
+            <button className="mt-8 border border-black/10 px-10 py-3.5 font-display text-[10px] tracking-[0.2em] uppercase hover:border-fluent-ink transition-all" onClick={() => setActiveNav("overview")}>Return Overview</button>
           </div>
         )}
       </div>

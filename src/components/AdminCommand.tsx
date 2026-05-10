@@ -178,6 +178,16 @@ export const AdminDashboard = ({ onBack, schoolId: initialSchoolId }: { onBack: 
     }
   };
 
+  const updateSecurity = async (level: string) => {
+    try {
+      await updateDoc(doc(db, 'platform', 'config'), {
+        securityLevel: level
+      });
+    } catch (e) {
+      handleFirestoreError(e, OperationType.UPDATE, 'platform/config');
+    }
+  };
+
   const hasSearchResults = searchResults.users.length > 0 || searchResults.schools.length > 0 || searchResults.assignments.length > 0;
 
   return (
@@ -431,6 +441,7 @@ export const AdminDashboard = ({ onBack, schoolId: initialSchoolId }: { onBack: 
                   {['Standard', 'Elevated', 'Lockdown'].map(level => (
                     <button 
                       key={level}
+                      onClick={() => updateSecurity(level)}
                       className={`flex-1 py-4 rounded-xl border-2 transition-all font-bold text-xs tracking-widest uppercase ${
                         (systemSettings.securityLevel || 'Standard') === level
                           ? "border-fluent-gold bg-fluent-gold/10 text-fluent-gold shadow-lg shadow-fluent-gold/5"

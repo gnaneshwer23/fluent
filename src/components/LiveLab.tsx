@@ -528,60 +528,61 @@ export const LiveLab = ({
     );
 
   return (
-    <div className="flex flex-col h-[85vh] bg-white rounded-[40px] shadow-2xl overflow-hidden border border-black/5">
+    <div className="flex flex-col h-[85vh] bg-white rounded-xl shadow-2xl overflow-hidden border border-black/5">
       {/* HUD Header */}
-      <div className="bg-fluent-navy p-6 flex justify-between items-center text-white">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-fluent-teal/20 flex items-center justify-center text-fluent-teal animate-pulse">
-            <Activity size={20} />
+      <div className="bg-fluent-midnight p-6 flex justify-between items-center text-white">
+        <div className="flex items-center gap-5">
+          <div className="w-12 h-12 rounded bg-fluent-gold/10 flex items-center justify-center text-fluent-gold animate-pulse shadow-[0_0_15px_rgba(184,151,58,0.2)]">
+            <Activity size={24} />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {role === "teacher" ? (
                 <input
                   value={localTopic}
                   onChange={(e) => setLocalTopic(e.target.value)}
-                  className="bg-transparent border-b border-white/20 focus:border-fluent-teal outline-none font-serif font-bold text-lg px-0 py-0 min-w-[200px]"
+                  className="bg-transparent border-b border-white/20 focus:border-fluent-gold outline-none font-serif font-bold text-xl px-0 py-0 min-w-[250px] placeholder:text-white/20"
+                  placeholder="Set Delivery Topic..."
                 />
               ) : (
-                <h3 className="font-serif font-bold text-lg">
+                <h3 className="font-serif font-bold text-xl tracking-tight">
                   {session.topic}
                 </h3>
               )}
               <Badge
-                color="teal"
-                className="bg-white/10 text-white border-none"
+                color="gold"
+                className="bg-fluent-gold/10 text-fluent-gold border-fluent-gold/20"
               >
-                Live Scaffolding
+                Live Delivery
               </Badge>
             </div>
-            <div className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/40">
-              {session.className} • {session.subject} Protocol
+            <div className="text-[10px] uppercase font-display font-medium tracking-[0.3em] text-white/30 mt-1">
+              {session.className} <span className="opacity-30 mx-1">::</span> {session.subject} Protocol
             </div>
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10">
+          <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-white/5 rounded border border-white/10 uppercase font-display">
             <Users size={14} className="text-fluent-gold" />
-            <span className="text-xs font-bold">
-              {session.activeCount || 0} Scholars Syncing
+            <span className="text-[9px] font-bold tracking-widest text-white/60">
+              {session.activeCount || 0} Scholars Synced
             </span>
           </div>
           {role === "teacher" ? (
             <Btn
               variant="primary"
               size="sm"
-              className="bg-red-500/20 text-red-100 border border-red-500/20 hover:bg-red-500"
+               className="bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white"
               icon={StopCircle}
               onClick={handleEndSession}
             >
-              End Session
+              Terminate
             </Btn>
           ) : (
             <Btn
               variant="outline"
               size="sm"
-              className="text-white border-white/20"
+              className="text-white border-white/10 hover:bg-white/5"
               onClick={onExit}
             >
               Disconnect
@@ -592,24 +593,30 @@ export const LiveLab = ({
 
       <div className="flex flex-1 overflow-hidden">
         {/* Navigation Sidebar */}
-        <div className="w-20 border-r border-black/5 flex flex-col items-center py-8 gap-8">
+        <div className="w-20 border-r border-black/5 flex flex-col items-center py-8 gap-8 bg-stone-50/30">
           <button
             onClick={() => setActiveTab("scaffolding")}
-            className={`p-3 rounded-2xl transition-all ${activeTab === "scaffolding" ? "bg-fluent-teal text-white shadow-lg" : "text-slate-300 hover:text-slate-500"}`}
+            className={`p-3 rounded transition-all group relative ${activeTab === "scaffolding" ? "bg-fluent-midnight text-fluent-gold shadow-lg" : "text-stone-300 hover:text-fluent-midnight"}`}
+            title="Lesson Scaffolding"
           >
             <Layout size={24} />
+            {activeTab === "scaffolding" && <div className="absolute -right-[1px] top-1/4 bottom-1/4 w-[2px] bg-fluent-gold shadow-[0_0_8px_rgba(184,151,58,0.5)]" />}
           </button>
           <button
             onClick={() => setActiveTab("scholars")}
-            className={`p-3 rounded-2xl transition-all ${activeTab === "scholars" ? "bg-fluent-teal text-white shadow-lg" : "text-slate-300 hover:text-slate-500"}`}
+            className={`p-3 rounded transition-all group relative ${activeTab === "scholars" ? "bg-fluent-midnight text-fluent-gold shadow-lg" : "text-stone-300 hover:text-fluent-midnight"}`}
+            title="Scholar Analytics"
           >
             <Users size={24} />
+            {activeTab === "scholars" && <div className="absolute -right-[1px] top-1/4 bottom-1/4 w-[2px] bg-fluent-gold shadow-[0_0_8px_rgba(184,151,58,0.5)]" />}
           </button>
           <button
             onClick={() => setActiveTab("feed")}
-            className={`p-3 rounded-2xl transition-all ${activeTab === "feed" ? "bg-fluent-teal text-white shadow-lg" : "text-slate-300 hover:text-slate-500"}`}
+            className={`p-3 rounded transition-all group relative ${activeTab === "feed" ? "bg-fluent-midnight text-fluent-gold shadow-lg" : "text-stone-300 hover:text-fluent-midnight"}`}
+            title="Real-time Feed"
           >
             <MessageSquare size={24} />
+            {activeTab === "feed" && <div className="absolute -right-[1px] top-1/4 bottom-1/4 w-[2px] bg-fluent-gold shadow-[0_0_8px_rgba(184,151,58,0.5)]" />}
           </button>
         </div>
 
