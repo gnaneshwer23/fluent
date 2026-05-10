@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Logo, Avatar, Badge } from './UI';
-import { LogOut, Sparkles, X } from 'lucide-react';
+import { LogOut, Sparkles, X, MessageCircle } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebaseInit';
 import { NotificationBell } from './NotificationBell';
@@ -77,6 +77,15 @@ export const DashboardShell = ({ role, title, children, navItems, activeNav, set
         </nav>
         
         <div className="p-6 space-y-3">
+          <a 
+            href="https://wa.me/447553886303" 
+            target="_blank" 
+            rel="no-referrer"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-xs text-white/70 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10 group"
+          >
+             <MessageCircle size={16} className="text-white/40 group-hover:text-green-400 transition-colors" />
+             <span>Help & Support</span>
+          </a>
           <div className="border border-white/5 bg-white/2 rounded-2xl p-3">
              <NotificationBell />
           </div>

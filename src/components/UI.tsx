@@ -70,7 +70,7 @@ export const Logo = ({ className = "", variant = "dark", onClick, animate = fals
     </div>
     <div className="border-l border-black/10 pl-4 py-1">
       <span className={`font-serif font-black text-xl md:text-2xl tracking-tighter transition-colors ${variant === 'dark' ? 'text-fluent-navy' : 'text-white'}`}>
-        FLUENT&nbsp;&nbsp;&nbsp;ACADEMY.
+        FLUENT&nbsp;&nbsp;&nbsp;INSTITUTE.
       </span>
     </div>
   </div>

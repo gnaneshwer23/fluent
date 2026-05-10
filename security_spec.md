@@ -1,4 +1,4 @@
-# Security Specification - Fluent Academy
+# Security Specification - Fluent Institute
 
 ## 1. Data Invariants
 - A **Student** cannot exist without a valid **Teacher** or **School** context (relational integrity).

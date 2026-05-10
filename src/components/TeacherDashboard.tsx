@@ -1,5 +1,5 @@
 /**
- * TeacherDashboard.tsx — Fluent Academy
+ * TeacherDashboard.tsx — Fluent Institute
  * src/components/TeacherDashboard.tsx
  * Deps: recharts (already in package.json)
  * Replace "// TODO: firebase" comments with your service calls

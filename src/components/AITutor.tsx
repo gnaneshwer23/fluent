@@ -56,23 +56,10 @@ export function AITutor({ profile }: { profile: any }) {
     setIsTyping(true);
 
     try {
-      // 1. RAG Retrieval Step: Find relevant curriculum chunks
-      const chunksRef = collection(db, "curriculum_chunks");
-      const q = query(
-        chunksRef, 
-        where("subject", "==", profile?.subject || "General"),
-        where("grade", "==", profile?.grade || "Grade 10"),
-        limit(3)
-      );
-      
-      const chunkSnap = await getDocs(q);
-      const curriculumContext = chunkSnap.docs.map(doc => doc.data().content).join("\n\n");
-
-      // 2. Performance History Step: Fetch recent strengths/weaknesses
+      // 0. Performance History Step: Fetch recent strengths/weaknesses first to inform RAG
       let performanceContext = "Initial baseline assessment phase. No historical data yet.";
       try {
         const reportsRef = collection(db, "weeklyReports");
-        // CRITICAL: Query by studentId to match security rules and ensure correct filtering
         const reportsQ = query(
           reportsRef,
           where("studentId", "==", auth.currentUser?.uid),
@@ -89,6 +76,91 @@ export function AITutor({ profile }: { profile: any }) {
       } catch (perr) {
         console.warn("Failed to fetch performance context", perr);
       }
+
+      // 1. RAG Retrieval Step: Find relevant curriculum chunks
+      // Pre-step: Extract keywords from input AND student profile to improve retrieval relevance
+      const personalContext = `
+        Learning Goals: ${(profile?.learningGoals || []).join(", ")}
+        Overall Goal: ${profile?.goal || ""}
+        Historical Weaknesses: ${performanceContext}
+      `;
+
+      const keywordPrompt = `Based on the following student inquiry and their personal academic context, extract 3-5 high-priority academic keywords or topics to retrieve from a curriculum database.
+      
+      Student Inquiry: "${input}"
+      Personal Context: ${personalContext}
+      
+      Return ONLY the keywords separated by commas. No other text. Priority should be given to topics mentioned in the inquiry that overlap with their goals/weaknesses.`;
+      
+      let relevantChunks: any[] = [];
+      try {
+        const keywordRes = await ai.models.generateContent({
+          model: "gemini-3-flash-preview",
+          contents: keywordPrompt,
+        });
+        const keywords = (keywordRes.text || "").split(",").map(k => k.trim().toLowerCase()).filter(k => k.length > 0);
+        
+        // Also derive static keywords from profile for direct boosting
+        const profileKeywords = [
+          ...(profile?.learningGoals || []),
+          ...(profile?.subjects || [])
+        ].map(k => k.toLowerCase());
+
+        const chunksRef = collection(db, "curriculum_chunks");
+        const q = query(
+          chunksRef, 
+          where("subject", "==", profile?.subject || "General"),
+          where("grade", "==", profile?.grade || "Grade 10"),
+          limit(30) // Fetch a larger batch for better personal filtering
+        );
+        
+        const chunkSnap = await getDocs(q);
+        const allChunks = chunkSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
+        
+        // Rank chunks by keyword matches with bias towards personal context
+        relevantChunks = allChunks.map(chunk => {
+          let score = 0;
+          const searchData = `${chunk.topic} ${chunk.chapter} ${chunk.content}`.toLowerCase();
+          
+          // Match against dynamically extracted keywords
+          keywords.forEach(kw => {
+            if (searchData.includes(kw)) score += 3; // Query-specific keywords get high weight
+          });
+
+          // Match against static profile goals/subjects
+          profileKeywords.forEach(pk => {
+            if (searchData.includes(pk)) score += 1; // Profile keywords get baseline boost
+          });
+
+          // Boost if it directly addresses a known weakness in performance context
+          if (performanceContext.toLowerCase().includes(chunk.topic.toLowerCase())) {
+            score += 5; // Direct weakness match is highest priority
+          }
+
+          return { chunk, score };
+        })
+        .filter(item => item.score > 0 || allChunks.length < 5) 
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5)
+        .map(item => item.chunk);
+
+      } catch (err) {
+        console.warn("RAG keyword extraction or retrieval failed, falling back to basic query", err);
+        // Fallback to basic query if extraction fails
+        const chunksRef = collection(db, "curriculum_chunks");
+        const q = query(
+          chunksRef, 
+          where("subject", "==", profile?.subject || "General"),
+          where("grade", "==", profile?.grade || "Grade 10"),
+          limit(3)
+        );
+        const chunkSnap = await getDocs(q);
+        relevantChunks = chunkSnap.docs.map(doc => doc.data());
+      }
+      
+      const curriculumContext = relevantChunks.length > 0 
+        ? relevantChunks.map(c => `[Topic: ${c.topic} | Chapter: ${c.chapter}]: ${c.content}`).join("\n\n")
+        : "No specific curriculum chunks found for this exact query.";
 
       // 3. Generation Step: Call Gemini directly in frontend with tailored prompt
       const prompt = `

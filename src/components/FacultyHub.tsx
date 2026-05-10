@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Home, Users, Database, Calendar, Play, BookOpen, Settings, Plus, Search, 
-  Trash2, Edit2, BarChart3, TrendingUp, Zap, CheckCircle2, ArrowRight, X, Mail, Phone, Shield, ShieldCheck, Lock, Check,
+  Trash2, Edit2, BarChart3, TrendingUp, Zap, CheckCircle2, ArrowRight, X, Mail, Phone, Shield, ShieldCheck, Lock, Check, AlertTriangle,
   ClipboardList, FileText, CalendarDays, LogOut, Library, MessageSquare, Layers
 } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -53,9 +53,11 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
   const [feedbackFilter, setFeedbackFilter] = useState("All");
   const [feedbackSort, setFeedbackSort] = useState("newest");
   const [feedbackDate, setFeedbackDate] = useState(new Date().toISOString().split('T')[0]);
+  const [internalNote, setInternalNote] = useState("");
   const [viewingHistory, setViewingHistory] = useState<any>(null);
   const [editingStudent, setEditingStudent] = useState<any>(null);
   const [viewingStudentDetail, setViewingStudentDetail] = useState<any>(null);
+  const [internalNotesList, setInternalNotesList] = useState<any[]>([]);
   const [studentModalTab, setStudentModalTab] = useState<'overview' | 'history'>('overview');
   const [studentHistory, setStudentHistory] = useState<any[]>([]);
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
@@ -79,6 +81,26 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
     
     return () => unsub();
   }, [viewingStudentDetail?.id, studentModalTab]);
+
+  useEffect(() => {
+    if (!viewingStudentDetail?.id || !selectedClassForStudents?.id) {
+      setInternalNotesList([]);
+      return;
+    }
+    
+    const notesRef = collection(db, 'cohorts', selectedClassForStudents.id, 'students', viewingStudentDetail.id, 'internal_notes');
+    const q = query(notesRef, orderBy('date', 'desc'), limit(10));
+    
+    const unsub = onSnapshot(q, (snap) => {
+      setInternalNotesList(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (error) => {
+      if (auth.currentUser) {
+        handleFirestoreError(error, OperationType.LIST, 'internal_notes');
+      }
+    });
+    
+    return () => unsub();
+  }, [viewingStudentDetail?.id, selectedClassForStudents?.id]);
   const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [bulkText, setBulkText] = useState("");
   const [unassignedStudents, setUnassignedStudents] = useState<any[]>([]);
@@ -1101,7 +1123,30 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                            <div className="flex items-center gap-4">
                               <Avatar name={s.name} size={44} />
                               <div>
-                                 <div className="font-bold text-sm tracking-tight">{s.name}</div>
+                                 <div className="flex items-center gap-2">
+                                    <div className="font-bold text-sm tracking-tight">{s.name}</div>
+                                    {(() => {
+                                       const status = (() => {
+                                          const hasAlert = dbAlerts.some(a => a.studentId === s.id && a.status === 'active');
+                                          // Mastery here is a blend of attendance and available performance data
+                                          const attendanceRate = s.total > 0 ? (s.attended / s.total) * 100 : 100;
+                                          const isLowPerformance = attendanceRate < 70 || hasAlert;
+                                          
+                                          if (s.status === 'on-leave') return { label: 'On Leave', color: 'gold' as const, icon: Calendar };
+                                          if (isLowPerformance) return { label: 'Needs Attention', color: 'red' as const, icon: AlertTriangle };
+                                          return { label: 'Active', color: 'teal' as const, icon: CheckCircle2 };
+                                       })();
+                                       return (
+                                          <Badge 
+                                             color={status.color} 
+                                             icon={status.icon}
+                                             className="text-[7px] py-0.5 px-2 uppercase tracking-tighter"
+                                          >
+                                             {status.label}
+                                          </Badge>
+                                       );
+                                    })()}
+                                 </div>
                                  <div className="text-[10px] text-slate-400 font-bold uppercase">{s.studentId || "UK-SYNT-001"}</div>
                               </div>
                            </div>
@@ -1191,10 +1236,30 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                     
                     <div className="flex items-center gap-6 relative z-10">
                        <Avatar name={viewingStudentDetail.name} size={84} color="#C9A84C" />
-                       <div>
-                          <div className="flex items-center gap-2 mb-2">
-                             <Badge color="gold">Scholar Profile</Badge>
-                             <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest">• ID: {viewingStudentDetail.studentId || "VERIFIED"}</span>
+                       <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                             <div className="flex items-center gap-2">
+                                <Badge color="gold">Scholar Profile</Badge>
+                                <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest">• ID: {viewingStudentDetail.studentId || "VERIFIED"}</span>
+                             </div>
+                             <select 
+                               value={viewingStudentDetail.status || 'active'}
+                               onChange={async (e) => {
+                                 if (!selectedClassForStudents?.id) return;
+                                 const newStatus = e.target.value;
+                                 try {
+                                   const studentRef = doc(db, 'cohorts', selectedClassForStudents.id, 'students', viewingStudentDetail.id);
+                                   await updateDoc(studentRef, { status: newStatus });
+                                   setViewingStudentDetail((prev: any) => ({ ...prev, status: newStatus }));
+                                 } catch (err) {
+                                   handleFirestoreError(err, OperationType.UPDATE, `cohorts/${selectedClassForStudents.id}/students/${viewingStudentDetail.id}`);
+                                 }
+                               }}
+                               className="bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg px-2 py-1 text-[8px] font-black uppercase tracking-widest text-white outline-none transition-all"
+                             >
+                               <option value="active" className="bg-fluent-navy">Mark Active</option>
+                               <option value="on-leave" className="bg-fluent-navy">Mark On Leave</option>
+                             </select>
                           </div>
                           <h2 className="text-4xl font-serif font-bold tracking-tight">{viewingStudentDetail.name}</h2>
                           <p className="text-white/40 text-sm font-medium mt-1">Enrolled: {viewingStudentDetail.enrolledAt ? new Date(viewingStudentDetail.enrolledAt).toLocaleDateString() : "Recent"}</p>
@@ -1248,8 +1313,78 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                               </div>
                            </div>
                          </section>
+                          <section>
+                           <h3 className="text-xs font-bold text-fluent-gold uppercase tracking-widest mb-6 py-2 border-b border-fluent-gold/10">Internal Notes (Private Faculty Node)</h3>
+                           <div className="space-y-4">
+                              <p className="text-[10px] text-slate-400 font-serif italic mb-2">Technical diagnostic logs. These are strictly for faculty nodes and are encrypted in the roster (NOT visible to the scholar).</p>
+                              <div className="space-y-4">
+                                 <textarea 
+                                   placeholder="Log internal observations, behavioral patterns, or synthesis strategies..."
+                                   className="w-full p-4 bg-slate-50 border border-black/5 rounded-2xl text-sm min-h-[100px] outline-none focus:bg-white focus:ring-4 focus:ring-fluent-gold/5 focus:border-fluent-gold/20 transition-all font-serif"
+                                   value={internalNote}
+                                   onChange={(e) => setInternalNote(e.target.value)}
+                                 />
+                                 
+                                 <div className="flex justify-between items-center">
+                                    <div className="flex -space-x-2">
+                                       {(internalNotesList || []).slice(0, 3).map((n: any, i: number) => (
+                                          <div key={i} className="w-6 h-6 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[8px] font-black">{n.authorName?.[0]}</div>
+                                       ))}
+                                       {(internalNotesList || []).length > 3 && (
+                                          <div className="w-6 h-6 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[8px] font-black text-slate-400">+{(internalNotesList || []).length - 3}</div>
+                                       )}
+                                    </div>
+                                    <Btn 
+                                      variant="gold" 
+                                      size="sm" 
+                                      disabled={isSubmittingFeedback || !internalNote.trim()}
+                                      className="text-[9px] px-6 py-2"
+                                      onClick={async () => {
+                                        if (!internalNote.trim() || isSubmittingFeedback) return;
+                                        setIsSubmittingFeedback(true);
+                                        try {
+                                          if (selectedClassForStudents?.id) {
+                                            const notesRef = collection(db, 'cohorts', selectedClassForStudents.id, 'students', viewingStudentDetail.id, 'internal_notes');
+                                            const newNote = {
+                                              text: internalNote.trim(),
+                                              date: new Date().toISOString(),
+                                              authorId: auth.currentUser?.uid,
+                                              authorName: teacherName
+                                            };
+                                            await addDoc(notesRef, newNote);
+                                          }
+                                          setInternalNote("");
+                                        } catch (e) {
+                                          handleFirestoreError(e, OperationType.WRITE, `internal_notes`);
+                                        } finally {
+                                          setIsSubmittingFeedback(false);
+                                        }
+                                      }}
+                                    >
+                                      {isSubmittingFeedback ? "Logging..." : "Commit Internal Note"}
+                                    </Btn>
+                                 </div>
+
+                                 {/* List of recent internal notes */}
+                                 {(internalNotesList || []).length > 0 && (
+                                    <div className="mt-4 space-y-3 max-h-[150px] overflow-auto pr-2 custom-scrollbar">
+                                       {(internalNotesList || []).map((note: any, idx: number) => (
+                                          <div key={idx} className="p-3 bg-gray-50/50 rounded-xl border border-black/5">
+                                             <div className="flex justify-between items-center mb-1">
+                                                <div className="text-[8px] font-black text-fluent-gold uppercase tracking-[0.1em]">{note.authorName}</div>
+                                                <div className="text-[8px] text-slate-400">{new Date(note.date).toLocaleDateString()}</div>
+                                             </div>
+                                             <p className="text-[11px] text-slate-600 italic leading-relaxed">{note.text}</p>
+                                          </div>
+                                       ))}
+                                    </div>
+                                 )}
+                              </div>
+                           </div>
+                         </section>
+
                          <section>
-                           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Faculty Assessment</h3>
+                           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Scholar Feedback (Visible to Student)</h3>
                            <div className="space-y-4">
                               <div className="flex flex-col gap-4">
                                  <div className="flex flex-col sm:flex-row gap-4 items-start">
@@ -1270,9 +1405,9 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                                  </div>
                                  
                                  <div className="space-y-2">
-                                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block px-1">Private Observations</label>
+                                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block px-1">Scholar-Facing Feedback</label>
                                     <textarea 
-                                      placeholder="Log faculty observations, scaffolding needs, or diagnostic notes..."
+                                      placeholder="Provide instructional guidance, synthesis goals, or academic praise for the scholar..."
                                       className="w-full p-4 bg-gray-50 border border-black/5 rounded-2xl text-sm min-h-[120px] outline-none focus:bg-white focus:ring-4 focus:ring-fluent-teal/5 focus:border-fluent-teal/20 transition-all"
                                       value={feedbackText}
                                       onChange={(e) => setFeedbackText(e.target.value)}

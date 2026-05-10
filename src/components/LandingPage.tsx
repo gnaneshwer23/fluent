@@ -135,7 +135,7 @@ export const LandingPage = () => {
                <div className="flex flex-col sm:flex-row gap-6">
                   <Btn variant="primary" size="lg" className="px-16 py-7 !text-[11px] tracking-[0.4em] uppercase font-black" onClick={() => setShowLeadModal(true)}>Establish Contact</Btn>
                   <a 
-                    href="https://wa.me/911234567890" 
+                    href="https://wa.me/447553886303" 
                     target="_blank" 
                     rel="no-referrer"
                     className="px-12 py-7 flex items-center gap-4 bg-green-500 hover:bg-green-600 text-white !text-[11px] tracking-[0.4em] uppercase font-black transition-all shadow-xl shadow-green-500/20"
@@ -241,7 +241,7 @@ export const LandingPage = () => {
                       <div className="w-12 h-12 md:w-14 md:h-14 bg-fluent-navy shadow-xl" />
                       <div>
                          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-fluent-navy mb-1">Institutional Board</div>
-                         <div className="text-[10px] font-serif text-fluent-gold uppercase tracking-widest">FLUENT&nbsp;&nbsp;&nbsp;ACADEMY. Governance</div>
+                         <div className="text-[10px] font-serif text-fluent-gold uppercase tracking-widest">FLUENT&nbsp;&nbsp;&nbsp;INSTITUTE. Governance</div>
                       </div>
                    </div>
                 </div>
@@ -691,7 +691,7 @@ export const LandingPage = () => {
                <div className="md:col-span-4">
                   <div className="mb-12">
                      <div className="font-serif font-black text-4xl tracking-tighter text-fluent-navy leading-none mb-6">
-                        FLUENT&nbsp;&nbsp;&nbsp;ACADEMY.
+                        FLUENT&nbsp;&nbsp;&nbsp;INSTITUTE.
                      </div>
                      <div className="text-[10px] font-black uppercase tracking-[0.5em] text-fluent-gold">Institutional Trust</div>
                   </div>
@@ -738,6 +738,10 @@ export const LandingPage = () => {
                            <a href="mailto:infofluent.academy@gmail.com" className="text-sm font-black text-fluent-navy hover:text-fluent-gold transition-colors font-serif">infofluent.academy@gmail.com</a>
                         </div>
                         <div>
+                           <div className="text-[8px] font-black uppercase tracking-widest text-slate-500 mb-2">Direct Synthesis Support</div>
+                           <a href="https://wa.me/447553886303" target="_blank" rel="no-referrer" className="text-sm font-black text-fluent-navy hover:text-fluent-gold transition-colors font-serif">+44 7553 886303 (WhatsApp)</a>
+                        </div>
+                        <div>
                            <div className="text-[8px] font-black uppercase tracking-widest text-slate-500 mb-2">Global Operations</div>
                            <div className="text-xs font-serif text-fluent-navy/80 leading-relaxed">
                                London Administrative Hub<br />
@@ -752,7 +756,7 @@ export const LandingPage = () => {
             <div className="mt-16 md:mt-24 pt-12 border-t border-black/5 flex flex-col md:flex-row justify-between items-center gap-12">
                <div className="flex items-center gap-4">
                   <div className="w-1.5 h-1.5 rounded-full bg-fluent-gold" />
-                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">© 2026 FLUENT&nbsp;&nbsp;&nbsp;ACADEMY. Institutional Trust • UK/India</div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">© 2026 FLUENT&nbsp;&nbsp;&nbsp;INSTITUTE. Institutional Trust • UK/India</div>
                </div>
                <div className="flex gap-12 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
                   <a href="#" className="hover:text-fluent-navy transition-colors">Privacy Protocol</a>

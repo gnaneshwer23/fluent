@@ -104,6 +104,10 @@ service cloud.firestore {
     match /{path=**}/students/{studentId} {
       allow list, get: if isSignedIn();
       allow create, update, delete: if isSignedIn() && (isAdmin() || isTeacher());
+
+      match /internal_notes/{noteId} {
+        allow read, write: if isTeacher() || isAdmin();
+      }
     }
 
     // --- Bookings (Hardened) ---

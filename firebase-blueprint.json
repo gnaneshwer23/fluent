@@ -413,6 +413,19 @@
         "schema": "Student",
         "description": "Students enrolled in a specific cohort."
     },
+    "cohorts/{cohortId}/students/{studentId}/internal_notes": {
+        "schema": {
+            "type": "object",
+            "properties": {
+                "text": { "type": "string" },
+                "date": { "type": "string", "format": "date-time" },
+                "authorId": { "type": "string" },
+                "authorName": { "type": "string" }
+            },
+            "required": ["text", "date", "authorId"]
+        },
+        "description": "Private diagnostic notes for a student, visible only to faculty."
+    },
     "enrollments": {
         "schema": "Enrollment",
         "description": "Student enrollment tracking."

@@ -119,17 +119,49 @@ function AppContent() {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/onboarding" element={<OnboardingFlow onComplete={handleOnboardingComplete} onBack={() => auth.signOut()} />} />
-      <Route path="/teacher-dashboard" element={<FacultyHub profile={profile} onBack={() => auth.signOut()} />} />
-      <Route path="/teacher-dashboard-v2" element={<TeacherDashboard />} />
-      <Route path="/student-dashboard" element={<StudentDashboard profile={profile} onBack={() => auth.signOut()} />} />
-      <Route path="/parent-dashboard" element={<ParentDashboard profile={profile} onBack={() => auth.signOut()} />} />
-      <Route path="/admin-dashboard" element={<AdminDashboard onBack={() => auth.signOut()} />} />
-      <Route path="/school_admin-dashboard" element={<AdminDashboard onBack={() => auth.signOut()} schoolId={profile?.schoolId} />} />
-      <Route path="*" element={<Navigate to="/" />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/onboarding" element={<OnboardingFlow onComplete={handleOnboardingComplete} onBack={() => auth.signOut()} />} />
+        <Route path="/teacher-dashboard" element={<FacultyHub profile={profile} onBack={() => auth.signOut()} />} />
+        <Route path="/teacher-dashboard-v2" element={<TeacherDashboard />} />
+        <Route path="/student-dashboard" element={<StudentDashboard profile={profile} onBack={() => auth.signOut()} />} />
+        <Route path="/parent-dashboard" element={<ParentDashboard profile={profile} onBack={() => auth.signOut()} />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard onBack={() => auth.signOut()} />} />
+        <Route path="/school_admin-dashboard" element={<AdminDashboard onBack={() => auth.signOut()} schoolId={profile?.schoolId} />} />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+
+      {/* Persistent WhatsApp Support Button */}
+      <motion.a
+        href="https://wa.me/447553886303"
+        target="_blank"
+        rel="no-referrer"
+        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        whileHover={{ scale: 1.1, rotate: 5 }}
+        whileTap={{ scale: 0.9 }}
+        className="fixed bottom-8 right-8 z-[100] flex items-center justify-center w-14 h-14 bg-green-500 text-white rounded-full shadow-2xl shadow-green-500/40 border-4 border-white group"
+        title="WhatsApp Support"
+      >
+        <svg 
+          viewBox="0 0 24 24" 
+          width="28" 
+          height="28" 
+          stroke="currentColor" 
+          strokeWidth="2" 
+          fill="none" 
+          strokeLinecap="round" 
+          strokeLinejoin="round" 
+          className="group-hover:animate-pulse transition-all"
+        >
+          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+        </svg>
+        <span className="absolute right-full mr-4 px-3 py-1.5 bg-fluent-navy text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-white/10 shadow-xl">
+          Direct Support
+        </span>
+      </motion.a>
+    </>
   );
 }
 

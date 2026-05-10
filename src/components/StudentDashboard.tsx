@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Home, BookOpen, Calendar, BarChart3, Award, Settings, Bell, Play, 
-  Sparkles, Zap, CheckCircle2, ArrowRight, Target, ClipboardList, MessageCircle, LogOut, Library, ChevronRight, MessageSquare, TrendingUp, BrainCircuit
+  Sparkles, Zap, CheckCircle2, ArrowRight, Target, ClipboardList, MessageCircle, LogOut, Library, ChevronRight, MessageSquare, TrendingUp, BrainCircuit, Star
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { collectionGroup, query, where, onSnapshot, collection, limit } from 'firebase/firestore';
@@ -345,7 +345,7 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
                     <div className="text-[10px] text-slate-500 mt-1 uppercase font-black tracking-widest">2/5 Labs Completed</div>
                  </div>
                  <div className="mt-8">
-                    <ProgressBar progress={40} color="#C9A84C" />
+                    <ProgressBar value={40} color="#C9A84C" />
                  </div>
               </Card>
             </div>
