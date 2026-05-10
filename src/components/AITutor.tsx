@@ -210,7 +210,7 @@ export function AITutor({ profile }: { profile: any }) {
         <div>
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[8px] font-display font-medium px-2 py-0.5 rounded bg-fluent-gold/10 text-fluent-gold uppercase tracking-[0.2em] border border-fluent-gold/20">AI Powered</span>
-            <span className="text-[10px] text-stone-400 font-display uppercase tracking-[0.2em]">• Mastery Protocol Active</span>
+            <span className="text-[10px] text-stone-600 font-display uppercase tracking-[0.2em]">• Mastery Protocol Active</span>
           </div>
           <h1 className="text-4xl font-serif font-black tracking-tighter text-fluent-ink">Personal <span className="text-fluent-gold font-normal italic underline decoration-fluent-gold/20 underline-offset-8">Mastery Tutor</span></h1>
           <p className="text-stone-500 mt-2 font-serif text-sm italic">24/7 conceptual scaffolding tailored to your specific neural gaps.</p>
@@ -238,13 +238,13 @@ export function AITutor({ profile }: { profile: any }) {
                     <BrainCircuit size={14} className="text-fluent-gold" />
                     Neural Mapping
                  </h3>
-                 <span className="text-[8px] font-display font-medium px-1.5 py-0.5 rounded bg-stone-100 text-stone-400 uppercase tracking-tighter">Real-time</span>
+                 <span className="text-[8px] font-display font-medium px-1.5 py-0.5 rounded bg-stone-100 text-stone-500 uppercase tracking-tighter">Real-time</span>
               </div>
               <div className="h-[240px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
                     <PolarGrid stroke="#f1f5f9" />
-                    <PolarAngleAxis dataKey="subject" tick={{ fontSize: 9, fontWeight: 500, fontFamily: 'DM Sans', fill: '#8896aa' }} />
+                    <PolarAngleAxis dataKey="subject" tick={{ fontSize: 9, fontWeight: 500, fontFamily: 'DM Sans', fill: '#4b5563' }} />
                     <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                     <Radar
                       name="Scholar"
@@ -256,7 +256,7 @@ export function AITutor({ profile }: { profile: any }) {
                   </RadarChart>
                 </ResponsiveContainer>
               </div>
-              <p className="text-[10px] text-center text-stone-400 mt-6 font-serif italic border-t border-black/5 pt-4">"Current focus suggests a high accuracy index but low retention resonance."</p>
+              <p className="text-[10px] text-center text-stone-600 mt-6 font-serif italic border-t border-black/5 pt-4">"Current focus suggests a high accuracy index but low retention resonance."</p>
            </div>
 
            {/* Weak Topics */}
@@ -283,7 +283,7 @@ export function AITutor({ profile }: { profile: any }) {
                          <div className="flex-1 h-1 bg-stone-100 rounded-full overflow-hidden">
                             <motion.div initial={{ width: 0 }} animate={{ width: t.gap }} className={`h-full ${t.alert === 'Critical' ? 'bg-red-400' : 'bg-fluent-gold'}`} />
                          </div>
-                         <span className="text-[9px] font-mono font-bold text-stone-400">{t.gap} Gap</span>
+                         <span className="text-[9px] font-mono font-bold text-stone-600">{t.gap} Gap</span>
                       </div>
                    </div>
                  ))}
@@ -301,7 +301,7 @@ export function AITutor({ profile }: { profile: any }) {
                  </div>
                  <div>
                     <h3 className="font-serif font-bold text-xl leading-tight italic">AI Scaffolder <span className="text-fluent-gold font-sans text-[10px] not-italic ml-2 uppercase tracking-widest">v3.1</span></h3>
-                    <div className="text-[8px] font-display font-medium text-white/30 uppercase tracking-[0.2em] mt-0.5">Optimised for {profile?.grade || 'Grade 10'} Synthesis</div>
+                    <div className="text-[8px] font-display font-medium text-white/50 uppercase tracking-[0.2em] mt-0.5">Optimised for {profile?.grade || 'Grade 10'} Synthesis</div>
                  </div>
               </div>
            </div>
@@ -329,7 +329,7 @@ export function AITutor({ profile }: { profile: any }) {
                       }`}>
                          {m.text}
                       </div>
-                      <div className="mt-2 px-2 text-[8px] font-display font-medium text-stone-300 uppercase tracking-[0.2em]">
+                      <div className="mt-2 px-2 text-[8px] font-display font-medium text-stone-500 uppercase tracking-[0.2em]">
                          {m.role === 'user' ? 'Identity Verified' : 'Standard Transmission'}
                       </div>
                    </div>
@@ -372,7 +372,7 @@ export function AITutor({ profile }: { profile: any }) {
                    <button 
                      key={chip}
                      onClick={() => setInput(`Explain ${chip}`)}
-                     className="text-[9px] font-display font-medium text-stone-400 hover:text-fluent-gold transition-colors flex items-center gap-1.5 group uppercase tracking-widest"
+                     className="text-[9px] font-display font-medium text-stone-600 hover:text-fluent-gold transition-colors flex items-center gap-1.5 group uppercase tracking-widest"
                    >
                      <span className="opacity-40 group-hover:opacity-100 transition-opacity">+</span>
                      {chip}

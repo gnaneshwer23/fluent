@@ -105,9 +105,9 @@ export default function AdminOverview({ schoolId }: { schoolId?: string }) {
         <div className="flex justify-between items-end mb-6">
           <div>
             <h3 className="text-xl font-serif font-bold text-fluent-navy">Critical Interventions</h3>
-            <p className="text-sm text-slate-500">Immediate institutional actions required based on live data.</p>
+            <p className="text-sm text-stone-700 font-medium">Immediate institutional actions required based on live data.</p>
           </div>
-          <Btn variant="ghost" size="sm" className="text-[10px] font-black uppercase tracking-widest text-slate-400">View All {alerts.length}</Btn>
+          <Btn variant="ghost" size="sm" className="text-[10px] font-black uppercase tracking-widest text-stone-600">View All {alerts.length}</Btn>
         </div>
         
         <div className="space-y-3">
@@ -143,7 +143,7 @@ export default function AdminOverview({ schoolId }: { schoolId?: string }) {
         <section>
           <div className="flex justify-between items-end mb-6">
             <h3 className="text-xl font-serif font-bold text-fluent-navy">Scholar Insights</h3>
-            <Btn variant="ghost" size="sm" icon={Search} className="text-slate-400">Filter Cohort</Btn>
+            <Btn variant="ghost" size="sm" icon={Search} className="text-stone-600">Filter Cohort</Btn>
           </div>
           <div className="grid sm:grid-cols-3 gap-4">
             {[
@@ -152,9 +152,9 @@ export default function AdminOverview({ schoolId }: { schoolId?: string }) {
               { label: "Participation Gap", value: `${lowConfidenceCount} Scholars`, desc: "Requires faculty support.", color: "text-fluent-gold" },
             ].map((seg, i) => (
               <Card key={i} className="p-6 border-black/5 bg-white shadow-xl shadow-slate-200/50">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">{seg.label}</h4>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-600 mb-4">{seg.label}</h4>
                 <div className={`text-xl font-serif font-bold mb-1 ${seg.color}`}>{seg.value}</div>
-                <p className="text-[10px] text-slate-500 font-medium">{seg.desc}</p>
+                <p className="text-[10px] text-stone-700 font-bold">{seg.desc}</p>
               </Card>
             ))}
           </div>
@@ -164,7 +164,7 @@ export default function AdminOverview({ schoolId }: { schoolId?: string }) {
         <section>
           <div className="flex justify-between items-end mb-6">
             <h3 className="text-xl font-serif font-bold text-fluent-navy">Faculty Command</h3>
-            <Btn variant="ghost" size="sm" icon={TrendingUp} className="text-slate-400">Full Audit</Btn>
+            <Btn variant="ghost" size="sm" icon={TrendingUp} className="text-stone-600">Full Audit</Btn>
           </div>
           <div className="space-y-4">
             {teachers.length > 0 ? teachers.slice(0, 3).map((teacher, i) => (
@@ -173,16 +173,16 @@ export default function AdminOverview({ schoolId }: { schoolId?: string }) {
                   <Avatar name={teacher.name} size={40} />
                   <div>
                     <div className="text-sm font-bold text-fluent-navy">{teacher.name}</div>
-                    <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">{teacher.subjects?.join(', ') || 'General Studies'}</div>
+                    <div className="text-[10px] text-stone-600 font-bold uppercase tracking-wider">{teacher.subjects?.join(', ') || 'General Studies'}</div>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className={`text-sm font-bold text-fluent-teal`}>Active</div>
-                  <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Faculty Node</div>
+                  <div className="text-[9px] font-black text-stone-500 uppercase tracking-widest">Faculty Node</div>
                 </div>
               </Card>
             )) : (
-                <p className="text-center py-8 text-slate-400 italic text-sm">No faculty records found.</p>
+                <p className="text-center py-8 text-stone-600 italic text-sm">No faculty records found.</p>
             )}
           </div>
         </section>
@@ -213,24 +213,24 @@ export default function AdminOverview({ schoolId }: { schoolId?: string }) {
                     <insight.icon size={20} />
                   </div>
                   <div>
-                    <div className="text-xs font-black uppercase tracking-widest opacity-40">{insight.label}</div>
+                    <div className="text-xs font-black uppercase tracking-widest opacity-60">{insight.label}</div>
                     <div className={`text-sm font-bold ${insight.color}`}>{insight.status}</div>
                   </div>
                 </div>
-                <p className="text-xs text-white/40 leading-relaxed italic">{insight.desc}</p>
+                <p className="text-xs text-white/70 leading-relaxed italic">{insight.desc}</p>
               </div>
             ))}
           </div>
 
           <div className="mt-12 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
-            <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Institutional Intelligence Ledger :: Verified</p>
+            <p className="text-[10px] font-bold text-white/60 uppercase tracking-[0.2em]">Institutional Intelligence Ledger :: Verified</p>
             <Btn variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10 px-8">Deep Analysis Engine</Btn>
           </div>
         </div>
       </section>
 
       <div className="pt-8 border-t border-black/5">
-        <p className="text-center text-[11px] text-slate-400 font-medium italic">
+        <p className="text-center text-[11px] text-stone-600 font-bold italic">
           Disclaimer: Live metrics are subject to synchronisation latency across institutional nodes.
         </p>
       </div>

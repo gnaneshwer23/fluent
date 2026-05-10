@@ -97,10 +97,10 @@ export const Forum = ({ userProfile }: { userProfile: any }) => {
     return (
       <div className="flex flex-col items-center justify-center p-20 text-center">
         <div className="w-16 h-16 bg-stone-50 rounded-full flex items-center justify-center mb-6">
-          <ShieldCheck size={32} className="text-stone-300" />
+          <ShieldCheck size={32} className="text-stone-500" />
         </div>
         <h2 className="text-2xl font-serif font-bold text-fluent-midnight">Protocol Suspended</h2>
-        <p className="text-stone-400 mt-2 max-w-md mx-auto font-serif italic text-sm">The Global Communication Protocol has been temporarily deactivated by the Provincial Authority for maintenance.</p>
+        <p className="text-stone-600 mt-2 max-w-md mx-auto font-serif italic text-sm">The Global Communication Protocol has been temporarily deactivated by the Provincial Authority for maintenance.</p>
       </div>
     );
   }
@@ -109,7 +109,7 @@ export const Forum = ({ userProfile }: { userProfile: any }) => {
     <div className="flex flex-col lg:flex-row gap-8 h-[calc(100vh-280px)] px-4">
       {/* Sidebar - Topics */}
       <div className="w-full lg:w-80 shrink-0 space-y-6">
-        <div className="text-[10px] font-display font-medium uppercase text-stone-400 tracking-[0.2em] px-4">Knowledge Nodes</div>
+        <div className="text-[10px] font-display font-medium uppercase text-stone-600 tracking-[0.2em] px-4">Knowledge Nodes</div>
         <div className="space-y-1">
           {topics.map(topic => (
             <button
@@ -122,13 +122,13 @@ export const Forum = ({ userProfile }: { userProfile: any }) => {
               }`}
             >
               <div className={`w-10 h-10 rounded flex items-center justify-center transition-colors ${
-                activeTopic === topic.id ? "bg-white/10" : "bg-stone-50 text-stone-400 group-hover:bg-white group-hover:text-fluent-midnight"
+                activeTopic === topic.id ? "bg-white/10" : "bg-stone-50 text-stone-600 group-hover:bg-white group-hover:text-fluent-midnight"
               }`}>
                 <topic.icon size={18} />
               </div>
               <div>
                 <div className="text-sm font-bold tracking-tight">{topic.label}</div>
-                <div className={`text-[10px] font-display font-medium leading-tight mt-1 ${activeTopic === topic.id ? "text-white/40" : "text-stone-400"}`}>
+                <div className={`text-[10px] font-display font-medium leading-tight mt-1 ${activeTopic === topic.id ? "text-white/60" : "text-stone-500"}`}>
                   {topic.desc}
                 </div>
               </div>
@@ -140,7 +140,7 @@ export const Forum = ({ userProfile }: { userProfile: any }) => {
            <div className="flex items-center gap-2 text-fluent-gold font-bold text-[10px] uppercase tracking-widest mb-3">
               <ShieldCheck size={14} /> Security Protocol
            </div>
-           <p className="text-[10px] text-stone-500 leading-relaxed italic font-serif">All transmissions are monitored by the Provincial AI for academic integrity and behavioral alignment.</p>
+           <p className="text-[10px] text-stone-700 leading-relaxed italic font-serif">All transmissions are monitored by the Provincial AI for academic integrity and behavioral alignment.</p>
         </Card>
       </div>
 
@@ -152,7 +152,7 @@ export const Forum = ({ userProfile }: { userProfile: any }) => {
             <div className="w-2 h-2 rounded-full bg-fluent-gold animate-pulse shadow-[0_0_8px_rgba(184,151,58,0.5)]" />
             <div>
               <h3 className="text-sm font-bold text-fluent-midnight tracking-tight uppercase font-display">{topics.find(t => t.id === activeTopic)?.label}</h3>
-              <p className="text-[10px] text-stone-400 font-medium uppercase tracking-widest">Real-time Node :: {messages.length} Threads</p>
+              <p className="text-[10px] text-stone-600 font-medium uppercase tracking-widest">Real-time Node :: {messages.length} Threads</p>
             </div>
           </div>
           <div className="flex gap-1">
@@ -170,10 +170,10 @@ export const Forum = ({ userProfile }: { userProfile: any }) => {
             </div>
           ) : messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-12">
-               <div className="w-16 h-16 bg-stone-50 rounded-full flex items-center justify-center mb-6 text-stone-200">
+               <div className="w-16 h-16 bg-stone-50 rounded-full flex items-center justify-center mb-6 text-stone-400">
                   <MessageSquare size={32} />
                </div>
-               <p className="font-serif italic text-stone-400 text-sm">The channel is silent. <br/>Initiate academic discourse.</p>
+               <p className="font-serif italic text-stone-600 text-sm">The channel is silent. <br/>Initiate academic discourse.</p>
             </div>
           ) : (
             <>
@@ -193,7 +193,7 @@ export const Forum = ({ userProfile }: { userProfile: any }) => {
                       <div className={`flex items-center gap-2 mb-1.5 ${isMe ? 'flex-row-reverse' : ''}`}>
                         <span className="text-[11px] font-bold text-fluent-midnight uppercase tracking-wide">{msg.userName}</span>
                         {isAdmin && <Badge color="gold" className="text-[8px] px-1.5 py-0 uppercase">Staff</Badge>}
-                        <span className="text-[9px] text-stone-400 font-display">
+                        <span className="text-[9px] text-stone-600 font-display">
                           {msg.createdAt?.toDate ? new Date(msg.createdAt.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Now'}
                         </span>
                       </div>
@@ -205,11 +205,11 @@ export const Forum = ({ userProfile }: { userProfile: any }) => {
                         {msg.text}
                       </div>
                       <div className={`flex items-center gap-4 mt-2 px-1 ${isMe ? 'flex-row-reverse' : ''}`}>
-                        <button className="text-[9px] font-bold text-stone-400 flex items-center gap-1 hover:text-fluent-gold transition-colors uppercase tracking-widest">
+                        <button className="text-[9px] font-bold text-stone-500 flex items-center gap-1 hover:text-fluent-gold transition-colors uppercase tracking-widest">
                           <ThumbsUp size={10} /> {msg.likes || 0}
                         </button>
-                        <button className="text-[9px] font-bold text-stone-400 hover:text-fluent-midnight transition-colors uppercase tracking-widest">Reply</button>
-                        {!isMe && <button className="text-[9px] font-bold text-stone-400 hover:text-red-500 transition-colors uppercase tracking-widest">Report</button>}
+                        <button className="text-[9px] font-bold text-stone-500 hover:text-fluent-midnight transition-colors uppercase tracking-widest">Reply</button>
+                        {!isMe && <button className="text-[9px] font-bold text-stone-500 hover:text-red-500 transition-colors uppercase tracking-widest">Report</button>}
                       </div>
                     </div>
                   </motion.div>
@@ -228,12 +228,12 @@ export const Forum = ({ userProfile }: { userProfile: any }) => {
               placeholder="Synthesize a contribution..."
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              className="w-full pl-6 pr-24 py-4 bg-white border border-black/5 rounded-lg text-sm font-medium text-fluent-midnight outline-none focus:ring-1 focus:ring-fluent-gold/20 transition-all placeholder:text-stone-300 font-serif italic"
+              className="w-full pl-6 pr-24 py-4 bg-white border border-black/5 rounded-lg text-sm font-medium text-fluent-midnight outline-none focus:ring-1 focus:ring-fluent-gold/20 transition-all placeholder:text-stone-500 font-serif italic"
             />
             <div className="absolute inset-y-0 right-2 flex items-center gap-2">
               <button 
                 type="button"
-                className="p-2 text-stone-200 hover:text-fluent-gold transition-colors"
+                className="p-2 text-stone-400 hover:text-fluent-gold transition-colors"
                 title="AI Assist"
               >
                 <Sparkles size={18} />
@@ -250,10 +250,10 @@ export const Forum = ({ userProfile }: { userProfile: any }) => {
             </div>
           </form>
           <div className="flex justify-between items-center mt-3 px-1">
-             <div className="text-[8px] font-bold text-stone-400 uppercase tracking-widest flex items-center gap-2">
+             <div className="text-[8px] font-bold text-stone-600 uppercase tracking-widest flex items-center gap-2">
                 <ShieldCheck size={10} /> Secure Node :: Encrypted
              </div>
-             <div className="text-[8px] text-stone-400 font-medium uppercase tracking-widest">Shift + Enter for Line</div>
+             <div className="text-[8px] text-stone-600 font-medium uppercase tracking-widest">Shift + Enter for Line</div>
           </div>
         </div>
       </div>

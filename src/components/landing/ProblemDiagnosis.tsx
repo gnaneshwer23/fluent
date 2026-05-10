@@ -10,16 +10,16 @@ export const ProblemDiagnosis = () => {
             <div className="grid lg:grid-cols-2 gap-20 items-center mb-16">
               <div>
                 <div className="text-[10px] font-black text-red-500 uppercase tracking-[0.5em] mb-4 font-mono">Status Audit: CRITICAL</div>
-                <h2 className="text-6xl md:text-7xl font-serif font-bold text-fluent-navy leading-[0.9] mb-6 tracking-tight">
+                <h2 className="text-6xl md:text-7xl font-serif font-bold text-fluent-midnight leading-[0.9] mb-6 tracking-tight">
                   Identifying the <br />
                   <span className="italic font-light text-red-500/80">Quiet Barriers.</span>
                 </h2>
-                <p className="text-lg text-slate-500 leading-relaxed max-w-lg mb-8 font-serif opacity-80">
+                <p className="text-lg text-stone-700 leading-relaxed max-w-lg mb-8 font-serif">
                   Academic stagnation is rarely a lack of effort. It is almost always a structural failure in confidence and methodology.
                 </p>
-                <div className="p-8 bg-fluent-navy text-white rounded-[32px]">
+                <div className="p-8 bg-fluent-midnight text-white rounded-[32px]">
                    <h4 className="text-xl font-bold font-serif mb-4 italic">Core Insight</h4>
-                   <p className="text-white/80 leading-relaxed">"Students do not fail due to lack of intelligence—they struggle due to lack of structured learning, confidence training, and effective teaching systems."</p>
+                   <p className="text-white/90 leading-relaxed italic">"Students do not fail due to lack of intelligence — they struggle due to lack of structured learning, confidence training, and effective teaching systems."</p>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -29,10 +29,10 @@ export const ProblemDiagnosis = () => {
                   { label: "Confidence Deficit", desc: "Poor participation and vocal skills.", code: "CNF-000" },
                   { label: "Visibility Gap", desc: "No accountability or parent-teacher visibility.", code: "OPA-404" }
                 ].map((problem, i) => (
-                  <div key={i} className="p-6 border border-black/5 rounded-[32px] bg-slate-50/50 shadow-sm relative overflow-hidden group hover:bg-red-500 hover:border-red-500 transition-all duration-700">
-                    <div className="text-[9px] font-black text-slate-300 group-hover:text-white/40 uppercase tracking-widest mb-8 font-mono">{problem.code}</div>
-                    <h3 className="font-serif text-xl font-bold text-fluent-navy group-hover:text-white mb-2">{problem.label}</h3>
-                    <p className="text-[11px] text-slate-400 group-hover:text-white/70 leading-relaxed font-sans">{problem.desc}</p>
+                  <div key={i} className="p-6 border border-black/5 rounded-[32px] bg-stone-50/50 shadow-sm relative overflow-hidden group hover:bg-red-500 hover:border-red-500 transition-all duration-700">
+                    <div className="text-[9px] font-bold text-stone-500 group-hover:text-white/40 uppercase tracking-widest mb-8 font-mono">{problem.code}</div>
+                    <h3 className="font-serif text-xl font-bold text-fluent-midnight group-hover:text-white mb-2">{problem.label}</h3>
+                    <p className="text-[11px] text-stone-600 group-hover:text-white/80 leading-relaxed font-sans">{problem.desc}</p>
                   </div>
                 ))}
               </div>

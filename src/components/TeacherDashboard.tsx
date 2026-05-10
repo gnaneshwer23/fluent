@@ -36,7 +36,7 @@ interface AlertItem {
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
   blue:"#2563EB", purple:"#7C3AED", green:"#059669",
-  amber:"#D97706", red:"#DC2626", gray:"#374151",
+  amber:"#D97706", red:"#DC2626", gray:"#4B5563",
   blueBg:"#EFF6FF", purpleBg:"#F5F3FF", greenBg:"#F0FDF4",
   amberBg:"#FFFBEB", redBg:"#FEF2F2",
 };
@@ -90,7 +90,7 @@ function StatCard({ label, value, sub, color, bg, icon }:{ label:string; value:s
       <div>
         <div style={{ fontSize:13, color:C.gray, marginBottom:2 }}>{label}</div>
         <div style={{ fontSize:24, fontWeight:700, color, lineHeight:1.1 }}>{value}</div>
-        {sub && <div style={{ fontSize:12, color:"#6B7280", marginTop:2 }}>{sub}</div>}
+        {sub && <div style={{ fontSize:12, color:"#4B5563", marginTop:2 }}>{sub}</div>}
       </div>
     </div>
   );
@@ -245,8 +245,8 @@ export function TeacherDashboard() {
         {tab==="overview" && (
           <>
             <div style={{ marginBottom:24 }}>
-              <h1 className="text-2xl font-serif font-black tracking-tight text-fluent-navy mb-1">Good morning, {TEACHER.name.split(" ")[1]} ✦</h1>
-              <p className="text-slate-700 font-bold text-sm">{activeCount} active alert{activeCount!==1?"s":""} · {STUDENTS.length-submitted.length} reports pending this week</p>
+              <h1 className="text-2xl font-serif font-black tracking-tight text-fluent-midnight mb-1">Good morning, {TEACHER.name.split(" ")[1]} ✦</h1>
+              <p className="text-stone-700 font-bold text-sm">{activeCount} active alert{activeCount!==1?"s":""} · {STUDENTS.length-submitted.length} reports pending this week</p>
             </div>
 
             {/* Class selector */}

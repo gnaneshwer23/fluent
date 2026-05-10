@@ -39,6 +39,7 @@ export const LandingPage = () => {
     classes: "Grade 10",
     subject: "Full Academic Sequence",
   });
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -54,6 +55,7 @@ export const LandingPage = () => {
   const handleLogin = async () => {
     if (isLoggingIn) return;
     setIsLoggingIn(true);
+    setLoginError(null);
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (error: any) {
@@ -62,6 +64,11 @@ export const LandingPage = () => {
         error.code !== "auth/popup-closed-by-user"
       ) {
         console.error("Login failed", error);
+        if (error.code === "auth/unauthorized-domain") {
+          setLoginError("This domain is not authorized in the Firebase Console. Please add your Vercel URL to 'Authorized domains' in Firebase Authentication settings.");
+        } else {
+          setLoginError(`Login failed: ${error.message}`);
+        }
       }
     } finally {
       setIsLoggingIn(false);
@@ -116,7 +123,7 @@ export const LandingPage = () => {
             <a
               key={id}
               href={`#${id}`}
-              className="text-[11px] tracking-[0.18em] uppercase text-stone-500 hover:text-fluent-ink transition-colors"
+              className="text-[11px] tracking-[0.18em] uppercase text-stone-800 font-bold hover:text-fluent-ink transition-colors"
             >
               {id.replace("audit", " Audit").replace("grounding", " Grounding").replace("the", "The ")}
             </a>
@@ -138,6 +145,22 @@ export const LandingPage = () => {
         </div>
       </nav>
 
+      <AnimatePresence>
+        {loginError && (
+          <motion.div
+            id="login-error-alert"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-24 left-1/2 -translate-x-1/2 z-[101] bg-red-600 text-white px-6 py-3 rounded shadow-xl text-xs font-bold tracking-widest uppercase flex items-center gap-3 max-w-md text-center"
+          >
+            <div className="w-5 h-5 rounded-full border-2 border-white flex items-center justify-center shrink-0">!</div>
+            <span>{loginError}</span>
+            <button onClick={() => setLoginError(null)} className="ml-2 hover:text-white/60 transition-colors">✕</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Hero Section */}
       <section className="min-h-screen grid lg:grid-cols-2 pt-[72px] relative overflow-hidden">
         <div className="p-10 md:p-16 lg:p-24 flex flex-col justify-center relative z-10 bg-fluent-ivory">
@@ -155,7 +178,7 @@ export const LandingPage = () => {
               Learn Directly<br />from British
               <em className="block not-italic text-fluent-gold italic">Masters.</em>
             </h1>
-            <p className="text-stone-600 text-lg leading-relaxed max-w-md mb-14 font-light">
+            <p className="text-stone-800 text-lg leading-relaxed max-w-md mb-14 font-medium">
               We don't just teach scholars — we train the next generation of academic leaders. UK-trained teachers, adaptive AI, and relentless accountability.
             </p>
             <div className="flex flex-wrap items-center gap-8">
@@ -166,7 +189,7 @@ export const LandingPage = () => {
                 <div className="absolute inset-0 bg-fluent-gold origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
                 <span className="relative z-10 group-hover:text-fluent-midnight">Begin Admission Protocol</span>
               </button>
-              <a href="#thesystem" className="text-xs tracking-[0.1em] text-stone-500 hover:text-fluent-ink border-b border-transparent hover:border-fluent-ink transition-all pb-0.5">
+              <a href="#thesystem" className="text-xs tracking-[0.1em] text-stone-700 font-bold hover:text-fluent-ink border-b border-transparent hover:border-fluent-ink transition-all pb-0.5">
                 Explore the System →
               </a>
             </div>
@@ -199,7 +222,7 @@ export const LandingPage = () => {
             <div className="text-[9px] tracking-[0.2em] uppercase text-stone-400 mb-3">
               Retrieved Knowledge Node #1092
             </div>
-            <div className="text-sm text-stone-400 leading-relaxed font-light">
+            <div className="text-sm text-white/80 leading-relaxed font-light">
               Direct retrieval from <strong className="text-fluent-gold-light font-medium">Grade 11 Chemical Bonding core</strong>. 
               The 2s and three 2p orbitals mix to form four identical hybrid orbitals… 
               Imagine a <strong className="text-fluent-gold-light font-medium">perfect tetrahedron</strong> — 109.5° bond angles, zero approximation.
@@ -217,7 +240,7 @@ export const LandingPage = () => {
                   {stat.val.split("%")[0]}<span className="text-fluent-gold">{stat.val.includes("%") ? "%" : ""}</span>
                   {stat.val.includes("/") && <span className="text-fluent-gold text-2xl">/{stat.val.split("/")[1]}</span>}
                 </div>
-                <div className="text-[9px] tracking-[0.2em] uppercase text-stone-400 mt-1">{stat.label}</div>
+                <div className="text-[9px] tracking-[0.2em] uppercase text-white/50 mt-1">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -241,7 +264,7 @@ export const LandingPage = () => {
                 "London Administrative Hub",
                 "Bengaluru Research Campus",
               ].map((text, j) => (
-                <div key={j} className="flex items-center gap-10 px-10 font-display text-[10px] tracking-[0.2em] text-stone-400 uppercase">
+                <div key={j} className="flex items-center gap-10 px-10 font-display text-[10px] tracking-[0.2em] text-white/70 uppercase">
                   {text} <span className="text-fluent-gold text-base">◆</span>
                 </div>
               ))}
@@ -266,7 +289,7 @@ export const LandingPage = () => {
             The Blind<br />
             <em className="text-red-600 not-italic italic">Spots.</em>
           </h2>
-          <p className="font-serif text-xl italic text-white/55 leading-relaxed mt-8">
+          <p className="font-serif text-xl italic text-white/80 leading-relaxed mt-8">
             "Conventional tuition prioritises throughput over mastery. In large batches, concept gaps are invisible until the strategic failure occurs."
           </p>
         </motion.div>
@@ -292,7 +315,7 @@ export const LandingPage = () => {
                   ■ {report.risk} Risk
                 </div>
                 <h3 className="font-serif text-2xl font-semibold mb-2">{report.title}</h3>
-                <p className="text-stone-400 text-sm leading-relaxed">{report.desc}</p>
+                <p className="text-stone-700 font-bold text-sm leading-relaxed">{report.desc}</p>
               </div>
             </motion.div>
           ))}
@@ -308,7 +331,7 @@ export const LandingPage = () => {
             viewport={{ once: true }}
             variants={textVariants}
           >
-            <div className="font-display text-[9px] tracking-[0.3em] uppercase text-stone-400 flex items-center gap-4 mb-14">
+            <div className="font-display text-[9px] tracking-[0.3em] uppercase text-stone-500 flex items-center gap-4 mb-14">
               Instructional Core
               <div className="flex-1 h-px bg-gradient-to-r from-fluent-gold/20 to-transparent" />
             </div>
@@ -317,7 +340,7 @@ export const LandingPage = () => {
               <em className="text-fluent-gold not-italic italic block mt-2">British Precision.</em>
             </h2>
           </motion.div>
-          <p className="font-serif text-xl italic text-stone-500 leading-relaxed lg:pb-2">
+          <p className="font-serif text-xl italic text-stone-800 font-bold leading-relaxed lg:pb-2">
             "Indian students learning directly from British-trained teachers — combined with AI support and continuous teacher development."
           </p>
         </div>
@@ -341,10 +364,10 @@ export const LandingPage = () => {
               <div className="font-serif text-6xl font-light text-stone-100 mb-8 group-hover:text-fluent-gold/15 transition-colors">{card.n}</div>
               <div className="font-display text-[8px] tracking-[0.25em] uppercase text-fluent-gold mb-4">Manual {card.n} · {card.label}</div>
               <h3 className="font-serif text-2xl font-semibold mb-4 leading-tight group-hover:text-fluent-cream transition-colors">{card.title}</h3>
-              <p className="text-stone-500 text-sm leading-relaxed group-hover:text-stone-400 transition-colors">{card.desc}</p>
+              <p className="text-stone-800 font-medium text-sm leading-relaxed group-hover:text-stone-400 transition-colors">{card.desc}</p>
               <div className="flex flex-wrap gap-2 mt-6">
                 {card.tags.map(tag => (
-                  <span key={tag} className="text-[9px] tracking-[0.12em] uppercase px-3 py-1 border border-stone-200 group-hover:border-fluent-gold/30 group-hover:text-fluent-gold transition-all">
+                  <span key={tag} className="text-[9px] tracking-[0.12em] uppercase px-3 py-1 border border-stone-300 group-hover:border-fluent-gold/30 group-hover:text-fluent-gold transition-all">
                     {tag}
                   </span>
                 ))}
@@ -357,10 +380,10 @@ export const LandingPage = () => {
       {/* How it Works */}
       <section id="howitworks" className="bg-fluent-ivory py-24 px-6 md:px-16 lg:px-24">
         <div className="text-center mb-24">
-           <div className="font-display text-[9px] tracking-[0.3em] uppercase text-stone-400 inline-flex items-center gap-4 mb-4">
-            <div className="w-8 h-px bg-stone-300" />
+           <div className="font-display text-[9px] tracking-[0.3em] uppercase text-stone-500 inline-flex items-center gap-4 mb-4">
+            <div className="w-8 h-px bg-stone-400" />
             Operational Loop
-            <div className="w-8 h-px bg-stone-300" />
+            <div className="w-8 h-px bg-stone-400" />
           </div>
           <h2 className="font-serif text-4xl md:text-6xl font-semibold">How It <em className="text-fluent-gold not-italic italic">Works.</em></h2>
         </div>
@@ -387,7 +410,7 @@ export const LandingPage = () => {
               </div>
               <div className="font-display text-[8px] tracking-[0.2em] text-fluent-gold uppercase mb-3">{step.code}</div>
               <h3 className="font-serif text-xl font-semibold mb-2">{step.title}</h3>
-              <p className="text-stone-500 text-xs leading-relaxed max-w-[180px] mx-auto">{step.desc}</p>
+              <p className="text-stone-800 font-bold text-xs leading-relaxed max-w-[180px] mx-auto">{step.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -408,7 +431,7 @@ export const LandingPage = () => {
             </div>
             <div className="bg-fluent-gold/10 border border-fluent-gold/15 p-7 mt-4">
               <div className="font-display text-[8px] tracking-[0.2em] text-fluent-gold-light mb-3 uppercase">Retrieved Knowledge Node #1092</div>
-              <p className="text-sm text-stone-400 leading-relaxed">
+              <p className="text-sm text-white/70 leading-relaxed">
                 Direct retrieval from <em className="not-italic text-fluent-gold-light">Grade 11 Chemical Bonding core</em>. The 2s and three 2p orbitals mix to form four identical hybrid orbitals… Imagine a <em className="not-italic text-fluent-gold-light">perfect tetrahedron</em> — bond angle 109.5°, zero ambiguity, zero hallucination.
               </p>
             </div>
@@ -435,7 +458,7 @@ export const LandingPage = () => {
                 <div className="font-serif text-xl font-semibold text-fluent-gold pt-1">{feature.n}</div>
                 <div>
                   <h3 className="font-serif text-2xl font-semibold text-fluent-cream mb-2">{feature.title}</h3>
-                  <p className="text-stone-400 text-sm leading-relaxed">{feature.desc}</p>
+                  <p className="text-white/70 text-sm leading-relaxed">{feature.desc}</p>
                 </div>
               </div>
             ))}
@@ -445,7 +468,7 @@ export const LandingPage = () => {
 
       {/* Outcome Audit Section */}
       <section id="outcomeaudit" className="bg-fluent-cream py-24 px-6 md:px-16 lg:px-24">
-        <div className="font-display text-[9px] tracking-[0.3em] uppercase text-stone-500 mb-12">Empirical Proof</div>
+        <div className="font-display text-[9px] tracking-[0.3em] uppercase text-stone-600 mb-12">Empirical Proof</div>
         
         <div className="grid md:grid-cols-3 border border-stone-200 mb-24">
           {[
@@ -466,7 +489,7 @@ export const LandingPage = () => {
                 {stat.val.includes("/") && <span className="text-fluent-gold text-4xl">/{stat.val.split("/")[1]}</span>}
               </div>
               <div className="font-display text-[9px] tracking-[0.25em] uppercase text-fluent-gold mb-3">{stat.label}</div>
-              <p className="text-stone-500 text-sm leading-relaxed">{stat.desc}</p>
+              <p className="text-stone-800 font-bold text-sm leading-relaxed">{stat.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -482,7 +505,7 @@ export const LandingPage = () => {
           </div>
           <div className="border-l border-fluent-gold/30 pl-8 relative z-10">
             <div className="font-display text-[13px] tracking-[0.15em] text-fluent-cream mb-2">Fluent Institute.</div>
-            <div className="text-[11px] tracking-[0.1em] text-stone-400 uppercase">Institutional Board · Verified Status</div>
+            <div className="text-[11px] tracking-[0.1em] text-white/50 uppercase">Institutional Board · Verified Status</div>
           </div>
           <div className="absolute top-0 right-0 w-64 h-64 bg-fluent-gold/5 blur-[100px] rounded-full translate-x-1/2 -translate-y-1/2" />
         </motion.div>
@@ -496,7 +519,7 @@ export const LandingPage = () => {
            viewport={{ once: true }}
            variants={textVariants}
         >
-          <div className="font-display text-[9px] tracking-[0.3em] uppercase text-stone-500 mb-10">Cohort Integration</div>
+          <div className="font-display text-[9px] tracking-[0.3em] uppercase text-stone-600 mb-10">Cohort Integration</div>
           <h2 className="font-serif text-4xl md:text-6xl font-semibold leading-[1.05] mb-8">
             Built for<br /><em className="text-fluent-gold not-italic italic">The Driven.</em>
           </h2>
@@ -518,7 +541,7 @@ export const LandingPage = () => {
             >
               <div className="font-display text-[8px] tracking-[0.25em] text-fluent-gold uppercase mb-4 transition-colors group-hover:text-fluent-gold">{segment.label}</div>
               <h3 className="font-serif text-2xl font-semibold mb-3 group-hover:text-fluent-cream transition-colors">{segment.title}</h3>
-              <p className="text-stone-500 text-sm leading-relaxed group-hover:text-stone-400 transition-colors">{segment.desc}</p>
+              <p className="text-stone-600 text-sm leading-relaxed group-hover:text-stone-400 transition-colors">{segment.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -527,13 +550,13 @@ export const LandingPage = () => {
       {/* Enrollment Scenarios Section */}
       <section id="investment" className="bg-fluent-ivory py-24 px-6 md:px-16 lg:px-24">
         <div className="text-center mb-20">
-          <div className="font-display text-[9px] tracking-[0.3em] uppercase text-stone-500 inline-flex items-center gap-4 mb-4">
-            <div className="w-8 h-px bg-stone-300" />
+          <div className="font-display text-[9px] tracking-[0.3em] uppercase text-stone-600 inline-flex items-center gap-4 mb-4">
+            <div className="w-8 h-px bg-stone-400" />
             Academic Enrollment 2026
-            <div className="w-8 h-px bg-stone-300" />
+            <div className="w-8 h-px bg-stone-400" />
           </div>
           <h2 className="font-serif text-4xl md:text-6xl font-semibold mb-6">Admission <em className="text-fluent-gold not-italic italic">Scenarios.</em></h2>
-          <p className="font-serif text-lg italic text-stone-500 max-w-2xl mx-auto">Transparent investment in high-yield academic futures. No hidden costs. Pure performance focus.</p>
+          <p className="font-serif text-lg italic text-stone-600 max-w-2xl mx-auto">Transparent investment in high-yield academic futures. No hidden costs. Pure performance focus.</p>
         </div>
 
         <div className="grid lg:grid-cols-3 border border-stone-200">
@@ -555,14 +578,14 @@ export const LandingPage = () => {
               <div className={`font-serif font-semibold leading-none mb-2 ${scenario.price === 'Contact Board' ? 'text-4xl' : 'text-6xl'}`}>
                 {scenario.price}
               </div>
-              <div className="text-xs text-stone-500 uppercase tracking-widest mb-8">{scenario.price === 'Contact Board' ? 'Custom Sequence' : 'per month'}</div>
-              <div className="h-px bg-current opacity-10 mb-8" />
-              <p className={`text-sm italic mb-8 flex-grow ${scenario.highlight ? 'text-stone-400' : 'text-stone-500'}`}>{scenario.desc}</p>
+              <div className="text-xs text-stone-600 uppercase tracking-widest mb-8">{scenario.price === 'Contact Board' ? 'Custom Sequence' : 'per month'}</div>
+              <div className="h-px bg-current opacity-15 mb-8" />
+              <p className={`text-sm italic mb-8 flex-grow ${scenario.highlight ? 'text-white/70' : 'text-stone-800'}`}>{scenario.desc}</p>
               <div className="space-y-4 mb-10">
                 {scenario.features.map(f => (
                    <div key={f} className="flex gap-3 text-[13px] items-start">
                      <span className="text-fluent-gold text-xs">◆</span>
-                     <span className={scenario.highlight ? 'text-stone-300' : 'text-stone-600'}>{f}</span>
+                     <span className={scenario.highlight ? 'text-stone-300' : 'text-stone-800'}>{f}</span>
                    </div>
                 ))}
               </div>
@@ -589,7 +612,7 @@ export const LandingPage = () => {
           <h2 className="font-serif text-4xl md:text-6xl font-semibold text-fluent-cream leading-[1.1] mb-8">
             Secure the<br /><em className="text-fluent-gold not-italic italic">Scholar's Future.</em>
           </h2>
-          <p className="text-stone-400 text-base leading-relaxed mb-12">Applications for the 2026 Academic Cohort are now being processed. We maintain strict enrollment caps to preserve our 12:1 instructional density.</p>
+          <p className="text-white/80 text-base leading-relaxed mb-12">Applications for the 2026 Academic Cohort are now being processed. We maintain strict enrollment caps to preserve our 12:1 instructional density.</p>
           <div className="mb-12">
             <div className="font-display text-[9px] tracking-[0.25em] text-fluent-gold uppercase mb-3">Cohort Capacity Status</div>
             <div className="h-1 bg-white/10 mb-2 relative overflow-hidden">
@@ -597,7 +620,7 @@ export const LandingPage = () => {
                   <div className="absolute right-0 top-[-20px] font-display text-[9px] tracking-[0.15em] text-fluent-gold">82% FILLED</div>
                </motion.div>
             </div>
-            <div className="text-[11px] text-stone-500 italic">Live: Admissions Pulse · Seats closing rapidly</div>
+            <div className="text-[11px] text-white/60 italic">Live: Admissions Pulse · Seats closing rapidly</div>
           </div>
           <div className="flex flex-wrap gap-4">
              <button
@@ -629,7 +652,7 @@ export const LandingPage = () => {
                <div className="font-serif text-3xl font-light text-fluent-gold/30">{benefit.n}</div>
                <div>
                   <h3 className="font-serif text-xl font-semibold text-fluent-cream mb-2">{benefit.title}</h3>
-                  <p className="text-stone-500 text-sm leading-relaxed">{benefit.desc}</p>
+                  <p className="text-white/80 text-sm leading-relaxed">{benefit.desc}</p>
                </div>
              </motion.div>
           ))}
@@ -637,7 +660,7 @@ export const LandingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-fluent-ink text-stone-400 py-24 px-6 md:px-12 lg:px-24">
+      <footer className="bg-fluent-ink text-stone-300 py-24 px-6 md:px-12 lg:px-24">
         <div className="grid lg:grid-cols-4 gap-16 pb-20 border-b border-white/5 mb-12">
           <div>
             <div className="font-display text-base tracking-[0.15em] text-fluent-cream mb-2">FLUENT INSTITUTE.</div>
@@ -680,7 +703,7 @@ export const LandingPage = () => {
            <div className="text-[11px] tracking-[0.05em] text-white/20 uppercase">
              © 2026 <span className="text-fluent-gold">Fluent Institute.</span> Institutional Trust · UK/India
            </div>
-           <div className="flex items-center gap-3 font-display text-[11px] tracking-[0.1em] uppercase text-stone-400">
+           <div className="flex items-center gap-3 font-display text-[11px] tracking-[0.1em] uppercase text-stone-300">
              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.3)]" />
              Live: Admissions Pulse
            </div>
@@ -719,7 +742,7 @@ export const LandingPage = () => {
               <form onSubmit={handleLeadSubmit} className="space-y-6 max-h-[65vh] overflow-y-auto pr-2 custom-scrollbar">
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">Academy/School Name</label>
+                    <label className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-600">Academy/School Name</label>
                     <input
                       required
                       className="w-full bg-white border border-stone-200 p-3 text-sm focus:border-fluent-gold focus:outline-none"
@@ -729,7 +752,7 @@ export const LandingPage = () => {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">Guardian Name</label>
+                    <label className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-600">Guardian Name</label>
                     <input
                       required
                       className="w-full bg-white border border-stone-200 p-3 text-sm focus:border-fluent-gold focus:outline-none"
@@ -742,7 +765,7 @@ export const LandingPage = () => {
 
                 <div className="grid sm:grid-cols-2 gap-6">
                    <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">Role</label>
+                    <label className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-600">Role</label>
                     <select
                       className="w-full bg-white border border-stone-200 p-3 text-sm focus:border-fluent-gold focus:outline-none"
                       value={leadData.designation}
@@ -755,7 +778,7 @@ export const LandingPage = () => {
                     </select>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">Phone (WhatsApp)</label>
+                    <label className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-600">Phone (WhatsApp)</label>
                     <input
                       required
                       className="w-full bg-white border border-stone-200 p-3 text-sm focus:border-fluent-gold focus:outline-none"
@@ -767,7 +790,7 @@ export const LandingPage = () => {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">Priority Email</label>
+                  <label className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-600">Priority Email</label>
                   <input
                     required
                     type="email"

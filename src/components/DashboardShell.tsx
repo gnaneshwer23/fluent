@@ -43,7 +43,7 @@ export const DashboardShell = ({ role, title, children, navItems, activeNav, set
               </div>
               <div className="min-w-0">
                 <div className="text-[11px] font-bold text-fluent-cream truncate leading-tight uppercase font-display tracking-wide">{title}</div>
-                <div className="text-[8px] font-display text-fluent-gold/50 uppercase tracking-[0.2em] mt-1 flex items-center gap-1.5">
+                <div className="text-[8px] font-display text-fluent-gold/80 uppercase tracking-[0.2em] mt-1 flex items-center gap-1.5 font-bold">
                    <div className="w-1 h-1 rounded-full bg-fluent-gold animate-pulse" />
                    Verified Scholar
                 </div>
@@ -52,26 +52,26 @@ export const DashboardShell = ({ role, title, children, navItems, activeNav, set
             <button 
               onClick={onBack}
               title="Sign Out"
-              className="w-8 h-8 flex items-center justify-center rounded bg-white/5 text-stone-500 hover:bg-red-500/20 hover:text-red-400 transition-all shrink-0 border border-white/5"
+              className="w-8 h-8 flex items-center justify-center rounded bg-white/5 text-stone-200 hover:bg-red-500/20 hover:text-red-400 transition-all shrink-0 border border-white/5"
             >
               <LogOut size={13} />
             </button>
           </div>
         </div>
         
-        <div className="px-8 py-6 text-[9px] font-display text-white/20 uppercase tracking-[0.4em] font-medium">Locus of Control</div>
+        <div className="px-8 py-6 text-[9px] font-display text-white/70 uppercase tracking-[0.4em] font-black">Locus of Control</div>
         <nav className="flex-1 px-4 space-y-1">
           {navItems.map(item => (
             <button
-              key={item.id}
-              onClick={() => setActiveNav(item.id)}
-              className={`w-full flex items-center gap-4 px-4 py-3.5 transition-all text-[11px] relative rounded ${
-                activeNav === item.id 
-                  ? 'bg-fluent-gold/10 text-fluent-gold font-bold shadow-[inset_0_0_20px_rgba(184,151,58,0.05)] border border-fluent-gold/20' 
-                  : 'text-white/40 hover:bg-white/5 border border-transparent'
-              }`}
+               key={item.id}
+               onClick={() => setActiveNav(item.id)}
+               className={`w-full flex items-center gap-4 px-4 py-3.5 transition-all text-[11px] relative rounded ${
+                 activeNav === item.id 
+                   ? 'bg-fluent-gold/10 text-fluent-gold font-bold shadow-[inset_0_0_20px_rgba(184,151,58,0.05)] border border-fluent-gold/20' 
+                   : 'text-white/80 hover:bg-white/5 border border-transparent font-bold'
+               }`}
             >
-              <item.icon size={18} className={`${activeNav === item.id ? 'text-fluent-gold drop-shadow-[0_0_8px_rgba(184,151,58,0.4)]' : 'text-stone-600'}`} />
+              <item.icon size={18} className={`${activeNav === item.id ? 'text-fluent-gold drop-shadow-[0_0_8px_rgba(184,151,58,0.4)]' : 'text-stone-200'}`} />
               <span className="tracking-[0.1em] uppercase font-display">{item.label}</span>
               {item.badge && (
                 <span className={`ml-auto text-[8px] font-display font-bold px-2 py-0.5 rounded uppercase tracking-tighter shadow-sm ${
@@ -90,11 +90,11 @@ export const DashboardShell = ({ role, title, children, navItems, activeNav, set
         </nav>
         
         <div className="p-8 mt-auto border-t border-white/5 space-y-6 bg-black/20">
-          <button className="flex items-center gap-3 text-[10px] text-stone-500 hover:text-fluent-gold transition-all w-full group font-display uppercase tracking-widest">
+          <button className="flex items-center gap-3 text-[10px] text-white/80 hover:text-fluent-gold transition-all w-full group font-display uppercase tracking-widest font-bold">
             <div className="w-6 h-6 rounded flex items-center justify-center bg-white/5 border border-white/5 group-hover:border-fluent-gold/30 transition-all">◯</div>
             <span>Academic Help</span>
           </button>
-          <div className="flex items-center gap-3 font-display text-[8px] tracking-[0.25em] text-white/20 uppercase group">
+          <div className="flex items-center gap-3 font-display text-[8px] tracking-[0.25em] text-white/70 uppercase group font-bold">
             <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
             Global Sync Active
           </div>
@@ -120,11 +120,11 @@ export const DashboardShell = ({ role, title, children, navItems, activeNav, set
         )}
         
         {/* Topbar */}
-        <header className="h-20 sticky top-0 bg-fluent-ivory/80 backdrop-blur-2xl border-b border-black/5 z-[100] flex items-center justify-between px-10 gap-8">
-           <div className="flex-1 min-w-0">
-             <div className="font-display text-[10px] tracking-[0.3em] text-stone-400 uppercase mb-1">
-               Locus <span className="text-fluent-gold opacity-50 mx-2">›</span> <span className="text-fluent-midnight font-bold">{navItems.find(i => i.id === activeNav)?.label?.toUpperCase() || activeNav.toUpperCase()}</span>
-             </div>
+         <header className="h-20 sticky top-0 bg-fluent-ivory/80 backdrop-blur-2xl border-b border-black/5 z-[100] flex items-center justify-between px-10 gap-8">
+            <div className="flex-1 min-w-0">
+              <div className="font-display text-[10px] tracking-[0.3em] text-stone-800 uppercase mb-1">
+                Locus <span className="text-fluent-gold opacity-70 mx-2">›</span> <span className="text-fluent-midnight font-black">{navItems.find(i => i.id === activeNav)?.label?.toUpperCase() || activeNav.toUpperCase()}</span>
+              </div>
              <div className="font-serif text-3xl font-black text-fluent-midnight flex items-center gap-3 leading-none">
                Protocol: <em className="not-italic text-fluent-gold italic font-normal">{navItems.find(i => i.id === activeNav)?.label || activeNav}</em>
                <Sparkles size={20} className="text-fluent-gold animate-pulse" />
@@ -136,7 +136,7 @@ export const DashboardShell = ({ role, title, children, navItems, activeNav, set
                  <Sparkles size={20} />
               </div>
               <div className="min-w-0">
-                <div className="font-display text-[8px] tracking-[0.3em] text-stone-400 uppercase mb-1">Weekly Objective</div>
+                <div className="font-display text-[8px] tracking-[0.3em] text-stone-600 uppercase mb-1 font-bold">Weekly Objective</div>
                 <div className="text-xs font-bold text-fluent-midnight leading-tight truncate font-serif italic">Master: Trigonometric Identities</div>
               </div>
            </div>

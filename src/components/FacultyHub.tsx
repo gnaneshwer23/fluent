@@ -415,13 +415,13 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
             <div className="flex items-center gap-2 mb-1.5">
               <Badge color="teal">Expert Faculty</Badge>
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-[9px] text-green-600 font-bold uppercase tracking-wider">• {department} Department Access</span>
+              <span className="text-[9px] text-green-800 font-bold uppercase tracking-wider">• {department} Department Access</span>
             </div>
             <h1 className="text-3xl font-serif font-bold tracking-tight">
               Welcome, <span className="text-fluent-teal italic font-normal">{teacherName.split(' ')[0]}</span> ✦
             </h1>
-            <p className="text-slate-500 mt-1 text-sm">
-              Focusing on <span className="font-bold text-fluent-navy">{profile?.goal || "British Scaffolding"}</span> • {classes.length} cohorts active.
+            <p className="text-stone-800 mt-1 text-sm font-bold">
+              Focusing on <span className="font-bold text-fluent-midnight">{profile?.goal || "British Scaffolding"}</span> • {classes.length} cohorts active.
             </p>
           </div>
           <div className="flex gap-2">
@@ -445,11 +445,11 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
               {criticalAlerts.length > 0 && (
                 <Card className="border-red-400/20 bg-red-400/5 overflow-hidden shadow-none ring-1 ring-red-400/10">
                   <div className="p-4 border-b border-red-400/10 bg-red-400/10 flex items-center justify-between">
-                     <div className="text-[9px] font-black text-red-500 uppercase tracking-[0.3em] flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                        Critical Cohort Alerts
-                     </div>
-                     <span className="text-[8px] font-bold text-red-400/60 uppercase">Action Required</span>
+                           <div className="text-[9px] font-bold text-white/70 uppercase tracking-[0.3em] flex items-center gap-2">
+                              <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                              Critical Cohort Alerts
+                           </div>
+                           <span className="text-[8px] font-bold text-white/50 uppercase">Action Required</span>
                   </div>
                   <div className="divide-y divide-red-400/10">
                     {criticalAlerts.map((a) => (
@@ -457,10 +457,10 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                         <div>
                           <div className="flex items-center gap-2 mb-1">
                             <Badge color="red" className="text-[7px] uppercase tracking-tighter h-4 px-1.5">{a.type}</Badge>
-                            <span className="text-[9px] font-bold text-red-400/60 uppercase">{a.className}</span>
+                           <div className="text-[9px] font-bold text-red-800 uppercase">{a.className}</div>
                           </div>
-                          <div className="text-base font-bold text-fluent-navy tracking-tight">{a.studentName}</div>
-                          <p className="text-xs text-slate-500 mt-0.5 italic">{a.message}</p>
+                          <div className="text-base font-bold text-fluent-midnight tracking-tight">{a.studentName}</div>
+                          <p className="text-xs text-stone-800 mt-0.5 italic font-medium">{a.message}</p>
                         </div>
                         <Btn 
                           variant="primary" 
@@ -479,8 +479,8 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
               {/* Orchestration Feed - Technical Grid */}
               <Card className="overflow-hidden border-black/5 shadow-none ring-1 ring-black/5">
                 <div className="p-4 border-b border-black/5 bg-gray-50/50 flex justify-between items-center">
-                   <h3 className="text-xs font-bold text-fluent-navy uppercase tracking-widest flex items-center gap-2">
-                      <Database size={14} className="text-slate-400" />
+                   <h3 className="text-xs font-bold text-fluent-midnight uppercase tracking-widest flex items-center gap-2">
+                      <Database size={14} className="text-stone-500" />
                       Synthetic Delivery Feed
                    </h3>
                    <div className="flex gap-2">
@@ -489,19 +489,19 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                 </div>
                 <div className="divide-y divide-black/5">
                   {sessions.map((s, i) => (
-                    <div key={i} className="flex hover:bg-slate-50 transition-all group">
-                      <div className="w-20 p-4 border-r border-black/5 flex flex-col items-center justify-center bg-gray-50/30 group-hover:bg-white transition-colors">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase leading-none mb-1">{s.time.split(' - ')[0]}</span>
-                        <div className="h-3 w-px bg-slate-200 my-1" />
-                        <span className="text-[9px] font-bold text-slate-400 uppercase leading-none">{s.time.split(' - ')[1]}</span>
+                    <div key={i} className="flex hover:bg-stone-50 transition-all group">
+                      <div className="w-20 p-4 border-r border-black/5 flex flex-col items-center justify-center bg-stone-50/30 group-hover:bg-white transition-colors">
+                        <span className="text-[10px] font-bold text-stone-600 uppercase leading-none mb-1">{s.time.split(' - ')[0]}</span>
+                        <div className="h-4 w-px bg-stone-300 my-1" />
+                        <span className="text-[10px] font-bold text-stone-600 uppercase leading-none">{s.time.split(' - ')[1]}</span>
                       </div>
                       <div className="flex-1 p-4 flex justify-between items-center">
                         <div>
                           <div className="flex items-center gap-2 mb-0.5">
-                            <span className="text-[10px] font-black text-fluent-navy uppercase tracking-[0.15em]">{s.class}</span>
-                            <span className="text-[9px] text-slate-400 font-medium">// {s.subject} Unit</span>
+                            <span className="text-[10px] font-black text-fluent-midnight uppercase tracking-[0.15em]">{s.class}</span>
+                            <span className="text-[9px] text-stone-800 font-black">// {s.subject} Unit</span>
                           </div>
-                          <div className="text-base font-serif font-bold text-fluent-navy">{s.topic}</div>
+                          <div className="text-base font-serif font-bold text-fluent-midnight">{s.topic}</div>
                         </div>
                         <div className="flex items-center gap-4">
                            <div className="text-right">
@@ -538,8 +538,8 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
               {/* Assignment Overview Section */}
               <Card className="overflow-hidden border-black/5 shadow-none ring-1 ring-black/5">
                 <div className="p-4 border-b border-black/5 bg-gray-50/50 flex justify-between items-center">
-                   <h3 className="text-xs font-bold text-fluent-navy uppercase tracking-widest flex items-center gap-2">
-                      <ClipboardList size={14} className="text-slate-400" />
+                   <h3 className="text-xs font-bold text-fluent-midnight uppercase tracking-widest flex items-center gap-2">
+                      <ClipboardList size={14} className="text-stone-500" />
                       Challenges
                    </h3>
                    <Btn variant="ghost" size="sm" className="text-[9px] font-bold uppercase tracking-widest" onClick={() => setActiveNav("assignments")}>View All</Btn>
@@ -558,7 +558,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                 </div>
                 <div className="relative z-10">
                    <h3 className="text-xl font-serif font-bold mb-1 italic">Institutional Reach</h3>
-                   <div className="text-white/40 text-[9px] font-bold uppercase tracking-[0.3em] mb-6">Analytic Summary</div>
+                   <div className="text-white/70 text-[9px] font-black uppercase tracking-[0.3em] mb-6">Analytic Summary</div>
                    
                    <div className="space-y-6">
                       {classes.slice(0, 3).map((c, i) => (
@@ -566,7 +566,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                            <div className="flex justify-between items-end">
                               <div>
                                  <div className="text-[10px] font-bold text-fluent-gold uppercase tracking-widest">{c.name}</div>
-                                 <div className="text-[9px] text-white/40 font-mono mt-0.5">{c.students} active scholars</div>
+                                 <div className="text-[9px] text-white/70 font-mono mt-0.5 font-bold">{c.students} active scholars</div>
                               </div>
                               <div className="text-xl font-mono font-medium tracking-tighter">{c.avgScore}%</div>
                            </div>
@@ -587,8 +587,8 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
 
               <Card className="p-6 border-black/5 group cursor-pointer" onClick={() => setActiveNav("registry")}>
                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-[10px] font-bold text-fluent-navy uppercase tracking-widest">Registry Intake</h3>
-                    <div className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-fluent-teal group-hover:text-white transition-all">
+                    <h3 className="text-[10px] font-bold text-fluent-midnight uppercase tracking-widest">Registry Intake</h3>
+                    <div className="w-6 h-6 rounded-full bg-stone-50 flex items-center justify-center group-hover:bg-fluent-teal group-hover:text-white transition-all">
                        <Plus size={12} />
                     </div>
                  </div>
@@ -596,7 +596,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                     {unassignedStudents.slice(0, 3).map((s, i) => (
                        <div key={i} className="flex items-center gap-3">
                           <Avatar name={s.name} size={28} />
-                          <div className="text-[11px] font-bold text-slate-600">{s.name}</div>
+                          <div className="text-[11px] font-black text-stone-800">{s.name}</div>
                           <Badge color="gray" className="ml-auto text-[8px]">Draft</Badge>
                        </div>
                     ))}
@@ -609,7 +609,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
             <h2 className="text-3xl font-serif font-bold mb-8">Faculty Preferences</h2>
             <Card className="p-8">
               <h3 className="text-lg font-bold mb-6">Subject Specializations</h3>
-              <p className="text-sm text-slate-500 mb-6">Select the subjects you specialize in to improve student matching and class management.</p>
+              <p className="text-sm text-stone-800 font-bold mb-6">Select the subjects you specialize in to improve student matching and class management.</p>
               <div className="grid grid-cols-2 gap-3">
                 {["Mathematics", "Physics", "Chemistry", "Biology", "English", "Science (All)"].map(s => (
                   <div 
@@ -652,7 +652,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                 <div className="flex-1 space-y-6 w-full">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 block px-1">Full Name</label>
+                       <label className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-600 block px-1">Full Name</label>
                        <input 
                          type="text" 
                          defaultValue={profile?.name || ""} 
@@ -666,7 +666,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                        />
                     </div>
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 block px-1">Primary Subject</label>
+                       <label className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-600 block px-1">Primary Subject</label>
                        <select 
                          defaultValue={department} 
                          onChange={async (e) => {
@@ -684,7 +684,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                   </div>
 
                   <div className="space-y-2">
-                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 block px-1">Professional Bio</label>
+                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-600 block px-1">Professional Bio</label>
                      <textarea 
                        rows={4}
                        defaultValue={profile?.bio || ""} 
@@ -704,7 +704,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                         <ShieldCheck size={18} className="text-fluent-teal" />
                         <h4 className="text-sm font-bold text-fluent-navy tracking-tight">Institutional Bio Policy</h4>
                      </div>
-                     <p className="text-[11px] text-slate-500 leading-relaxed italic">
+                     <p className="text-[11px] text-stone-700 leading-relaxed italic font-bold">
                         "Bios should reflect the British Scaffolding standard, highlighting global academic mastery and adaptive synthesis techniques."
                      </p>
                   </div>
@@ -717,7 +717,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-white p-8 rounded-[32px] border border-black/5 shadow-sm">
               <div className="flex flex-wrap gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 block px-1">Subject Filter</label>
+                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-600 block px-1">Subject Filter</label>
                   <div className="flex gap-2 p-1 bg-gray-50 rounded-xl border border-black/5">
                     {["All", "Mathematics", "Physics", "Chemistry", "Biology", "English"].map(subject => {
                       const isActive = cohortSubjectFilter.includes(subject);
@@ -728,7 +728,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                           className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                             isActive 
                               ? 'bg-fluent-navy text-white shadow-md' 
-                              : 'text-slate-400 hover:text-fluent-navy hover:bg-white'
+                              : 'text-stone-600 font-bold hover:text-fluent-navy hover:bg-white'
                           }`}
                         >
                           {subject}
@@ -739,7 +739,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 block px-1">Grade Level</label>
+                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-600 block px-1">Grade Level</label>
                   <div className="flex gap-2 p-1 bg-gray-50 rounded-xl border border-black/5">
                     {["All", "Grade 9", "Grade 10", "Grade 11", "Grade 12"].map(grade => (
                       <button
@@ -760,14 +760,14 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
 
               <div className="flex gap-4">
                 <div className="text-right">
-                  <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-1">Impact Score</div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-600 mb-1">Impact Score</div>
                   <div className="text-2xl font-serif font-bold text-fluent-navy">
-                    {filteredClasses.reduce((sum, c) => sum + (c.students || 0), 0)} <span className="text-xs text-slate-300 font-sans uppercase">Scholars</span>
+                    {filteredClasses.reduce((sum, c) => sum + (c.students || 0), 0)} <span className="text-xs text-stone-500 font-sans uppercase font-bold">Scholars</span>
                   </div>
                 </div>
                 <div className="w-px h-10 bg-slate-100 hidden md:block" />
                 <div className="text-right">
-                  <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-1">Global Mastery</div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-600 mb-1">Global Mastery</div>
                   <div className="text-2xl font-serif font-bold text-fluent-teal text-right">
                     {filteredClasses.length > 0 
                       ? Math.round(filteredClasses.reduce((sum, c) => sum + (c.avgScore || 0), 0) / filteredClasses.length) 
@@ -782,11 +782,11 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                 <div className="flex justify-between items-center mb-8 relative z-10">
                   <div>
                     <h3 className="text-xl font-serif font-bold">Performance Trajectory</h3>
-                    <p className="text-xs text-slate-400 font-medium">Aggregate mastery trend across {cohortSubjectFilter.join(", ")} {cohortGradeFilter !== 'All' ? `(${cohortGradeFilter})` : ''} cohorts</p>
+                    <p className="text-xs text-stone-600 font-bold">Aggregate mastery trend across {cohortSubjectFilter.join(", ")} {cohortGradeFilter !== 'All' ? `(${cohortGradeFilter})` : ''} cohorts</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-fluent-teal"></div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Mastery %</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-stone-600">Mastery %</span>
                   </div>
                 </div>
                 

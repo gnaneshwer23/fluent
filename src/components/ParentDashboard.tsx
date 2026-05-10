@@ -124,9 +124,9 @@ export function ParentDashboard({ profile, onBack }:{ profile: any, onBack: () =
     return (
       <DashboardShell role="parent" title={profile?.name} navItems={navItems} activeNav={tab} setActiveNav={setTab} onBack={onBack}>
          <div className="p-20 text-center space-y-4">
-            <AlertCircle size={48} className="mx-auto text-slate-200" />
-            <h2 className="text-2xl font-serif font-bold text-fluent-navy">No Registered Scholars</h2>
-            <p className="text-slate-500 max-w-sm mx-auto">Please contact administrative support to link your child's academic node to your account.</p>
+            <AlertCircle size={48} className="mx-auto text-stone-300" />
+            <h2 className="text-2xl font-serif font-bold text-fluent-midnight">No Registered Scholars</h2>
+            <p className="text-stone-600 max-w-sm mx-auto">Please contact administrative support to link your child's academic node to your account.</p>
          </div>
       </DashboardShell>
     );
@@ -142,7 +142,7 @@ export function ParentDashboard({ profile, onBack }:{ profile: any, onBack: () =
                 <div>
                   <div className="text-[10px] text-fluent-gold font-display font-medium uppercase tracking-[0.4em] mb-2">Guardian Protocol · Scholar Node Active</div>
                   <h1 className="text-4xl font-serif font-black text-fluent-midnight leading-none">Scholar <em className="not-italic text-fluent-gold italic">Overview</em></h1>
-                  <p className="text-sm text-stone-500 font-serif italic mt-2">Real-time visibility into your scholar's academic pulse.</p>
+                  <p className="text-sm text-stone-700 font-serif italic mt-2">Real-time visibility into your scholar's academic pulse.</p>
                 </div>
                 <div className="flex gap-3">
                   <Btn variant="primary" size="sm" icon={Download} className="text-[9px] font-black tracking-widest uppercase px-6">Download Summary</Btn>
@@ -182,28 +182,27 @@ export function ParentDashboard({ profile, onBack }:{ profile: any, onBack: () =
                              <div className="w-4 h-[1px] bg-fluent-gold" /> Week 5 Node
                           </div>
                           <h2 className="text-4xl font-serif font-bold text-fluent-cream leading-tight">{selectedChild.name.split(' ')[0]} <em className="not-italic text-fluent-gold italic">{selectedChild.name.split(' ')[1]}</em></h2>
-                          <p className="text-xs text-white/40 mt-3 font-serif italic max-w-xs leading-relaxed">
-                            <strong className="text-white/60 font-medium not-italic">{selectedChild.grade} · Mastery Cohort</strong> · Board Exam Elite Performance Protocol (95%+)
+                          <p className="text-xs text-white/60 mt-3 font-serif italic max-w-xs leading-relaxed">
+                            <strong className="text-white/80 font-medium not-italic">{selectedChild.grade} · Mastery Cohort</strong> · Board Exam Elite Performance Protocol (95%+)
                           </p>
                        </div>
                     </div>
-
                     <div className="grid grid-cols-3 gap-6 border-l border-white/10 pl-12">
                        <div className="space-y-1">
-                          <div className="text-3xl font-serif font-bold text-fluent-gold">{selectedChild.total > 0 ? Math.round((selectedChild.attended/selectedChild.total)*100) : 0}%</div>
-                          <div className="text-[8px] font-display font-medium uppercase text-white/30 tracking-widest">Attendance</div>
+                          <div className="text-3xl font-serif font-bold text-fluent-gold">{selectedChild.attended/selectedChild.total ? Math.round((selectedChild.attended/selectedChild.total)*100) : 0}%</div>
+                          <div className="text-[8px] font-display font-medium uppercase text-white/50 tracking-widest">Attendance</div>
                           <div className="text-[9px] text-green-400 font-bold">▲ Optimal</div>
                        </div>
                        <div className="space-y-1">
                           <div className="text-3xl font-serif font-bold text-fluent-cream">{selectedChild.avgScore || 0}%</div>
-                          <div className="text-[8px] font-display font-medium uppercase text-white/30 tracking-widest">Mastery Index</div>
+                          <div className="text-[8px] font-display font-medium uppercase text-white/50 tracking-widest">Mastery Index</div>
                           <div className="text-[9px] text-fluent-gold font-bold">▲ +2.4%</div>
                        </div>
                        <div className="space-y-1">
                           <div className="text-xl font-serif font-bold text-fluent-gold uppercase tracking-tighter pt-2">
                              #04
                           </div>
-                          <div className="text-[8px] font-display font-medium uppercase text-white/30 tracking-widest">Global Rank</div>
+                          <div className="text-[8px] font-display font-medium uppercase text-white/50 tracking-widest">Global Rank</div>
                           <div className="text-[9px] text-green-400 font-bold">▲ Up 2</div>
                        </div>
                     </div>
@@ -218,8 +217,8 @@ export function ParentDashboard({ profile, onBack }:{ profile: any, onBack: () =
                        </div>
                        <Badge color="gold">2 Remaining</Badge>
                     </div>
-                    <div className="text-[9px] font-display font-medium uppercase text-stone-400 tracking-widest mb-2">Sessions This Week</div>
-                    <div className="text-3xl font-serif font-bold text-fluent-midnight">3 <span className="text-lg text-stone-300">/ 5</span></div>
+                    <div className="text-[9px] font-display font-medium uppercase text-stone-500 tracking-widest mb-2">Sessions This Week</div>
+                    <div className="text-3xl font-serif font-bold text-fluent-midnight">3 <span className="text-lg text-stone-400">/ 5</span></div>
                  </div>
                  
                  <div className="bg-white p-8 border border-black/5 rounded-xl group hover:border-fluent-gold transition-all">
@@ -229,8 +228,8 @@ export function ParentDashboard({ profile, onBack }:{ profile: any, onBack: () =
                        </div>
                        <Badge color="green">Peak</Badge>
                     </div>
-                    <div className="text-[9px] font-display font-medium uppercase text-stone-400 tracking-widest mb-2">Study Streak</div>
-                    <div className="text-3xl font-serif font-bold text-fluent-midnight">5 <span className="text-lg text-stone-400">Days</span></div>
+                    <div className="text-[9px] font-display font-medium uppercase text-stone-500 tracking-widest mb-2">Study Streak</div>
+                    <div className="text-3xl font-serif font-bold text-fluent-midnight">5 <span className="text-lg text-stone-500">Days</span></div>
                  </div>
 
                  <div className="bg-white p-8 border border-black/5 rounded-xl group hover:border-fluent-gold transition-all">
@@ -240,7 +239,7 @@ export function ParentDashboard({ profile, onBack }:{ profile: any, onBack: () =
                        </div>
                        <Badge color="red">1 Overdue</Badge>
                     </div>
-                    <div className="text-[9px] font-display font-medium uppercase text-stone-400 tracking-widest mb-2">Assignments Due</div>
+                    <div className="text-[9px] font-display font-medium uppercase text-stone-500 tracking-widest mb-2">Assignments Due</div>
                     <div className="text-3xl font-serif font-bold text-red-600">2</div>
                  </div>
 
@@ -251,7 +250,7 @@ export function ParentDashboard({ profile, onBack }:{ profile: any, onBack: () =
                        </div>
                        <Badge color="navy">High Activity</Badge>
                     </div>
-                    <div className="text-[9px] font-display font-medium uppercase text-stone-400 tracking-widest mb-2">AI Tutor Queries</div>
+                    <div className="text-[9px] font-display font-medium uppercase text-stone-500 tracking-widest mb-2">AI Tutor Queries</div>
                     <div className="text-3xl font-serif font-bold text-fluent-midnight">12</div>
                  </div>
               </div>
@@ -274,7 +273,7 @@ export function ParentDashboard({ profile, onBack }:{ profile: any, onBack: () =
                                 <div className="flex justify-between items-end mb-3">
                                    <div>
                                       <div className="text-sm font-bold text-fluent-midnight">Mathematics</div>
-                                      <div className="text-[10px] text-stone-400 font-serif italic">Trigonometric Identities</div>
+                                      <div className="text-[10px] text-stone-500 font-serif italic">Trigonometric Identities</div>
                                    </div>
                                    <div className="text-xl font-serif font-bold text-fluent-gold">68%</div>
                                 </div>
@@ -291,7 +290,7 @@ export function ParentDashboard({ profile, onBack }:{ profile: any, onBack: () =
                                 <div className="flex justify-between items-end mb-3">
                                    <div>
                                       <div className="text-sm font-bold text-fluent-midnight">Physics</div>
-                                      <div className="text-[10px] text-stone-400 font-serif italic">Newtonian Mechanics</div>
+                                      <div className="text-[10px] text-stone-500 font-serif italic">Newtonian Mechanics</div>
                                    </div>
                                    <div className="text-xl font-serif font-bold text-green-600">85%</div>
                                 </div>
@@ -308,7 +307,7 @@ export function ParentDashboard({ profile, onBack }:{ profile: any, onBack: () =
                                 <div className="flex justify-between items-end mb-3">
                                    <div>
                                       <div className="text-sm font-bold text-fluent-midnight">English</div>
-                                      <div className="text-[10px] text-stone-400 font-serif italic">Synthesis & Rhetoric</div>
+                                      <div className="text-[10px] text-stone-500 font-serif italic">Synthesis & Rhetoric</div>
                                    </div>
                                    <div className="text-xl font-serif font-bold text-red-600">44%</div>
                                 </div>
@@ -454,10 +453,10 @@ export function ParentDashboard({ profile, onBack }:{ profile: any, onBack: () =
                       ].map((item, id) => (
                         <div key={id} className="flex justify-between items-center py-4 border-b border-black/5 last:border-0">
                            <div>
-                              <div className="text-[9px] font-display font-medium text-stone-400 uppercase tracking-widest">{item.label}</div>
+                              <div className="text-[9px] font-display font-medium text-stone-500 uppercase tracking-widest">{item.label}</div>
                               <div className="text-sm font-bold text-fluent-midnight mt-1">{item.val}</div>
                            </div>
-                           <div className="text-xs font-serif italic text-stone-400">{item.sub}</div>
+                           <div className="text-xs font-serif italic text-stone-600">{item.sub}</div>
                         </div>
                       ))}
                    </div>
@@ -526,12 +525,12 @@ export function ParentDashboard({ profile, onBack }:{ profile: any, onBack: () =
                         </div>
                         <div className="space-y-2">
                            <div className="text-[9px] font-display font-medium uppercase text-stone-400 tracking-widest">Confidence Index</div>
-                           <div className="text-4xl font-serif font-bold text-fluent-midnight">7.2<span className="text-lg text-stone-300">/10</span></div>
+                           <div className="text-4xl font-serif font-bold text-fluent-midnight">7.2<span className="text-lg text-stone-400">/10</span></div>
                            <div className="text-[10px] text-green-500 font-bold">▲ +0.5 Delta</div>
                         </div>
                         <div className="space-y-2">
                            <div className="text-[9px] font-display font-medium uppercase text-stone-400 tracking-widest">Sessions Logged</div>
-                           <div className="text-4xl font-serif font-bold text-fluent-midnight">3<span className="text-lg text-stone-300">/5</span></div>
+                           <div className="text-4xl font-serif font-bold text-fluent-midnight">3<span className="text-lg text-stone-400">/5</span></div>
                            <div className="text-[10px] text-fluent-gold font-bold italic">2 Synch Gaps</div>
                         </div>
                         <div className="space-y-2 text-right">

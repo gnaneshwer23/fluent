@@ -184,7 +184,7 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
                 <h2 className="font-serif text-3xl md:text-4xl font-semibold text-fluent-cream leading-tight mb-2">
                   Good morning, <em>{studentName.split(' ')[0]}!</em> ✦
                 </h2>
-                <p className="text-stone-400 text-sm font-serif italic max-w-md">
+                <p className="text-stone-300 text-sm font-serif italic max-w-md">
                   Focusing on <strong className="text-fluent-gold font-normal not-italic">{profile?.goal || "Board Exam Elite Performance (95%+)"}</strong> today.
                 </p>
               </div>
@@ -209,8 +209,8 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
                 { label: "Global Rank", val: "#04", delta: "Up 2 places", icon: "🏅", color: "text-green-500" },
               ].map((stat, i) => (
                 <div key={i} className="bg-white border border-black/5 p-6 rounded-lg group hover:border-fluent-gold/30 transition-all">
-                  <div className={`w-9 h-9 rounded-lg bg-stone-50 flex items-center justify-center text-lg mb-4 ${stat.color}`}>{stat.icon}</div>
-                  <div className="font-display text-[7px] tracking-[0.2em] uppercase text-stone-400 mb-1">{stat.label}</div>
+                  <div className={`w-9 h-9 rounded-lg bg-stone-100/50 flex items-center justify-center text-lg mb-4 ${stat.color}`}>{stat.icon}</div>
+                  <div className="font-display text-[7px] tracking-[0.2em] uppercase text-stone-500 mb-1">{stat.label}</div>
                   <div className="font-serif text-3xl font-semibold text-fluent-ink leading-none">{stat.val}</div>
                   <div className="text-[11px] font-medium text-green-600 mt-2">▲ {stat.delta}</div>
                 </div>
@@ -224,11 +224,11 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
                 <div className="bg-white border border-black/5 p-8 rounded-lg">
                   <div className="font-display text-[8px] tracking-[0.2em] uppercase text-fluent-gold mb-4">Next Recommended Concept</div>
                   <h3 className="font-serif text-2xl font-semibold text-fluent-ink mb-2">Bernoulli's Principle: Synthesis Lab</h3>
-                  <p className="font-serif text-sm italic text-stone-500 mb-6">"Masters expect you to synthesise this with your recent Maths Logic quiz results."</p>
+                  <p className="font-serif text-sm italic text-stone-600 mb-6">"Masters expect you to synthesise this with your recent Maths Logic quiz results."</p>
                   <div className="flex flex-wrap gap-2 mb-8">
-                    <span className="text-[8px] font-display tracking-[0.1em] uppercase px-3 py-1 bg-stone-100 text-stone-600">Physics</span>
+                    <span className="text-[8px] font-display tracking-[0.1em] uppercase px-3 py-1 bg-stone-200/50 text-stone-600">Physics</span>
                     <span className="text-[8px] font-display tracking-[0.1em] uppercase px-3 py-1 bg-fluent-gold/10 text-fluent-gold">Synthesis Lab</span>
-                    <span className="text-[8px] font-display tracking-[0.1em] uppercase px-3 py-1 text-stone-400">Estimated 45 min</span>
+                    <span className="text-[8px] font-display tracking-[0.1em] uppercase px-3 py-1 text-stone-500">Estimated 45 min</span>
                   </div>
                   <div className="flex gap-4">
                     <button className="bg-fluent-midnight text-fluent-cream px-8 py-3.5 font-display text-[9px] tracking-[0.15em] uppercase hover:bg-fluent-gold hover:text-fluent-midnight transition-all">Initialise AI Prep</button>
@@ -238,9 +238,9 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
 
                 {/* Score Journey */}
                 <div className="bg-white border border-black/5 p-8 rounded-lg">
-                  <div className="font-display text-[8px] tracking-[0.25em] uppercase text-stone-400 mb-6 flex items-center gap-4">
+                  <div className="font-display text-[8px] tracking-[0.25em] uppercase text-stone-500 mb-6 flex items-center gap-4">
                     My Score Journey — Last 5 Weeks
-                    <div className="flex-1 h-px bg-stone-100" />
+                    <div className="flex-1 h-px bg-stone-200/50" />
                   </div>
                   <div className="h-[200px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
@@ -265,7 +265,7 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
                     </ResponsiveContainer>
                   </div>
                   <div className="flex items-center gap-4 mt-4">
-                    <div className="flex items-center gap-2 text-[10px] text-stone-400">
+                    <div className="flex items-center gap-2 text-[10px] text-stone-500">
                       <div className="w-2 h-2 rounded-full bg-fluent-gold" />
                       Score Trajectory
                     </div>
@@ -274,14 +274,14 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
 
                 {/* Action Plan */}
                 <div className="bg-white border border-black/5 p-8 rounded-lg">
-                  <div className="font-display text-[8px] tracking-[0.25em] uppercase text-stone-400 mb-6">AI-Generated Action Plan · This Week</div>
+                  <div className="font-display text-[8px] tracking-[0.25em] uppercase text-stone-500 mb-6">AI-Generated Action Plan · This Week</div>
                   <div className="space-y-2">
                     {[
                       "Practice 5 word problems daily — your biggest gap this week",
                       "Revisit Chapter 4 geometry theorems before Thursday's test",
                       "Book a 15-min session with Ms. Mehta on construction problems"
                     ].map((plan, i) => (
-                      <div key={i} className="flex gap-4 p-4 bg-stone-50 rounded border-l-2 border-fluent-gold text-sm text-fluent-ink">
+                      <div key={i} className="flex gap-4 p-4 bg-stone-100/50 rounded border-l-2 border-fluent-gold text-sm text-fluent-ink">
                         <span className="text-fluent-gold py-0.5">◆</span>
                         {plan}
                       </div>
@@ -294,40 +294,40 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
               <div className="space-y-6">
                 {/* Achievement Pulse */}
                 <div className="bg-white border border-black/5 p-6 rounded-lg">
-                  <div className="font-display text-[8px] tracking-[0.25em] uppercase text-stone-400 mb-6">Achievement Pulse</div>
+                  <div className="font-display text-[8px] tracking-[0.25em] uppercase text-stone-500 mb-6">Achievement Pulse</div>
                   <div className="flex gap-2 mb-6">
                     <div className="w-11 h-11 rounded-full bg-fluent-gold/10 border border-fluent-gold/20 flex items-center justify-center text-xl">🏅</div>
-                    <div className="w-11 h-11 rounded-full bg-stone-50 text-stone-300 opacity-40 flex items-center justify-center text-xl grayscale">⭐</div>
-                    <div className="w-11 h-11 rounded-full bg-stone-50 text-stone-300 opacity-40 flex items-center justify-center text-xl grayscale">🎯</div>
+                    <div className="w-11 h-11 rounded-full bg-stone-100 text-stone-400 opacity-40 flex items-center justify-center text-xl grayscale">⭐</div>
+                    <div className="w-11 h-11 rounded-full bg-stone-100 text-stone-400 opacity-40 flex items-center justify-center text-xl grayscale">🎯</div>
                   </div>
                   <div className="font-medium text-sm text-fluent-ink">Concept Crusader</div>
-                  <div className="text-[10px] text-stone-500 mt-1 uppercase font-display tracking-widest">2/5 Labs Completed</div>
-                  <div className="h-1 bg-stone-100 rounded-full mt-4 overflow-hidden">
+                  <div className="text-[10px] text-stone-600 mt-1 uppercase font-display tracking-widest">2/5 Labs Completed</div>
+                  <div className="h-1 bg-stone-200/50 rounded-full mt-4 overflow-hidden">
                     <div className="h-full bg-fluent-gold" style={{ width: '40%' }} />
                   </div>
-                  <div className="text-[10px] text-stone-400 mt-2 font-medium">40% · 3 labs to next badge</div>
+                  <div className="text-[10px] text-stone-500 mt-2 font-medium">40% · 3 labs to next badge</div>
                 </div>
 
                 {/* Weekly Pulse */}
                 <div className="bg-white border border-black/5 p-6 rounded-lg">
-                  <div className="font-display text-[8px] tracking-[0.25em] uppercase text-stone-400 mb-6">This Week's Pulse</div>
+                  <div className="font-display text-[8px] tracking-[0.25em] uppercase text-stone-500 mb-6">This Week's Pulse</div>
                   <div className="space-y-4">
                     <div className="flex justify-between items-end">
-                      <div className="text-[12px] text-stone-600">Sessions attended</div>
+                      <div className="text-[12px] text-stone-700">Sessions attended</div>
                       <div className="font-serif text-lg font-semibold leading-none">3/5</div>
                     </div>
-                    <div className="h-1 bg-stone-100 rounded-full overflow-hidden">
+                    <div className="h-1 bg-stone-200/50 rounded-full overflow-hidden">
                       <div className="h-full bg-green-500" style={{ width: '60%' }} />
                     </div>
                     <div className="flex justify-between items-end">
-                      <div className="text-[12px] text-stone-600">Assignments submitted</div>
+                      <div className="text-[12px] text-stone-700">Assignments submitted</div>
                       <div className="font-serif text-lg font-semibold leading-none">0/2</div>
                     </div>
-                    <div className="h-1 bg-stone-100 rounded-full overflow-hidden">
+                    <div className="h-1 bg-stone-200/50 rounded-full overflow-hidden">
                       <div className="h-full bg-red-500" style={{ width: '0%' }} />
                     </div>
                     <div className="flex justify-between items-end">
-                      <div className="text-[12px] text-stone-600">AI Tutor queries</div>
+                      <div className="text-[12px] text-stone-700">AI Tutor queries</div>
                       <div className="font-serif text-lg font-semibold leading-none">12</div>
                     </div>
                   </div>
@@ -335,7 +335,7 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
 
                 {/* Quick Navigate */}
                 <div className="bg-white border border-black/5 p-6 rounded-lg">
-                  <div className="font-display text-[8px] tracking-[0.25em] uppercase text-stone-400 mb-6">Quick Navigate</div>
+                  <div className="font-display text-[8px] tracking-[0.25em] uppercase text-stone-500 mb-6">Quick Navigate</div>
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       { icon: "✦", label: "AI Tutor", id: "ai-tutor" },
@@ -343,9 +343,9 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
                       { icon: "≡", label: "Assignments", id: "assignments" },
                       { icon: "◎", label: "Forum", id: "forum" },
                     ].map(nav => (
-                      <button key={nav.id} onClick={() => setActiveNav(nav.id)} className="p-4 bg-stone-50 rounded hover:bg-fluent-gold/5 border border-transparent hover:border-fluent-gold/20 transition-all text-center group">
+                      <button key={nav.id} onClick={() => setActiveNav(nav.id)} className="p-4 bg-stone-100/50 rounded hover:bg-fluent-gold/5 border border-transparent hover:border-fluent-gold/20 transition-all text-center group">
                         <div className="text-lg mb-1.5 group-hover:scale-110 transition-transform">{nav.icon}</div>
-                        <div className="text-[10px] text-stone-400 group-hover:text-fluent-midnight font-medium">{nav.label}</div>
+                        <div className="text-[10px] text-stone-500 group-hover:text-fluent-midnight font-medium">{nav.label}</div>
                       </button>
                     ))}
                   </div>
@@ -353,10 +353,10 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
 
                 {/* Next Session */}
                 <div className="bg-white border-l-4 border-fluent-gold border-y border-r border-black/5 p-6 rounded-lg">
-                  <div className="font-display text-[8px] tracking-[0.25em] uppercase text-stone-400 mb-4">Next Session</div>
+                  <div className="font-display text-[8px] tracking-[0.25em] uppercase text-stone-500 mb-4">Next Session</div>
                   <h4 className="font-serif text-xl font-bold text-fluent-ink">Physics · Mechanics</h4>
-                  <div className="text-xs text-stone-400 mt-1 mb-1">Tomorrow · 10:00 AM</div>
-                  <div className="text-xs text-stone-400 mb-6 italic">Ms. Priya Mehta · British Trained</div>
+                  <div className="text-xs text-stone-500 mt-1 mb-1">Tomorrow · 10:00 AM</div>
+                  <div className="text-xs text-stone-500 mb-6 italic">Ms. Priya Mehta · British Trained</div>
                   <button className="w-full py-3 border border-black/10 rounded font-display text-[9px] tracking-[0.2em] uppercase hover:border-fluent-ink transition-all">Add to Calendar</button>
                 </div>
               </div>
@@ -381,7 +381,7 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
             <div className="p-20 text-center flex flex-col items-center">
                <div className="w-16 h-16 bg-white border border-black/5 rounded-full flex items-center justify-center mb-6 text-2xl opacity-20">▶</div>
                <h3 className="text-2xl font-serif font-bold text-fluent-midnight">No Active Synthesis</h3>
-               <p className="text-sm text-stone-400 mt-2 font-serif italic">Check your timetable for upcoming scheduled sessions.</p>
+               <p className="text-sm text-stone-600 mt-2 font-serif italic">Check your timetable for upcoming scheduled sessions.</p>
                <button onClick={() => setActiveNav('overview')} className="mt-8 bg-fluent-midnight text-fluent-cream px-10 py-4 font-display text-[10px] tracking-[0.2em] uppercase hover:bg-fluent-gold transition-all">View Full Schedule</button>
             </div>
           )
@@ -419,8 +419,8 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
           </div>
 
           <div className="space-y-2 px-2">
-             <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">Professional Bio</div>
-             <p className="text-sm text-slate-700 leading-relaxed italic font-serif">
+             <div className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-700">Professional Bio</div>
+             <p className="text-sm text-stone-800 leading-relaxed italic font-serif">
                 {selectedTeacher?.bio || "This faculty node focuses on high-performance British instruction and adaptive synthesis. Bio currently being synchronised."}
              </p>
           </div>
