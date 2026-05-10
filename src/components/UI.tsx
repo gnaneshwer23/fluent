@@ -9,7 +9,7 @@ export const Badge = ({ children, color = "navy", className = "", icon: Icon }: 
     teal: "bg-fluent-gold/5 text-fluent-gold border-fluent-gold/10",
     green: "bg-green-50 text-green-700 border-green-100",
     red: "bg-red-50 text-red-700 border-red-100",
-    gray: "bg-stone-100 text-stone-700 border-stone-200",
+    gray: "bg-stone-100 text-[#4a5568] border-stone-200",
   };
   return (
     <span className={`text-[8px] font-display font-bold tracking-[0.2em] px-2 py-0.5 rounded uppercase whitespace-nowrap flex items-center gap-1.5 border ${colors[color]} ${className}`}>
@@ -47,7 +47,7 @@ export const ProgressBar = ({ value, max = 100, color = "#b8973a", label, showPc
   <div className="w-full">
     {(label || showPct) && (
       <div className="flex justify-between mb-2">
-        {label && <span className="text-[10px] font-display uppercase tracking-widest text-stone-700 font-bold">{label}</span>}
+        {label && <span className="text-[10px] font-display uppercase tracking-widest text-[#4a5568] font-bold">{label}</span>}
         {showPct && <span className="text-[10px] font-mono font-bold text-fluent-ink">{Math.round((value / max) * 100)}%</span>}
       </div>
     )}
@@ -85,10 +85,10 @@ export const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean, o
         animate={{ opacity: 1, scale: 1, y: 0 }}
         className="bg-white rounded-xl p-8 md:p-10 max-w-xl w-full shadow-2xl relative border border-black/5"
       >
-        <button onClick={onClose} className="absolute top-6 right-6 p-2 hover:bg-stone-100 rounded transition-colors text-stone-600">
+        <button onClick={onClose} className="absolute top-6 right-6 p-2 hover:bg-stone-100 rounded transition-colors text-[#4a5568]">
            <ArrowRight className="rotate-45" size={18} />
         </button>
-        <div className="text-[10px] font-display uppercase tracking-[0.3em] text-stone-700 font-bold mb-2">Request Synthesis</div>
+        <div className="text-[10px] font-display uppercase tracking-[0.3em] text-[#4a5568] font-bold mb-2">Request Synthesis</div>
         <h3 className="text-2xl font-serif font-bold text-fluent-ink mb-8">{title}</h3>
         {children}
       </motion.div>
@@ -102,7 +102,7 @@ export const MetricTile = ({ label, value, delta, icon: Icon, color = "#b8973a" 
       <div className="w-9 h-9 rounded bg-stone-100/80 flex items-center justify-center text-lg mb-4 text-fluent-gold border border-black/5">
         <Icon size={18} />
       </div>
-      <div className="font-display text-[7px] tracking-[0.2em] uppercase text-stone-600 font-bold mb-1">{label}</div>
+      <div className="font-display text-[7px] tracking-[0.2em] uppercase text-[#4a5568] font-bold mb-1">{label}</div>
       <div className="font-serif text-3xl font-semibold text-fluent-ink leading-none">{value}</div>
       {delta && (
         <div className="text-[11px] font-medium text-green-600 mt-2">▲ {delta}</div>
@@ -116,7 +116,7 @@ export const Btn = ({ children, variant = "primary", onClick, className = "", si
     primary: "bg-fluent-midnight text-fluent-cream hover:bg-fluent-gold hover:text-fluent-midnight shadow-lg border-transparent",
     gold: "bg-fluent-gold text-fluent-midnight hover:bg-fluent-midnight hover:text-fluent-cream shadow-xl shadow-fluent-gold/10 border-transparent",
     outline: "bg-transparent text-fluent-ink border border-black/10 hover:border-fluent-ink hover:text-fluent-ink",
-    ghost: "bg-transparent text-stone-600 hover:text-fluent-midnight border-transparent",
+    ghost: "bg-transparent text-[#4a5568] hover:text-fluent-midnight border-transparent",
     danger: "bg-red-50 text-red-700 border border-red-100 hover:bg-red-100",
     success: "bg-green-50 text-green-700 border border-green-100 hover:bg-green-100",
   };

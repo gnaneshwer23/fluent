@@ -31,7 +31,7 @@ export function AdminDashboard(){const [tab,setTab]=useState<Tab>("overview");co
             <header className="flex justify-between items-center mb-8">
                 <div>
                     <h1 className="text-2xl font-serif font-bold text-fluent-midnight">Admin Dashboard</h1>
-                    <p className="text-sm text-stone-700">Platform overview & management</p>
+                    <p className="text-sm text-[#4a5568] font-bold">Platform overview & management</p>
                 </div>
                 <div className="flex gap-2">
                     {TABS.map(t=>(
@@ -120,7 +120,7 @@ export function AdminDashboard(){const [tab,setTab]=useState<Tab>("overview");co
                                         <AlertTriangle className={a.severity==="high" ? "text-red-500" : "text-amber-500"} />
                                         <div>
                                             <div className="font-bold">{a.schoolName} — {a.studentName}</div>
-                                            <div className="text-xs text-stone-800 font-medium">{a.message}</div>
+                                            <div className="text-xs text-[#4a5568] font-black">{a.message}</div>
                                         </div>
                                     </div>
                                     <Btn variant={a.status==="active"?"danger":"success"} size="sm" onClick={()=>setAlertMap(prev=>({...prev,[a.id]:a.status==="active"?"resolved":"active"}))}>
@@ -135,8 +135,8 @@ export function AdminDashboard(){const [tab,setTab]=useState<Tab>("overview");co
                     <Card>
                         <h2 className="text-xl font-bold mb-6">School Leads</h2>
                         <table className="w-full text-sm">
-                            <thead className="text-left text-stone-600 uppercase text-[10px] tracking-widest">
-                                <tr><th>School</th><th>Contact</th><th>Status</th><th>Actions</th></tr>
+                            <thead className="text-left text-[#1e293b] uppercase text-[10px] tracking-widest font-black">
+                                <tr><th className="pb-4">School</th><th className="pb-4">Contact</th><th className="pb-4">Status</th><th className="pb-4">Actions</th></tr>
                             </thead>
                             <tbody>
                                 {SCHOOL_LEADS.map(l => (

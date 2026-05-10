@@ -59,7 +59,7 @@ export const DashboardShell = ({ role, title, children, navItems, activeNav, set
           </div>
         </div>
         
-        <div className="px-8 py-6 text-[9px] font-display text-white/70 uppercase tracking-[0.4em] font-black">Locus of Control</div>
+        <div className="px-8 py-6 text-[9px] font-display text-white/90 uppercase tracking-[0.4em] font-black">Locus of Control</div>
         <nav className="flex-1 px-4 space-y-1">
           {navItems.map(item => (
             <button
@@ -68,10 +68,10 @@ export const DashboardShell = ({ role, title, children, navItems, activeNav, set
                className={`w-full flex items-center gap-4 px-4 py-3.5 transition-all text-[11px] relative rounded ${
                  activeNav === item.id 
                    ? 'bg-fluent-gold/10 text-fluent-gold font-bold shadow-[inset_0_0_20px_rgba(184,151,58,0.05)] border border-fluent-gold/20' 
-                   : 'text-white/80 hover:bg-white/5 border border-transparent font-bold'
+                   : 'text-[#f1f5f9] hover:bg-white/5 border border-transparent font-bold'
                }`}
             >
-              <item.icon size={18} className={`${activeNav === item.id ? 'text-fluent-gold drop-shadow-[0_0_8px_rgba(184,151,58,0.4)]' : 'text-stone-200'}`} />
+              <item.icon size={18} className={`${activeNav === item.id ? 'text-fluent-gold drop-shadow-[0_0_8px_rgba(184,151,58,0.4)]' : 'text-[#94a3b8]'}`} />
               <span className="tracking-[0.1em] uppercase font-display">{item.label}</span>
               {item.badge && (
                 <span className={`ml-auto text-[8px] font-display font-bold px-2 py-0.5 rounded uppercase tracking-tighter shadow-sm ${
@@ -90,11 +90,11 @@ export const DashboardShell = ({ role, title, children, navItems, activeNav, set
         </nav>
         
         <div className="p-8 mt-auto border-t border-white/5 space-y-6 bg-black/20">
-          <button className="flex items-center gap-3 text-[10px] text-white/80 hover:text-fluent-gold transition-all w-full group font-display uppercase tracking-widest font-bold">
+          <button className="flex items-center gap-3 text-[10px] text-white/90 hover:text-fluent-gold transition-all w-full group font-display uppercase tracking-widest font-bold">
             <div className="w-6 h-6 rounded flex items-center justify-center bg-white/5 border border-white/5 group-hover:border-fluent-gold/30 transition-all">◯</div>
             <span>Academic Help</span>
           </button>
-          <div className="flex items-center gap-3 font-display text-[8px] tracking-[0.25em] text-white/70 uppercase group font-bold">
+          <div className="flex items-center gap-3 font-display text-[8px] tracking-[0.25em] text-[#94a3b8] uppercase group font-bold">
             <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
             Global Sync Active
           </div>

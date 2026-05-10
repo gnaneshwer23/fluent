@@ -289,7 +289,7 @@ export const LandingPage = () => {
             The Blind<br />
             <em className="text-red-600 not-italic italic">Spots.</em>
           </h2>
-          <p className="font-serif text-xl italic text-white/80 leading-relaxed mt-8">
+          <p className="font-serif text-xl italic text-white/60 leading-relaxed mt-8">
             "Conventional tuition prioritises throughput over mastery. In large batches, concept gaps are invisible until the strategic failure occurs."
           </p>
         </motion.div>
@@ -307,15 +307,17 @@ export const LandingPage = () => {
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.1 }}
               viewport={{ once: true }}
-              className="group grid grid-cols-[80px_1fr] gap-6 py-9 border-b border-white/10 hover:bg-fluent-gold/5 transition-all px-0 hover:px-6 hover:-mx-6"
+              className="group grid grid-cols-[80px_1fr] gap-6 py-9 border-b border-white/10 hover:bg-white/5 transition-all px-0 hover:px-6 hover:-mx-6"
             >
-              <div className="font-serif text-5xl font-extralight text-white/10 leading-none group-hover:text-fluent-gold/30 transition-colors">{report.n}</div>
+              <div className="font-serif text-5xl font-extralight text-white/10 leading-none group-hover:text-fluent-gold/30 transition-colors">
+                <span style={{ color: 'rgba(255,255,255,0.08)' }}>{report.n}</span>
+              </div>
               <div>
-                <div className={`font-display text-[8px] tracking-[0.2em] uppercase mb-2 ${report.risk === 'High' ? 'text-red-500' : report.risk === 'Critical' ? 'text-orange-500' : 'text-red-700'}`}>
+                <div className={`font-display text-[8px] tracking-[0.15em] font-semibold uppercase mb-2 ${report.risk === 'High' ? 'text-[#f87171]' : report.risk === 'Critical' ? 'text-[#fb923c]' : 'text-[#f87171]'}`}>
                   ■ {report.risk} Risk
                 </div>
-                <h3 className="font-serif text-2xl font-semibold mb-2">{report.title}</h3>
-                <p className="text-stone-700 font-bold text-sm leading-relaxed">{report.desc}</p>
+                <h3 className="font-serif text-2xl font-semibold mb-2 text-[#f1f5f9]">{report.title}</h3>
+                <p className="text-[#94a3b8] font-medium text-sm leading-relaxed">{report.desc}</p>
               </div>
             </motion.div>
           ))}
@@ -331,7 +333,7 @@ export const LandingPage = () => {
             viewport={{ once: true }}
             variants={textVariants}
           >
-            <div className="font-display text-[9px] tracking-[0.3em] uppercase text-stone-500 flex items-center gap-4 mb-14">
+            <div className="font-display text-[9px] tracking-[0.3em] uppercase text-[#8896aa] flex items-center gap-4 mb-14">
               Instructional Core
               <div className="flex-1 h-px bg-gradient-to-r from-fluent-gold/20 to-transparent" />
             </div>
@@ -340,12 +342,12 @@ export const LandingPage = () => {
               <em className="text-fluent-gold not-italic italic block mt-2">British Precision.</em>
             </h2>
           </motion.div>
-          <p className="font-serif text-xl italic text-stone-800 font-bold leading-relaxed lg:pb-2">
+          <p className="font-serif text-xl italic text-[#4a5568] font-bold leading-relaxed lg:pb-2">
             "Indian students learning directly from British-trained teachers — combined with AI support and continuous teacher development."
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 border border-stone-200">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 border border-[rgba(0,0,0,0.1)]">
           {[
             { n: "01", label: "Instruction", title: "Elite Indian Faculty Nodes", desc: "Small cohort classes limited to 20 seats. Taught by faculty with proven track records in high-rigour competitive excellence.", tags: ["Live Interaction", "Syllabus Precision"] },
             { n: "02", label: "Grounding", title: "AI Augmented RAG Grounding", desc: "A curriculum-aware tutor available 24/7. It doesn't just answer; it retrieves from verified syllabus nodes to ensure factual mastery.", tags: ["Context Retrieval", "Infinite Depth"] },
@@ -358,16 +360,16 @@ export const LandingPage = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
               viewport={{ once: true }}
-              className="relative p-12 border-r border-stone-200 last:border-r-0 group overflow-hidden hover:bg-fluent-midnight transition-colors duration-500"
+              className="relative p-12 border-r border-[rgba(0,0,0,0.1)] last:border-r-0 group overflow-hidden hover:bg-fluent-midnight transition-colors duration-500"
             >
               <div className="absolute top-0 left-0 right-0 h-0.5 bg-fluent-gold scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500" />
-              <div className="font-serif text-6xl font-light text-stone-100 mb-8 group-hover:text-fluent-gold/15 transition-colors">{card.n}</div>
-              <div className="font-display text-[8px] tracking-[0.25em] uppercase text-fluent-gold mb-4">Manual {card.n} · {card.label}</div>
-              <h3 className="font-serif text-2xl font-semibold mb-4 leading-tight group-hover:text-fluent-cream transition-colors">{card.title}</h3>
-              <p className="text-stone-800 font-medium text-sm leading-relaxed group-hover:text-stone-400 transition-colors">{card.desc}</p>
+              <div className="font-serif text-6xl font-light text-[rgba(0,0,0,0.06)] mb-8 group-hover:text-fluent-gold/15 transition-colors">{card.n}</div>
+              <div className="font-display text-[8px] tracking-[0.25em] uppercase text-[#b8973a] mb-4">Manual {card.n} · {card.label}</div>
+              <h3 className="font-serif text-2xl font-semibold mb-4 leading-tight text-[#0d0d0d] group-hover:text-fluent-cream transition-colors">{card.title}</h3>
+              <p className="text-[#4a5568] font-medium text-sm leading-relaxed group-hover:text-stone-400 transition-colors">{card.desc}</p>
               <div className="flex flex-wrap gap-2 mt-6">
                 {card.tags.map(tag => (
-                  <span key={tag} className="text-[9px] tracking-[0.12em] uppercase px-3 py-1 border border-stone-300 group-hover:border-fluent-gold/30 group-hover:text-fluent-gold transition-all">
+                  <span key={tag} className="text-[9px] tracking-[0.12em] font-medium uppercase px-3 py-1 bg-[rgba(0,0,0,0.07)] border border-[rgba(0,0,0,0.12)] text-[#374151] group-hover:border-fluent-gold/30 group-hover:text-fluent-gold transition-all">
                     {tag}
                   </span>
                 ))}
@@ -380,12 +382,12 @@ export const LandingPage = () => {
       {/* How it Works */}
       <section id="howitworks" className="bg-fluent-ivory py-24 px-6 md:px-16 lg:px-24">
         <div className="text-center mb-24">
-           <div className="font-display text-[9px] tracking-[0.3em] uppercase text-stone-500 inline-flex items-center gap-4 mb-4">
-            <div className="w-8 h-px bg-stone-400" />
+           <div className="font-display text-[9px] tracking-[0.3em] uppercase text-[#8896aa] inline-flex items-center gap-4 mb-4">
+            <div className="w-8 h-px bg-stone-300" />
             Operational Loop
-            <div className="w-8 h-px bg-stone-400" />
+            <div className="w-8 h-px bg-stone-300" />
           </div>
-          <h2 className="font-serif text-4xl md:text-6xl font-semibold">How It <em className="text-fluent-gold not-italic italic">Works.</em></h2>
+          <h2 className="font-serif text-4xl md:text-6xl font-semibold leading-tight text-[#0d0d0d]">How It <em className="text-fluent-gold not-italic italic">Works.</em></h2>
         </div>
 
         <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-12 relative">
@@ -408,9 +410,9 @@ export const LandingPage = () => {
               <div className="w-16 h-16 rounded-full bg-fluent-midnight border border-fluent-gold/30 flex items-center justify-center font-serif text-xl font-semibold text-fluent-gold mx-auto mb-8 relative z-10 transition-transform group-hover:scale-110">
                 {step.n}
               </div>
-              <div className="font-display text-[8px] tracking-[0.2em] text-fluent-gold uppercase mb-3">{step.code}</div>
-              <h3 className="font-serif text-xl font-semibold mb-2">{step.title}</h3>
-              <p className="text-stone-800 font-bold text-xs leading-relaxed max-w-[180px] mx-auto">{step.desc}</p>
+              <div className="font-display text-[8px] tracking-[0.2em] text-[#b8973a] uppercase mb-3 font-semibold">{step.code}</div>
+              <h3 className="font-serif text-xl font-semibold mb-2 text-[#0d0d0d]">{step.title}</h3>
+              <p className="text-[#4a5568] font-medium text-xs leading-relaxed max-w-[180px] mx-auto">{step.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -425,13 +427,13 @@ export const LandingPage = () => {
           className="relative"
         >
           <div className="bg-white/5 border border-fluent-gold/20 p-10 relative">
-            <div className="font-display text-[9px] tracking-[0.25em] text-fluent-gold mb-6 uppercase">AI-Grounding · Neural Architecture</div>
-            <div className="font-serif text-lg italic text-fluent-cream leading-relaxed mb-4 p-5 bg-white/5 border-l-2 border-fluent-gold">
+            <div className="font-display text-[9px] tracking-[0.25em] text-[#b8973a] mb-6 uppercase">AI-Grounding · Neural Architecture</div>
+            <div className="font-serif text-lg italic text-[#f1f5f9] leading-relaxed mb-4 p-5 bg-white/5 border-l-2 border-fluent-gold">
               "Explain the orbital hybridisation of Methane using the VSEPR framework."
             </div>
             <div className="bg-fluent-gold/10 border border-fluent-gold/15 p-7 mt-4">
               <div className="font-display text-[8px] tracking-[0.2em] text-fluent-gold-light mb-3 uppercase">Retrieved Knowledge Node #1092</div>
-              <p className="text-sm text-white/70 leading-relaxed">
+              <p className="text-sm text-[#cbd5e1] leading-relaxed">
                 Direct retrieval from <em className="not-italic text-fluent-gold-light">Grade 11 Chemical Bonding core</em>. The 2s and three 2p orbitals mix to form four identical hybrid orbitals… Imagine a <em className="not-italic text-fluent-gold-light">perfect tetrahedron</em> — bond angle 109.5°, zero ambiguity, zero hallucination.
               </p>
             </div>
@@ -444,8 +446,8 @@ export const LandingPage = () => {
            viewport={{ once: true }}
            variants={textVariants}
         >
-          <div className="font-display text-[9px] tracking-[0.3em] uppercase text-fluent-gold/60 mb-10">Neural Architecture</div>
-          <h2 className="font-serif text-4xl md:text-6xl font-semibold text-fluent-cream leading-[1.1] mb-10">
+          <div className="font-display text-[9px] tracking-[0.3em] uppercase text-[rgba(184,151,58,0.9)] mb-10">Neural Architecture</div>
+          <h2 className="font-serif text-4xl md:text-6xl font-semibold text-[#f1f5f9] leading-[1.1] mb-10">
             AI That <em className="text-fluent-gold not-italic italic">Retrieves.</em>
           </h2>
           <div className="space-y-10">
@@ -457,8 +459,8 @@ export const LandingPage = () => {
               <div key={i} className="grid grid-cols-[40px_1fr] gap-5">
                 <div className="font-serif text-xl font-semibold text-fluent-gold pt-1">{feature.n}</div>
                 <div>
-                  <h3 className="font-serif text-2xl font-semibold text-fluent-cream mb-2">{feature.title}</h3>
-                  <p className="text-white/70 text-sm leading-relaxed">{feature.desc}</p>
+                  <h3 className="font-serif text-2xl font-semibold text-[#f1f5f9] mb-2">{feature.title}</h3>
+                  <p className="text-[#94a3b8] text-sm leading-relaxed">{feature.desc}</p>
                 </div>
               </div>
             ))}
@@ -468,7 +470,7 @@ export const LandingPage = () => {
 
       {/* Outcome Audit Section */}
       <section id="outcomeaudit" className="bg-fluent-cream py-24 px-6 md:px-16 lg:px-24">
-        <div className="font-display text-[9px] tracking-[0.3em] uppercase text-stone-600 mb-12">Empirical Proof</div>
+        <div className="font-display text-[9px] tracking-[0.3em] uppercase text-[#8896aa] mb-12">Empirical Proof</div>
         
         <div className="grid md:grid-cols-3 border border-stone-200 mb-24">
           {[
@@ -484,12 +486,12 @@ export const LandingPage = () => {
               viewport={{ once: true }}
               className="p-12 md:p-16 border-r border-stone-200 last:border-r-0"
             >
-              <div className="font-serif text-6xl md:text-8xl font-semibold leading-none mb-4">
+              <div className="font-serif text-6xl md:text-8xl font-semibold leading-none mb-4 text-[#0d0d0d]">
                 {stat.val.split("%")[0]}<span className="text-fluent-gold">{stat.val.includes("%") ? "%" : ""}</span>
                 {stat.val.includes("/") && <span className="text-fluent-gold text-4xl">/{stat.val.split("/")[1]}</span>}
               </div>
-              <div className="font-display text-[9px] tracking-[0.25em] uppercase text-fluent-gold mb-3">{stat.label}</div>
-              <p className="text-stone-800 font-bold text-sm leading-relaxed">{stat.desc}</p>
+              <div className="font-display text-[9px] tracking-[0.25em] uppercase text-[#b8973a] mb-3 font-semibold">{stat.label}</div>
+              <p className="text-[#4a5568] font-medium text-sm leading-relaxed">{stat.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -500,12 +502,12 @@ export const LandingPage = () => {
           viewport={{ once: true }}
           className="bg-fluent-midnight p-16 grid lg:grid-cols-[1fr_300px] gap-20 items-center overflow-hidden relative"
         >
-          <div className="font-serif text-3xl md:text-4xl italic text-fluent-cream leading-relaxed relative z-10">
+          <div className="font-serif text-3xl md:text-4xl italic text-[#f1f5f9] leading-relaxed relative z-10">
             "Traditional tuition relies on hope. We rely on <em className="not-italic text-fluent-gold">data</em>. Every week, we deliver a full narrative audit of the scholar's cognitive trajectory."
           </div>
           <div className="border-l border-fluent-gold/30 pl-8 relative z-10">
-            <div className="font-display text-[13px] tracking-[0.15em] text-fluent-cream mb-2">Fluent Institute.</div>
-            <div className="text-[11px] tracking-[0.1em] text-white/50 uppercase">Institutional Board · Verified Status</div>
+            <div className="font-display text-[13px] tracking-[0.15em] text-[#f1f5f9] mb-2 font-bold">Fluent Institute.</div>
+            <div className="text-[11px] tracking-[0.1em] text-[rgba(255,255,255,0.6)] uppercase font-semibold">Institutional Board · Verified Status</div>
           </div>
           <div className="absolute top-0 right-0 w-64 h-64 bg-fluent-gold/5 blur-[100px] rounded-full translate-x-1/2 -translate-y-1/2" />
         </motion.div>
@@ -519,16 +521,16 @@ export const LandingPage = () => {
            viewport={{ once: true }}
            variants={textVariants}
         >
-          <div className="font-display text-[9px] tracking-[0.3em] uppercase text-stone-600 mb-10">Cohort Integration</div>
-          <h2 className="font-serif text-4xl md:text-6xl font-semibold leading-[1.05] mb-8">
+          <div className="font-display text-[9px] tracking-[0.3em] uppercase text-[#8896aa] mb-10">Cohort Integration</div>
+          <h2 className="font-serif text-4xl md:text-6xl font-semibold leading-[1.05] mb-8 text-[#0d0d0d]">
             Built for<br /><em className="text-fluent-gold not-italic italic">The Driven.</em>
           </h2>
-          <blockquote className="font-serif text-2xl italic text-fluent-ink border-l-[3px] border-fluent-gold pl-8 mt-10">
+          <blockquote className="font-serif text-2xl italic text-[#1e293b] border-l-[3px] border-[#b8973a] pl-8 mt-10">
             "We are not a tuition center. We are an academic trust dedicated to high-rigour scholarship."
           </blockquote>
         </motion.div>
 
-        <div className="grid grid-cols-2 border-stone-200">
+        <div className="grid grid-cols-2 border-[rgba(0,0,0,0.1)]">
            {[
             { label: "Archive 01", title: "Scholars", desc: "Class 9–12 seekers moving beyond rote memory." },
             { label: "Archive 02", title: "Guardians", desc: "Demanding absolute clarity and ROI data." },
@@ -537,11 +539,11 @@ export const LandingPage = () => {
           ].map((segment, i) => (
             <motion.div
                key={i}
-               className="p-10 border border-stone-200 -mt-px -ml-px group hover:bg-fluent-midnight transition-colors duration-500"
+               className="p-10 border border-[rgba(0,0,0,0.1)] -mt-px -ml-px group hover:bg-fluent-midnight transition-colors duration-500"
             >
-              <div className="font-display text-[8px] tracking-[0.25em] text-fluent-gold uppercase mb-4 transition-colors group-hover:text-fluent-gold">{segment.label}</div>
-              <h3 className="font-serif text-2xl font-semibold mb-3 group-hover:text-fluent-cream transition-colors">{segment.title}</h3>
-              <p className="text-stone-600 text-sm leading-relaxed group-hover:text-stone-400 transition-colors">{segment.desc}</p>
+              <div className="font-display text-[8px] tracking-[0.25em] text-[#b8973a] font-medium uppercase mb-4 transition-colors group-hover:text-fluent-gold">{segment.label}</div>
+              <h3 className="font-serif text-[22px] font-semibold mb-3 text-[#0d0d0d] group-hover:text-fluent-cream transition-colors">{segment.title}</h3>
+              <p className="text-[#4a5568] text-sm leading-relaxed group-hover:text-stone-400 transition-colors">{segment.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -550,13 +552,13 @@ export const LandingPage = () => {
       {/* Enrollment Scenarios Section */}
       <section id="investment" className="bg-fluent-ivory py-24 px-6 md:px-16 lg:px-24">
         <div className="text-center mb-20">
-          <div className="font-display text-[9px] tracking-[0.3em] uppercase text-stone-600 inline-flex items-center gap-4 mb-4">
-            <div className="w-8 h-px bg-stone-400" />
+          <div className="font-display text-[9px] tracking-[0.3em] uppercase text-[#8896aa] inline-flex items-center gap-4 mb-4">
+            <div className="w-8 h-px bg-stone-300" />
             Academic Enrollment 2026
-            <div className="w-8 h-px bg-stone-400" />
+            <div className="w-8 h-px bg-stone-300" />
           </div>
-          <h2 className="font-serif text-4xl md:text-6xl font-semibold mb-6">Admission <em className="text-fluent-gold not-italic italic">Scenarios.</em></h2>
-          <p className="font-serif text-lg italic text-stone-600 max-w-2xl mx-auto">Transparent investment in high-yield academic futures. No hidden costs. Pure performance focus.</p>
+          <h2 className="font-serif text-4xl md:text-6xl font-semibold mb-6 text-[#0d0d0d]">Admission <em className="text-fluent-gold not-italic italic">Scenarios.</em></h2>
+          <p className="font-serif text-lg italic text-[#4a5568] max-w-2xl mx-auto font-medium">Transparent investment in high-yield academic futures. No hidden costs. Pure performance focus.</p>
         </div>
 
         <div className="grid lg:grid-cols-3 border border-stone-200">
@@ -570,28 +572,28 @@ export const LandingPage = () => {
               className={`p-14 border-r last:border-r-0 border-stone-200 relative flex flex-col ${scenario.highlight ? 'bg-fluent-midnight text-fluent-cream -my-px border-y border-transparent shadow-[0_40px_80px_rgba(0,0,0,0.3)] z-10' : ''}`}
             >
               {scenario.highlight && (
-                <div className="absolute top-[-1px] left-1/2 -translate-x-1/2 bg-fluent-gold text-fluent-midnight font-display text-[8px] tracking-[0.2em] uppercase px-5 py-2">
+                <div className="absolute top-[-1px] left-1/2 -translate-x-1/2 bg-fluent-gold text-fluent-midnight font-display text-[8px] tracking-[0.2em] uppercase px-5 py-2 font-bold">
                   Institutional Choice
                 </div>
               )}
-              <div className="font-display text-[9px] tracking-[0.25em] text-fluent-gold uppercase mb-6">{scenario.plan}</div>
-              <div className={`font-serif font-semibold leading-none mb-2 ${scenario.price === 'Contact Board' ? 'text-4xl' : 'text-6xl'}`}>
+              <div className="font-display text-[9px] tracking-[0.25em] text-[#b8973a] font-semibold uppercase mb-6">{scenario.plan}</div>
+              <div className={`font-serif font-semibold leading-none mb-2 ${scenario.price === 'Contact Board' ? 'text-4xl' : 'text-6xl'} ${scenario.highlight ? 'text-[#f1f5f9]' : 'text-[#0d0d0d]'}`}>
                 {scenario.price}
               </div>
-              <div className="text-xs text-stone-600 uppercase tracking-widest mb-8">{scenario.price === 'Contact Board' ? 'Custom Sequence' : 'per month'}</div>
+              <div className={`text-xs uppercase tracking-widest mb-8 font-semibold ${scenario.highlight ? 'text-[#94a3b8]' : 'text-[#4a5568]'}`}>{scenario.price === 'Contact Board' ? 'Custom Sequence' : 'per month'}</div>
               <div className="h-px bg-current opacity-15 mb-8" />
-              <p className={`text-sm italic mb-8 flex-grow ${scenario.highlight ? 'text-white/70' : 'text-stone-800'}`}>{scenario.desc}</p>
+              <p className={`text-sm italic mb-8 flex-grow font-medium ${scenario.highlight ? 'text-[#cbd5e1]' : 'text-[#4a5568]'}`}>{scenario.desc}</p>
               <div className="space-y-4 mb-10">
                 {scenario.features.map(f => (
                    <div key={f} className="flex gap-3 text-[13px] items-start">
                      <span className="text-fluent-gold text-xs">◆</span>
-                     <span className={scenario.highlight ? 'text-stone-300' : 'text-stone-800'}>{f}</span>
+                     <span className={`font-medium ${scenario.highlight ? 'text-[#cbd5e1]' : 'text-[#4a5568]'}`}>{f}</span>
                    </div>
                 ))}
               </div>
               <button
                  onClick={() => setShowLeadModal(true)}
-                 className={`w-full py-4 border font-display text-[9px] tracking-[0.2em] uppercase transition-all ${scenario.highlight ? 'bg-fluent-gold border-fluent-gold text-fluent-midnight hover:bg-fluent-gold-light' : 'bg-transparent border-fluent-ink text-fluent-ink hover:bg-fluent-ink hover:text-fluent-cream'}`}
+                 className={`w-full py-4 border font-display text-[9px] tracking-[0.2em] uppercase transition-all font-bold ${scenario.highlight ? 'bg-fluent-gold border-fluent-gold text-fluent-midnight hover:bg-fluent-gold-light' : 'bg-transparent border-fluent-ink text-fluent-ink hover:bg-fluent-ink hover:text-fluent-cream'}`}
               >
                 {scenario.price === 'Contact Board' ? 'Initiate Inquiry' : 'Enroll Scholar'}
               </button>
@@ -608,19 +610,19 @@ export const LandingPage = () => {
            viewport={{ once: true }}
            variants={textVariants}
         >
-          <div className="font-display text-[9px] tracking-[0.3em] uppercase text-fluent-gold/60 mb-8">Final Enrollment Sequence</div>
-          <h2 className="font-serif text-4xl md:text-6xl font-semibold text-fluent-cream leading-[1.1] mb-8">
+          <div className="font-display text-[9px] tracking-[0.3em] uppercase text-[rgba(184,151,58,0.9)] mb-8">Final Enrollment Sequence</div>
+          <h2 className="font-serif text-4xl md:text-6xl font-semibold text-[#f1f5f9] leading-[1.1] mb-8">
             Secure the<br /><em className="text-fluent-gold not-italic italic">Scholar's Future.</em>
           </h2>
-          <p className="text-white/80 text-base leading-relaxed mb-12">Applications for the 2026 Academic Cohort are now being processed. We maintain strict enrollment caps to preserve our 12:1 instructional density.</p>
+          <p className="text-[rgba(255,255,255,0.65)] text-base leading-relaxed mb-12">Applications for the 2026 Academic Cohort are now being processed. We maintain strict enrollment caps to preserve our 12:1 instructional density.</p>
           <div className="mb-12">
-            <div className="font-display text-[9px] tracking-[0.25em] text-fluent-gold uppercase mb-3">Cohort Capacity Status</div>
+            <div className="font-display text-[9px] tracking-[0.25em] text-[rgba(184,151,58,0.8)] uppercase mb-3">Cohort Capacity Status</div>
             <div className="h-1 bg-white/10 mb-2 relative overflow-hidden">
                <motion.div initial={{ width: 0 }} whileInView={{ width: "82%" }} transition={{ duration: 1.5 }} className="h-full bg-fluent-gold relative">
                   <div className="absolute right-0 top-[-20px] font-display text-[9px] tracking-[0.15em] text-fluent-gold">82% FILLED</div>
                </motion.div>
             </div>
-            <div className="text-[11px] text-white/60 italic">Live: Admissions Pulse · Seats closing rapidly</div>
+            <div className="text-[11px] text-[rgba(255,255,255,0.5)] italic">Live: Admissions Pulse · Seats closing rapidly</div>
           </div>
           <div className="flex flex-wrap gap-4">
              <button
@@ -647,12 +649,12 @@ export const LandingPage = () => {
                whileInView={{ opacity: 1, x: 0 }}
                transition={{ delay: i * 0.1 }}
                viewport={{ once: true }}
-               className="grid grid-cols-[48px_1fr] gap-6 py-8 border-b border-white/5 last:border-b-0"
+               className="grid grid-cols-[48px_1fr] gap-6 py-8 border-b border-[rgba(255,255,255,0.1)] last:border-b-0"
              >
-               <div className="font-serif text-3xl font-light text-fluent-gold/30">{benefit.n}</div>
+               <div className="font-serif text-3xl font-light text-[rgba(255,255,255,0.12)]">{benefit.n}</div>
                <div>
-                  <h3 className="font-serif text-xl font-semibold text-fluent-cream mb-2">{benefit.title}</h3>
-                  <p className="text-white/80 text-sm leading-relaxed">{benefit.desc}</p>
+                  <h3 className="font-serif text-[20px] font-semibold text-[#f1f5f9] mb-2">{benefit.title}</h3>
+                  <p className="text-[#94a3b8] text-sm leading-relaxed">{benefit.desc}</p>
                </div>
              </motion.div>
           ))}
@@ -660,20 +662,20 @@ export const LandingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-fluent-ink text-stone-300 py-24 px-6 md:px-12 lg:px-24">
+      <footer className="bg-fluent-ink text-[#cbd5e1] py-24 px-6 md:px-12 lg:px-24">
         <div className="grid lg:grid-cols-4 gap-16 pb-20 border-b border-white/5 mb-12">
           <div>
             <div className="font-display text-base tracking-[0.15em] text-fluent-cream mb-2">FLUENT INSTITUTE.</div>
             <p className="font-serif text-sm italic mb-6">"We do not teach subjects; we architect scholars."</p>
-            <div className="text-xs leading-loose">
+            <div className="text-xs leading-loose text-[#94a3b8]">
               <a href="mailto:info@fluent.academy" className="text-fluent-gold hover:underline">info@fluent.academy</a><br />
               +44 7553 886303 (WhatsApp)<br />
               London · Bengaluru
             </div>
           </div>
           <div>
-            <div className="font-display text-[9px] tracking-[0.25em] text-fluent-gold uppercase mb-6">Archive</div>
-            <div className="flex flex-col gap-3 text-sm">
+            <div className="font-display text-[9px] tracking-[0.25em] text-fluent-gold uppercase mb-6 font-bold">Archive</div>
+            <div className="flex flex-col gap-3 text-sm text-[#94a3b8]">
               <a href="#" className="hover:text-fluent-cream transition-colors">Academy Node</a>
               <a href="#" className="hover:text-fluent-cream transition-colors">Faculty Pulse</a>
               <a href="#" className="hover:text-fluent-cream transition-colors">Synthesis Lab</a>
@@ -681,8 +683,8 @@ export const LandingPage = () => {
             </div>
           </div>
           <div>
-             <div className="font-display text-[9px] tracking-[0.25em] text-fluent-gold uppercase mb-6">Technical</div>
-             <div className="flex flex-col gap-3 text-sm">
+             <div className="font-display text-[9px] tracking-[0.25em] text-fluent-gold uppercase mb-6 font-bold">Technical</div>
+             <div className="flex flex-col gap-3 text-sm text-[#94a3b8]">
               <a href="#" className="hover:text-fluent-cream transition-colors">RAG System</a>
               <a href="#" className="hover:text-fluent-cream transition-colors">Pedagogy Core</a>
               <a href="#" className="hover:text-fluent-cream transition-colors">Neural Audit</a>
@@ -690,8 +692,8 @@ export const LandingPage = () => {
             </div>
           </div>
           <div>
-            <div className="font-display text-[9px] tracking-[0.25em] text-fluent-gold uppercase mb-6">Institutional</div>
-            <div className="flex flex-col gap-3 text-sm">
+            <div className="font-display text-[9px] tracking-[0.25em] text-fluent-gold uppercase mb-6 font-bold">Institutional</div>
+            <div className="flex flex-col gap-3 text-sm text-[#94a3b8]">
               <a href="#" className="hover:text-fluent-cream transition-colors">Privacy Protocol</a>
               <a href="#" className="hover:text-fluent-cream transition-colors">Service Standards</a>
               <a href="#" className="hover:text-fluent-cream transition-colors">Digital Integrity</a>
@@ -700,10 +702,10 @@ export const LandingPage = () => {
           </div>
         </div>
         <div className="flex flex-col md:flex-row justify-between items-center gap-8">
-           <div className="text-[11px] tracking-[0.05em] text-white/20 uppercase">
+           <div className="text-[11px] tracking-[0.05em] text-[rgba(255,255,255,0.45)] uppercase font-semibold">
              © 2026 <span className="text-fluent-gold">Fluent Institute.</span> Institutional Trust · UK/India
            </div>
-           <div className="flex items-center gap-3 font-display text-[11px] tracking-[0.1em] uppercase text-stone-300">
+           <div className="flex items-center gap-3 font-display text-[11px] tracking-[0.1em] uppercase text-[#cbd5e1] font-bold">
              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.3)]" />
              Live: Admissions Pulse
            </div>
@@ -742,20 +744,20 @@ export const LandingPage = () => {
               <form onSubmit={handleLeadSubmit} className="space-y-6 max-h-[65vh] overflow-y-auto pr-2 custom-scrollbar">
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-600">Academy/School Name</label>
+                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#4a5568]">Academy/School Name</label>
                     <input
                       required
-                      className="w-full bg-white border border-stone-200 p-3 text-sm focus:border-fluent-gold focus:outline-none"
+                      className="w-full bg-white border border-stone-200 p-3 text-sm focus:border-fluent-gold focus:outline-none text-[#1e293b] font-medium"
                       placeholder="Current School..."
                       value={leadData.schoolName}
                       onChange={e => setLeadData(d => ({ ...d, schoolName: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-600">Guardian Name</label>
+                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#4a5568]">Guardian Name</label>
                     <input
                       required
-                      className="w-full bg-white border border-stone-200 p-3 text-sm focus:border-fluent-gold focus:outline-none"
+                      className="w-full bg-white border border-stone-200 p-3 text-sm focus:border-fluent-gold focus:outline-none text-[#1e293b] font-medium"
                       placeholder="Full Name..."
                       value={leadData.contactPerson}
                       onChange={e => setLeadData(d => ({ ...d, contactPerson: e.target.value }))}
@@ -765,9 +767,9 @@ export const LandingPage = () => {
 
                 <div className="grid sm:grid-cols-2 gap-6">
                    <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-600">Role</label>
+                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#4a5568]">Role</label>
                     <select
-                      className="w-full bg-white border border-stone-200 p-3 text-sm focus:border-fluent-gold focus:outline-none"
+                      className="w-full bg-white border border-stone-200 p-3 text-sm focus:border-fluent-gold focus:outline-none text-[#1e293b] font-medium"
                       value={leadData.designation}
                       onChange={e => setLeadData(d => ({ ...d, designation: e.target.value }))}
                     >
@@ -778,10 +780,10 @@ export const LandingPage = () => {
                     </select>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-600">Phone (WhatsApp)</label>
+                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#4a5568]">Phone (WhatsApp)</label>
                     <input
                       required
-                      className="w-full bg-white border border-stone-200 p-3 text-sm focus:border-fluent-gold focus:outline-none"
+                      className="w-full bg-white border border-stone-200 p-3 text-sm focus:border-fluent-gold focus:outline-none text-[#1e293b] font-medium"
                       placeholder="+91..."
                       value={leadData.phone}
                       onChange={e => setLeadData(d => ({ ...d, phone: e.target.value }))}
@@ -790,11 +792,11 @@ export const LandingPage = () => {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-600">Priority Email</label>
+                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#4a5568]">Priority Email</label>
                   <input
                     required
                     type="email"
-                    className="w-full bg-white border border-stone-200 p-3 text-sm focus:border-fluent-gold focus:outline-none"
+                    className="w-full bg-white border border-stone-200 p-3 text-sm focus:border-fluent-gold focus:outline-none text-[#1e293b] font-medium"
                     placeholder="email@example.com"
                     value={leadData.email}
                     onChange={e => setLeadData(d => ({ ...d, email: e.target.value }))}
@@ -803,19 +805,19 @@ export const LandingPage = () => {
 
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">Student Count</label>
+                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#4a5568]">Student Count</label>
                     <input
                       required
-                      className="w-full bg-white border border-stone-200 p-3 text-sm focus:border-fluent-gold focus:outline-none"
+                      className="w-full bg-white border border-stone-200 p-3 text-sm focus:border-fluent-gold focus:outline-none text-[#1e293b] font-medium"
                       placeholder="e.g. 1"
                       value={leadData.studentCount}
                       onChange={e => setLeadData(d => ({ ...d, studentCount: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">Target Grade</label>
+                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#4a5568]">Target Grade</label>
                     <select
-                      className="w-full bg-white border border-stone-200 p-3 text-sm focus:border-fluent-gold focus:outline-none"
+                      className="w-full bg-white border border-stone-200 p-3 text-sm focus:border-fluent-gold focus:outline-none text-[#1e293b] font-medium"
                       value={leadData.classes}
                       onChange={e => setLeadData(d => ({ ...d, classes: e.target.value }))}
                     >
@@ -828,9 +830,9 @@ export const LandingPage = () => {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400">Primary Subject Interest</label>
+                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[#4a5568]">Primary Subject Interest</label>
                   <select
-                    className="w-full bg-white border border-stone-200 p-3 text-sm focus:border-fluent-gold focus:outline-none"
+                    className="w-full bg-white border border-stone-200 p-3 text-sm focus:border-fluent-gold focus:outline-none text-[#1e293b] font-medium"
                     value={leadData.subject}
                     onChange={e => setLeadData(d => ({ ...d, subject: e.target.value }))}
                   >
@@ -865,9 +867,9 @@ export const LandingPage = () => {
             exit={{ opacity: 0, scale: 0.9 }}
             className="fixed bottom-10 right-10 z-[1000] bg-fluent-midnight text-white p-8 border-l-4 border-fluent-gold shadow-2xl max-w-sm"
           >
-            <div className="font-display text-[10px] tracking-[0.3em] text-fluent-gold mb-2 uppercase">Protocol Initiated</div>
+            <div className="font-display text-[10px] tracking-[0.3em] text-fluent-gold mb-2 uppercase font-bold">Protocol Initiated</div>
             <h4 className="font-serif text-xl font-semibold mb-2">Request Logged.</h4>
-            <p className="text-stone-400 text-xs mb-6">Our institutional board will prioritize your case for audit. We will reach out within 24 standard operational hours.</p>
+            <p className="text-[#94a3b8] text-xs mb-6 font-medium">Our institutional board will prioritize your case for audit. We will reach out within 24 standard operational hours.</p>
             <button
                onClick={() => setWaitlistSuccess(false)}
                className="text-[9px] font-black uppercase tracking-widest text-fluent-gold hover:text-white transition-colors"

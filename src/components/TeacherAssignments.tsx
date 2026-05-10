@@ -194,22 +194,22 @@ export default function TeacherAssignments({ mini = false, cohortId }: { mini?: 
     return (
       <div className="divide-y divide-black/5">
         {fetching ? (
-          <div className="p-10 text-center animate-pulse text-[10px] font-black text-stone-600 uppercase tracking-widest">Synchronising Ledger...</div>
+          <div className="p-10 text-center animate-pulse text-[10px] font-black text-[#4a5568] uppercase tracking-widest">Synchronising Ledger...</div>
         ) : assignments.length === 0 ? (
-          <div className="p-10 text-center text-[10px] font-black text-stone-600 uppercase tracking-widest italic">No active challenges found</div>
+          <div className="p-10 text-center text-[10px] font-black text-[#4a5568] uppercase tracking-widest italic">No active challenges found</div>
         ) : (
           assignments.map((a) => (
             <div key={a.id} className="p-6 flex justify-between items-center hover:bg-gray-50 transition-colors">
               <div className="flex gap-4 items-center">
-                <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-stone-600">
+                <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-[#4a5568]">
                   <BookOpen size={16} />
                 </div>
                 <div>
                   <div className="text-sm font-bold text-fluent-navy leading-tight">{a.title}</div>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[9px] font-black text-stone-700 uppercase tracking-tighter">{a.batch || "General"}</span>
+                    <span className="text-[9px] font-black text-[#4a5568] uppercase tracking-tighter">{a.batch || "General"}</span>
                     <div className="w-1 h-1 rounded-full bg-slate-200" />
-                    <span className={`text-[9px] font-black uppercase ${new Date(a.dueDate) < new Date() ? 'text-red-600' : 'text-stone-700'}`}>
+                    <span className={`text-[9px] font-black uppercase ${new Date(a.dueDate) < new Date() ? 'text-red-600' : 'text-[#4a5568]'}`}>
                       {a.dueDate}
                     </span>
                   </div>
@@ -233,7 +233,7 @@ export default function TeacherAssignments({ mini = false, cohortId }: { mini?: 
           <div className="flex justify-between items-start">
             <div>
               <h2 className="text-3xl font-serif font-black text-fluent-navy tracking-tight">Issue Assignment</h2>
-              <p className="text-stone-800 mt-2 text-sm italic font-serif font-bold">Distribute logic challenges to specific scholar cohorts.</p>
+              <p className="text-[#4a5568] mt-2 text-sm italic font-serif font-bold">Distribute logic challenges to specific scholar cohorts.</p>
             </div>
             <Btn 
               variant="outline" 
@@ -250,7 +250,7 @@ export default function TeacherAssignments({ mini = false, cohortId }: { mini?: 
             {isBulk ? (
               <div className="space-y-6">
                  <div>
-                    <div className="text-[10px] font-black uppercase tracking-widest text-stone-800 mb-4 px-1">Institutional Bulk Protocol</div>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-[#1e293b] mb-4 px-1">Institutional Bulk Protocol</div>
                     <div 
                       className={`border-2 border-dashed rounded-[24px] p-8 text-center transition-all cursor-pointer ${
                         bulkFile ? 'border-fluent-teal bg-fluent-teal/5' : 'border-slate-100 hover:border-fluent-gold/30 hover:bg-slate-50/50'
@@ -270,17 +270,17 @@ export default function TeacherAssignments({ mini = false, cohortId }: { mini?: 
                                <FileText size={24} />
                             </div>
                             <div className="text-sm font-bold text-fluent-navy">{bulkFile.name}</div>
-                            <div className="text-[10px] text-stone-800 uppercase font-black">{bulkPreview.length} Entires Detected</div>
+                            <div className="text-[10px] text-[#4a5568] uppercase font-black">{bulkPreview.length} Entires Detected</div>
                          </div>
                        ) : (
                          <div className="space-y-3">
-                            <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-stone-600 mx-auto group-hover:text-fluent-gold transition-colors">
+                            <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-[#4a5568] mx-auto group-hover:text-fluent-gold transition-colors">
                                <Upload size={24} />
                             </div>
-                            <div className="text-sm font-bold text-stone-700">Click to Synchronise CSV/TXT</div>
-                            <div className="text-[9px] text-stone-600 uppercase tracking-widest leading-relaxed font-bold">
-                               Required Headers:<br /> 
-                               <span className="text-stone-800 font-black">title, dueDate, batch (opt), link (opt)</span>
+                            <div className="text-sm font-bold text-[#4a5568]">Click to Synchronise CSV/TXT</div>
+                            <div className="text-[9px] text-[#4a5568] uppercase tracking-widest leading-relaxed font-bold">
+                                Required Headers:<br /> 
+                                <span className="text-[#1e293b] font-black">title, dueDate, batch (opt), link (opt)</span>
                             </div>
                          </div>
                        )}
@@ -300,7 +300,7 @@ export default function TeacherAssignments({ mini = false, cohortId }: { mini?: 
                         {bulkPreview.map((item, i) => (
                           <div key={i} className="p-3 border-b border-black/5 last:border-0 flex justify-between items-center text-[10px] font-black">
                              <div className="text-fluent-navy truncate max-w-[120px] font-bold">{item.title}</div>
-                             <div className="text-stone-700 font-bold">{item.dueDate}</div>
+                             <div className="text-[#4a5568] font-bold">{item.dueDate}</div>
                           </div>
                         ))}
                       </div>
@@ -319,7 +319,7 @@ export default function TeacherAssignments({ mini = false, cohortId }: { mini?: 
                     <div className="w-8 h-8 rounded-full bg-fluent-gold/10 flex items-center justify-center text-fluent-gold shrink-0">
                        <Check size={14} />
                     </div>
-                    <div className="text-[9px] text-stone-800 leading-relaxed font-serif italic font-bold">
+                    <div className="text-[9px] text-[#4a5568] leading-relaxed font-serif italic font-bold">
                        "Bulk issuance respects specific cohort logic and regional date protocols."
                     </div>
                  </div>
@@ -327,9 +327,9 @@ export default function TeacherAssignments({ mini = false, cohortId }: { mini?: 
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-stone-800 px-1">Challenge Title</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[#1e293b] px-1">Challenge Title</label>
                   <div className="relative">
-                    <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-600" size={18} />
+                    <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-[#4a5568]" size={18} />
                     <input
                       required
                       className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-fluent-teal/20 transition-all font-bold text-fluent-navy placeholder:text-slate-300"
@@ -344,7 +344,7 @@ export default function TeacherAssignments({ mini = false, cohortId }: { mini?: 
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Due Date</label>
                     <div className="relative">
-                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-600" size={18} />
+                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-[#4a5568]" size={18} />
                       <input
                         type="date"
                         required
@@ -356,7 +356,7 @@ export default function TeacherAssignments({ mini = false, cohortId }: { mini?: 
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-stone-800 px-1">Target Cohort/Batch</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[#1e293b] px-1">Target Cohort/Batch</label>
                     <input
                       className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-fluent-teal/20 transition-all font-bold text-fluent-navy placeholder:text-slate-300"
                       placeholder="e.g. Batch 2026-Alpha"
@@ -367,9 +367,9 @@ export default function TeacherAssignments({ mini = false, cohortId }: { mini?: 
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-stone-800 px-1">Protocol URL (Optional)</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[#1e293b] px-1">Protocol URL (Optional)</label>
                   <div className="relative">
-                    <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-600" size={18} />
+                    <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-[#4a5568]" size={18} />
                     <input
                       className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-fluent-teal/20 transition-all font-bold text-fluent-navy placeholder:text-slate-300"
                       placeholder="https://resource.ac.uk/..."
@@ -397,7 +397,7 @@ export default function TeacherAssignments({ mini = false, cohortId }: { mini?: 
           <div className="flex justify-between items-end">
             <div>
               <h2 className="text-3xl font-serif font-black text-fluent-navy tracking-tight">Active Registries</h2>
-              <p className="text-stone-700 mt-2 text-sm italic font-serif font-bold">Currently distributed tasks across the institution.</p>
+              <p className="text-[#4a5568] mt-2 text-sm italic font-serif font-bold">Currently distributed tasks across the institution.</p>
             </div>
             <Badge color="gold" className="px-4 py-1">{assignments.length} Tasks</Badge>
           </div>
@@ -405,7 +405,7 @@ export default function TeacherAssignments({ mini = false, cohortId }: { mini?: 
           <div className="space-y-4">
             <div className="flex flex-wrap gap-3 items-center bg-slate-50/50 p-4 rounded-2xl border border-black/5">
               <div className="flex-1 min-w-[150px]">
-                <label className="text-[9px] font-black uppercase tracking-widest text-stone-700 block mb-1.5 ml-1">Filter Status</label>
+                <label className="text-[9px] font-black uppercase tracking-widest text-[#4a5568] block mb-1.5 ml-1">Filter Status</label>
                 <select 
                   value={filterStatus} 
                   onChange={(e) => setFilterStatus(e.target.value)}
@@ -418,7 +418,7 @@ export default function TeacherAssignments({ mini = false, cohortId }: { mini?: 
               </div>
 
               <div className="flex-1 min-w-[150px]">
-                <label className="text-[9px] font-black uppercase tracking-widest text-stone-700 block mb-1.5 ml-1">Filter Batch</label>
+                <label className="text-[9px] font-black uppercase tracking-widest text-[#4a5568] block mb-1.5 ml-1">Filter Batch</label>
                 <select 
                   value={filterBatch} 
                   onChange={(e) => setFilterBatch(e.target.value)}
@@ -432,7 +432,7 @@ export default function TeacherAssignments({ mini = false, cohortId }: { mini?: 
               </div>
 
               <div className="flex-1 min-w-[150px]">
-                <label className="text-[9px] font-black uppercase tracking-widest text-stone-700 block mb-1.5 ml-1">Sort By</label>
+                <label className="text-[9px] font-black uppercase tracking-widest text-[#4a5568] block mb-1.5 ml-1">Sort By</label>
                 <select 
                   value={sortOrder} 
                   onChange={(e) => setSortOrder(e.target.value)}
@@ -461,8 +461,8 @@ export default function TeacherAssignments({ mini = false, cohortId }: { mini?: 
                       <div className="space-y-1">
                         <h3 className="text-lg font-serif font-black text-fluent-navy group-hover:text-fluent-teal transition-colors leading-tight">{a.title}</h3>
                         <div className="flex flex-wrap items-center gap-4">
-                          <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-stone-700">
-                            <Users size={12} className="text-stone-600" /> {a.batch || "Global Batch"}
+                          <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-[#4a5568]">
+                            <Users size={12} className="text-[#4a5568]" /> {a.batch || "Global Batch"}
                           </div>
                           <div className="w-1.5 h-1.5 rounded-full bg-slate-100" />
                           <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-red-700 bg-red-50 px-2.5 py-1 rounded-lg border border-red-100">
@@ -474,7 +474,7 @@ export default function TeacherAssignments({ mini = false, cohortId }: { mini?: 
 
                     <div className="flex items-center gap-3 w-full sm:w-auto">
                        <Badge 
-                         color={a.status === 'active' ? 'teal' : 'gold'} 
+                         color={a.status === 'active' ? 'teal' : 'gray'} 
                          className={`flex items-center gap-2 px-4 py-2 rounded-full font-black uppercase tracking-widest text-[9px] shadow-sm ${
                            a.status === 'active' 
                              ? 'bg-fluent-teal text-white border-transparent' 
@@ -488,14 +488,14 @@ export default function TeacherAssignments({ mini = false, cohortId }: { mini?: 
                        {a.link && (
                          <div className="flex items-center bg-slate-50 rounded-2xl p-1 border border-slate-100">
                             <a href={a.link} target="_blank" rel="noopener noreferrer" title="View Protocol">
-                              <Btn variant="ghost" className="p-2 h-auto text-stone-700 hover:text-fluent-teal font-bold">
+                              <Btn variant="ghost" className="p-2 h-auto text-[#4a5568] hover:text-fluent-teal font-bold">
                                <ExternalLink size={14} />
                              </Btn>
                            </a>
                            <div className="w-[1px] h-4 bg-slate-200 mx-1" />
                            <Btn 
                              variant="ghost" 
-                             className={`p-2 h-auto transition-colors ${copiedId === a.id ? 'text-green-600' : 'text-stone-700 hover:text-fluent-teal font-bold'}`}
+                             className={`p-2 h-auto transition-colors ${copiedId === a.id ? 'text-green-600' : 'text-[#4a5568] hover:text-fluent-teal font-bold'}`}
                              onClick={() => copyToClipboard(a.link, a.id)}
                            >
                              {copiedId === a.id ? <CheckCircle2 size={14} /> : <Copy size={14} />}
@@ -521,7 +521,7 @@ export default function TeacherAssignments({ mini = false, cohortId }: { mini?: 
             ) : (
               <div className="text-center py-20 bg-slate-50/50 rounded-[40px] border border-dashed border-slate-200">
                 <BookOpen size={48} className="mx-auto mb-4 text-stone-300" />
-                <p className="text-stone-700 font-serif italic font-bold">No published assignments in the ledger.</p>
+                <p className="text-[#4a5568] font-serif italic font-bold">No published assignments in the ledger.</p>
               </div>
             )}
           </div>

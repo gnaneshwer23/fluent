@@ -105,9 +105,9 @@ export default function AdminOverview({ schoolId }: { schoolId?: string }) {
         <div className="flex justify-between items-end mb-6">
           <div>
             <h3 className="text-xl font-serif font-bold text-fluent-navy">Critical Interventions</h3>
-            <p className="text-sm text-stone-800 font-bold leading-relaxed">Immediate institutional actions required based on live data.</p>
+            <p className="text-sm text-[#4a5568] font-bold leading-relaxed">Immediate institutional actions required based on live data.</p>
           </div>
-          <Btn variant="ghost" size="sm" className="text-[10px] font-black uppercase tracking-widest text-stone-800">View All {alerts.length}</Btn>
+          <Btn variant="ghost" size="sm" className="text-[10px] font-black uppercase tracking-widest text-[#1e293b]">View All {alerts.length}</Btn>
         </div>
         
         <div className="space-y-3">
@@ -120,7 +120,7 @@ export default function AdminOverview({ schoolId }: { schoolId?: string }) {
               className={`p-5 rounded-2xl border-l-4 flex items-center gap-4 ${
                 alert.type?.toLowerCase().includes('marks') ? 'bg-red-50 border-red-500 text-red-900' :
                 alert.type?.toLowerCase().includes('participation') ? 'bg-fluent-gold/5 border-fluent-gold text-fluent-navy' :
-                'bg-slate-50 border-slate-300 text-slate-700'
+                'bg-slate-50 border-slate-300 text-[#4a5568]'
               }`}
             >
               <div className="w-10 h-10 rounded-xl bg-white/50 backdrop-blur-sm flex items-center justify-center text-fluent-navy">
@@ -143,18 +143,18 @@ export default function AdminOverview({ schoolId }: { schoolId?: string }) {
         <section>
           <div className="flex justify-between items-end mb-6">
             <h3 className="text-xl font-serif font-bold text-fluent-navy">Scholar Insights</h3>
-            <Btn variant="ghost" size="sm" icon={Search} className="text-stone-800 font-bold">Filter Cohort</Btn>
+            <Btn variant="ghost" size="sm" icon={Search} className="text-[#1e293b] font-bold">Filter Cohort</Btn>
           </div>
           <div className="grid sm:grid-cols-3 gap-4">
             {[
               { label: "Elite Performers", value: `${eliteScholarsCount} Scholars`, desc: "Above 85% mastery avg.", color: "text-green-700 font-bold" },
               { label: "At Risk Scholars", value: `${atRiskScholarsCount} Scholars`, desc: "Below 60% intervention zone.", color: "text-red-700 font-bold" },
-              { label: "Participation Gap", value: `${lowConfidenceCount} Scholars`, desc: "Requires faculty support.", color: "text-stone-800 font-bold" },
+              { label: "Participation Gap", value: `${lowConfidenceCount} Scholars`, desc: "Requires faculty support.", color: "text-[#4a5568] font-bold" },
             ].map((seg, i) => (
               <Card key={i} className="p-6 border-black/5 bg-white shadow-xl shadow-slate-200/50">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-800 mb-4">{seg.label}</h4>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-[#1e293b] mb-4">{seg.label}</h4>
                 <div className={`text-xl font-serif font-bold mb-1 ${seg.color}`}>{seg.value}</div>
-                <p className="text-[10px] text-stone-800 font-black">{seg.desc}</p>
+                <p className="text-[10px] text-[#4a5568] font-black">{seg.desc}</p>
               </Card>
             ))}
           </div>
@@ -164,7 +164,7 @@ export default function AdminOverview({ schoolId }: { schoolId?: string }) {
         <section>
           <div className="flex justify-between items-end mb-6">
             <h3 className="text-xl font-serif font-bold text-fluent-navy">Faculty Command</h3>
-            <Btn variant="ghost" size="sm" icon={TrendingUp} className="text-stone-600">Full Audit</Btn>
+            <Btn variant="ghost" size="sm" icon={TrendingUp} className="text-[#1e293b]">Full Audit</Btn>
           </div>
           <div className="space-y-4">
             {teachers.length > 0 ? teachers.slice(0, 3).map((teacher, i) => (
@@ -173,16 +173,16 @@ export default function AdminOverview({ schoolId }: { schoolId?: string }) {
                   <Avatar name={teacher.name} size={40} />
                   <div>
                     <div className="text-sm font-bold text-fluent-navy">{teacher.name}</div>
-                    <div className="text-[10px] text-stone-600 font-bold uppercase tracking-wider">{teacher.subjects?.join(', ') || 'General Studies'}</div>
+                    <div className="text-[10px] text-[#4a5568] font-bold uppercase tracking-wider">{teacher.subjects?.join(', ') || 'General Studies'}</div>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className={`text-sm font-bold text-fluent-teal`}>Active</div>
-                  <div className="text-[9px] font-black text-stone-500 uppercase tracking-widest">Faculty Node</div>
+                  <div className="text-[9px] font-black text-[#495B6A] uppercase tracking-widest">Faculty Node</div>
                 </div>
               </Card>
             )) : (
-                <p className="text-center py-8 text-stone-600 italic text-sm">No faculty records found.</p>
+                <p className="text-center py-8 text-[#4a5568] italic text-sm">No faculty records found.</p>
             )}
           </div>
         </section>
@@ -230,7 +230,7 @@ export default function AdminOverview({ schoolId }: { schoolId?: string }) {
       </section>
 
       <div className="pt-8 border-t border-black/5">
-        <p className="text-center text-[11px] text-stone-600 font-bold italic">
+        <p className="text-center text-[11px] text-[#4a5568] font-bold italic">
           Disclaimer: Live metrics are subject to synchronisation latency across institutional nodes.
         </p>
       </div>
