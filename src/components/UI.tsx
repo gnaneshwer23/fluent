@@ -137,14 +137,16 @@ export const Btn = ({ children, variant = "primary", onClick, className = "", si
   };
 
   return (
-    <button 
+    <motion.button 
       type={type}
       disabled={disabled}
       onClick={onClick}
-      className={`inline-flex items-center justify-center gap-3 transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed border-2 ${variants[variant]} ${sizes[size]} ${className} font-sans`}
+      whileHover={{ scale: 1.02, y: -2 }}
+      whileTap={{ scale: 0.98 }}
+      className={`inline-flex items-center justify-center gap-3 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border-2 ${variants[variant]} ${sizes[size]} ${className} font-sans active:shadow-inner`}
     >
       {IconComp && <IconComp size={size === 'sm' ? 14 : 16} strokeWidth={2.5} />}
       {children}
-    </button>
+    </motion.button>
   );
 };
