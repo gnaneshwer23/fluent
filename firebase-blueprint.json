@@ -237,6 +237,7 @@
       "properties": {
         "title": { "type": "string" },
         "batch": { "type": "string" },
+        "cohortId": { "type": "string", "description": "Linked cohort ID if specific to one group." },
         "dueDate": { "type": "string", "format": "date" },
         "link": { "type": "string" },
         "status": { "type": "string", "enum": ["pending", "completed"] },
@@ -246,18 +247,18 @@
     },
     "ProgressReport": {
       "title": "Progress Record",
-      "description": "Topic-wise marks and feedback with confidence metrics.",
+      "description": "Topic-wise marks and feedback with confidence and participation metrics.",
       "type": "object",
       "properties": {
         "studentId": { "type": "string" },
         "cohortId": { "type": "string" },
-        "sessionId": { "type": "string" },
         "marks": { "type": "number" },
         "confidenceScore": { "type": "number" },
-        "communicationScore": { "type": "number" },
+        "participationScore": { "type": "number" },
         "topic": { "type": "string" },
         "feedback": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["studentId", "marks", "topic"]
     },
@@ -425,6 +426,10 @@
             "required": ["text", "date", "authorId"]
         },
         "description": "Private diagnostic notes for a student, visible only to faculty."
+    },
+    "cohorts/{cohortId}/students/{studentId}/progress": {
+        "schema": "ProgressReport",
+        "description": "Progress records for a student within a cohort."
     },
     "enrollments": {
         "schema": "Enrollment",

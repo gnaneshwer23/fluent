@@ -27,7 +27,7 @@ export default function TeacherAnalytics({ teacherId }: { teacherId: string }) {
         setData(result);
         
         // Load cohorts
-        const q = query(collection(db, 'classes'), where('ownerId', '==', teacherId));
+        const q = query(collection(db, 'cohorts'), where('tutorId', '==', teacherId));
         const snap = await getDocs(q);
         setCohorts(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       } catch (err) {
@@ -44,7 +44,7 @@ export default function TeacherAnalytics({ teacherId }: { teacherId: string }) {
       if (!selectedCohort) return;
       setLoading(true);
       try {
-        const q = collection(db, 'classes', selectedCohort.id, 'students');
+        const q = collection(db, 'cohorts', selectedCohort.id, 'students');
         const snap = await getDocs(q);
         setStudents(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       } catch (err) {

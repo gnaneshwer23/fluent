@@ -17,6 +17,7 @@ import AdminAlerts from './AdminAlerts';
 import AdminOverview from './AdminOverview';
 import AdminPayments from './AdminPayments';
 import AdminSchools from './AdminSchools';
+import AdminCohorts from './AdminCohorts';
 import { Forum } from './Forum';
 import { MasteryLedger } from './MasteryLedger';
 
@@ -139,6 +140,7 @@ export const AdminDashboard = ({ onBack, schoolId: initialSchoolId }: { onBack: 
   const navItems = [
     { id: "overview", label: "Strategic Overview", icon: Home },
     { id: "schools", label: "Institutional Nodes", icon: Building2, badge: "SaaS" },
+    { id: "cohorts", label: "Cohort Registry", icon: Users },
     { id: "leads", label: "Lead Pipeline", icon: Globe },
     { id: "students", label: "Scholar Registry", icon: Users },
     { id: "teachers", label: "Faculty Command", icon: Award },
@@ -337,7 +339,7 @@ export const AdminDashboard = ({ onBack, schoolId: initialSchoolId }: { onBack: 
 
             <div className="flex gap-3 shrink-0">
               <Btn variant="outline" size="sm" icon={ShieldCheck}>Security Audit</Btn>
-              {!initialSchoolId && <Btn variant="primary" size="sm" icon={Plus}>Onboard Cohort</Btn>}
+              {!initialSchoolId && <Btn variant="primary" size="sm" icon={Plus} onClick={() => setActiveNav("cohorts")}>Onboard Cohort</Btn>}
               <Btn variant="ghost" size="sm" className="text-red-500 hover:bg-red-50" icon={LogOut} onClick={onBack}>Sign Out</Btn>
             </div>
           </div>
@@ -347,6 +349,8 @@ export const AdminDashboard = ({ onBack, schoolId: initialSchoolId }: { onBack: 
           <AdminOverview schoolId={selectedSchoolId} />
         ) : activeNav === "schools" ? (
           <AdminSchools />
+        ) : activeNav === "cohorts" ? (
+          <AdminCohorts schoolId={selectedSchoolId} />
         ) : activeNav === "leads" ? (
           <AdminLeads />
         ) : activeNav === "students" ? (

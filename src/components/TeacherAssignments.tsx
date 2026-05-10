@@ -6,12 +6,15 @@ import { Card, Btn, Badge } from "./UI";
 import { Users, PlusCircle, Link as LinkIcon, Calendar, BookOpen, Clock, CheckCircle2, ChevronRight, Trash2, Copy, ExternalLink, FileUp, FileText, Upload, AlertCircle, Check } from "lucide-react";
 import Papa from "papaparse";
 
-export default function TeacherAssignments({ mini = false }: { mini?: boolean }) {
+export default function TeacherAssignments({ mini = false, cohortId }: { mini?: boolean, cohortId?: string }) {
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isBulk, setIsBulk] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterBatch, setFilterBatch] = useState<string>("all");
+  const [sortOrder, setSortOrder] = useState<string>("newest");
   const [bulkFile, setBulkFile] = useState<File | null>(null);
   const [bulkPreview, setBulkPreview] = useState<any[]>([]);
   const [bulkError, setBulkError] = useState<string | null>(null);
@@ -32,12 +35,23 @@ export default function TeacherAssignments({ mini = false }: { mini?: boolean })
   useEffect(() => {
     if (!auth.currentUser) return;
     
-    // Query assignments created by this teacher
-    const q = query(
+    // Query assignments created by this teacher, optionally filtered by cohort
+    let q = query(
       collection(db, "assignments"),
+      where("teacherId", "==", auth.currentUser.uid),
       orderBy("createdAt", "desc"),
       limit(mini ? 3 : 50)
     );
+
+    if (cohortId) {
+      q = query(
+        collection(db, "assignments"),
+        where("teacherId", "==", auth.currentUser.uid),
+        where("cohortId", "==", cohortId),
+        orderBy("createdAt", "desc"),
+        limit(mini ? 3 : 50)
+      );
+    }
     
     const unsub = onSnapshot(q, (snapshot) => {
       setAssignments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
@@ -49,7 +63,45 @@ export default function TeacherAssignments({ mini = false }: { mini?: boolean })
     });
 
     return () => unsub();
-  }, [mini]);
+  }, [mini, cohortId]);
+
+  const filteredAndSortedAssignments = React.useMemo(() => {
+    let result = [...assignments];
+
+    // Status Filter
+    if (filterStatus !== "all") {
+      result = result.filter(a => a.status === filterStatus);
+    }
+
+    // Batch Filter
+    if (filterBatch !== "all") {
+      result = result.filter(a => a.batch === filterBatch || a.cohortId === filterBatch);
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      if (sortOrder === "newest") {
+        return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+      }
+      if (sortOrder === "oldest") {
+        return (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);
+      }
+      if (sortOrder === "due-soon") {
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      }
+      if (sortOrder === "due-far") {
+        return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
+      }
+      return 0;
+    });
+
+    return result;
+  }, [assignments, filterStatus, filterBatch, sortOrder]);
+
+  const uniqueBatches = React.useMemo(() => {
+    const batches = assignments.map(a => a.batch || a.cohortId).filter(Boolean);
+    return Array.from(new Set(batches));
+  }, [assignments]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +111,7 @@ export default function TeacherAssignments({ mini = false }: { mini?: boolean })
     try {
       await addDoc(collection(db, "assignments"), {
         ...form,
+        cohortId: cohortId || "",
         teacherId: auth.currentUser?.uid,
         status: "active",
         createdAt: serverTimestamp()
@@ -117,6 +170,7 @@ export default function TeacherAssignments({ mini = false }: { mini?: boolean })
           title: item.title || "Untitled Assignment",
           dueDate: item.dueDate || new Date().toISOString().split('T')[0],
           batch: item.batch || "",
+          cohortId: cohortId || "",
           link: item.link || "",
           teacherId: auth.currentUser?.uid,
           status: "active",
@@ -349,12 +403,55 @@ export default function TeacherAssignments({ mini = false }: { mini?: boolean })
           </div>
 
           <div className="space-y-4">
+            <div className="flex flex-wrap gap-3 items-center bg-slate-50/50 p-4 rounded-2xl border border-black/5">
+              <div className="flex-1 min-w-[150px]">
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-1.5 ml-1">Filter Status</label>
+                <select 
+                  value={filterStatus} 
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="w-full bg-white border border-black/5 rounded-xl px-4 py-2 text-[11px] font-bold text-fluent-navy outline-none focus:ring-2 focus:ring-fluent-teal/20 transition-all"
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+
+              <div className="flex-1 min-w-[150px]">
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-1.5 ml-1">Filter Batch</label>
+                <select 
+                  value={filterBatch} 
+                  onChange={(e) => setFilterBatch(e.target.value)}
+                  className="w-full bg-white border border-black/5 rounded-xl px-4 py-2 text-[11px] font-bold text-fluent-navy outline-none focus:ring-2 focus:ring-fluent-teal/20 transition-all"
+                >
+                  <option value="all">All Batches</option>
+                  {uniqueBatches.map(b => (
+                    <option key={b} value={b}>{b}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex-1 min-w-[150px]">
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-1.5 ml-1">Sort By</label>
+                <select 
+                  value={sortOrder} 
+                  onChange={(e) => setSortOrder(e.target.value)}
+                  className="w-full bg-white border border-black/5 rounded-xl px-4 py-2 text-[11px] font-bold text-fluent-navy outline-none focus:ring-2 focus:ring-fluent-teal/20 transition-all"
+                >
+                  <option value="newest">Newest First</option>
+                  <option value="oldest">Oldest First</option>
+                  <option value="due-soon">Due Soon</option>
+                  <option value="due-far">Due Far</option>
+                </select>
+              </div>
+            </div>
+
             {fetching ? (
               <div className="py-20 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-fluent-teal mx-auto" />
               </div>
-            ) : assignments.length > 0 ? (
-              assignments.map((a, i) => (
+            ) : filteredAndSortedAssignments.length > 0 ? (
+              filteredAndSortedAssignments.map((a, i) => (
                 <Card key={a.id || i} className="p-6 group hover:border-fluent-gold/20 transition-all duration-300 bg-white border-black/5 rounded-[24px]">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
                     <div className="flex gap-5 items-center">

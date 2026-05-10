@@ -45,6 +45,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingClass, setEditingClass] = useState<any>(null);
   const [selectedClassForStudents, setSelectedClassForStudents] = useState<any>(null);
+  const [cohortTab, setCohortTab] = useState<'roster' | 'assignments'>('roster');
   const [selectedPoolStudents, setSelectedPoolStudents] = useState<string[]>([]);
   const [studentSearch, setStudentSearch] = useState("");
   const [studentSort, setStudentSort] = useState("name-asc");
@@ -58,29 +59,58 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
   const [editingStudent, setEditingStudent] = useState<any>(null);
   const [viewingStudentDetail, setViewingStudentDetail] = useState<any>(null);
   const [internalNotesList, setInternalNotesList] = useState<any[]>([]);
-  const [studentModalTab, setStudentModalTab] = useState<'overview' | 'history'>('overview');
-  const [studentHistory, setStudentHistory] = useState<any[]>([]);
+  const [studentModalTab, setStudentModalTab] = useState<'overview' | 'history' | 'report'>('overview');
+  const [studentGlobalHistory, setStudentGlobalHistory] = useState<any[]>([]);
+  const [studentLocalHistory, setStudentLocalHistory] = useState<any[]>([]);
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+
+  const mergedStudentHistory = useMemo(() => {
+    const combined = [...studentGlobalHistory, ...studentLocalHistory];
+    const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
+    return unique.sort((a: any, b: any) => {
+      const da = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+      const dbTime = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+      return dbTime.getTime() - da.getTime();
+    });
+  }, [studentGlobalHistory, studentLocalHistory]);
 
   useEffect(() => {
     if (!viewingStudentDetail?.id || studentModalTab !== 'history') return;
     
-    // Students might be identified by sid or id in progress collection
     const sid = viewingStudentDetail.id;
-    const q = query(
+    const cid = selectedClassForStudents?.id;
+    
+    // Global progress
+    const qGlobal = query(
       collection(db, 'progress'), 
       where('studentId', '==', sid),
       orderBy('createdAt', 'desc')
     );
-    
-    const unsub = onSnapshot(q, (snap) => {
-      setStudentHistory(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+
+    const unsubGlobal = onSnapshot(qGlobal, (snap) => {
+      setStudentGlobalHistory(snap.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'report' })));
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'progress');
     });
+
+    let unsubLocal = () => {};
+    if (cid) {
+      const qLocal = query(
+        collection(db, 'cohorts', cid, 'students', sid, 'progress'),
+        orderBy('createdAt', 'desc')
+      );
+      unsubLocal = onSnapshot(qLocal, (snap) => {
+        setStudentLocalHistory(snap.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'report' })));
+      }, (error) => {
+        handleFirestoreError(error, OperationType.LIST, 'progress_local');
+      });
+    }
     
-    return () => unsub();
-  }, [viewingStudentDetail?.id, studentModalTab]);
+    return () => {
+      unsubGlobal();
+      unsubLocal();
+    };
+  }, [viewingStudentDetail?.id, studentModalTab, selectedClassForStudents?.id]);
 
   useEffect(() => {
     if (!viewingStudentDetail?.id || !selectedClassForStudents?.id) {
@@ -1057,7 +1087,7 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
         {/* Student Management / Roster View */}
         {selectedClassForStudents && (
           <div className="fixed inset-0 z-[80] flex items-center justify-center p-6">
-             <div className="absolute inset-0 bg-fluent-navy/60 backdrop-blur-md" onClick={() => setSelectedClassForStudents(null)} />
+             <div className="absolute inset-0 bg-fluent-navy/60 backdrop-blur-md" onClick={() => { setSelectedClassForStudents(null); setCohortTab('roster'); }} />
              <motion.div 
                initial={{ opacity: 0, scale: 0.95, y: 20 }}
                animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1076,13 +1106,33 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                          </div>
                       </div>
                    </div>
-                   <button onClick={() => setSelectedClassForStudents(null)} className="p-2 text-slate-400 hover:text-black">
+                   <div className="flex gap-2 p-1 bg-white/50 border border-black/5 rounded-2xl">
+                      <button 
+                        onClick={() => setCohortTab('roster')}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                          cohortTab === 'roster' ? 'bg-fluent-navy text-white shadow-lg' : 'text-slate-400 hover:text-fluent-navy'
+                        }`}
+                      >
+                        Roster
+                      </button>
+                      <button 
+                        onClick={() => setCohortTab('assignments')}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                          cohortTab === 'assignments' ? 'bg-fluent-navy text-white shadow-lg' : 'text-slate-400 hover:text-fluent-navy'
+                        }`}
+                      >
+                        Assignments
+                      </button>
+                   </div>
+                   <button onClick={() => { setSelectedClassForStudents(null); setCohortTab('roster'); }} className="p-2 text-slate-400 hover:text-black">
                       <X size={24} />
                    </button>
                 </div>
 
                 <div className="flex-1 overflow-auto p-8">
-                   {/* Performance Summary Header */}
+                   {cohortTab === 'roster' ? (
+                      <>
+                         {/* Performance Summary Header */}
                    <div className="grid md:grid-cols-2 gap-4 mb-8">
                       <Card className="p-6 bg-fluent-teal/5 border-fluent-teal/10">
                          <div className="text-[10px] font-bold text-fluent-teal uppercase tracking-widest mb-1">Class Attendance Rate</div>
@@ -1130,17 +1180,17 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                                           const hasAlert = dbAlerts.some(a => a.studentId === s.id && a.status === 'active');
                                           // Mastery here is a blend of attendance and available performance data
                                           const attendanceRate = s.total > 0 ? (s.attended / s.total) * 100 : 100;
-                                          const isLowPerformance = attendanceRate < 70 || hasAlert;
+                                          const isLowPerformance = attendanceRate < 75 || hasAlert;
                                           
-                                          if (s.status === 'on-leave') return { label: 'On Leave', color: 'gold' as const, icon: Calendar };
-                                          if (isLowPerformance) return { label: 'Needs Attention', color: 'red' as const, icon: AlertTriangle };
-                                          return { label: 'Active', color: 'teal' as const, icon: CheckCircle2 };
+                                          if (s.status === 'on-leave') return { label: 'On Leave', color: 'gold' as const, icon: Calendar, animate: false };
+                                          if (isLowPerformance) return { label: 'Needs Attention', color: 'red' as const, icon: AlertTriangle, animate: true };
+                                          return { label: 'Active', color: 'teal' as const, icon: CheckCircle2, animate: false };
                                        })();
                                        return (
                                           <Badge 
                                              color={status.color} 
                                              icon={status.icon}
-                                             className="text-[7px] py-0.5 px-2 uppercase tracking-tighter"
+                                             className={`text-[7px] py-0.5 px-2 uppercase tracking-tighter ${status.animate ? 'animate-pulse shadow-sm shadow-red-200' : ''}`}
                                           >
                                              {status.label}
                                           </Badge>
@@ -1162,7 +1212,11 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                         </div>
                       )}
                    </div>
-                </div>
+                </>
+             ) : (
+                <TeacherAssignments cohortId={selectedClassForStudents.id} />
+             )}
+          </div>
              </motion.div>
           </div>
         )}
@@ -1279,6 +1333,12 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                        >
                          Performance History
                        </button>
+                       <button 
+                         onClick={() => setStudentModalTab('report')}
+                         className={`text-[10px] font-black uppercase tracking-[0.2em] pb-2 transition-all ${studentModalTab === 'report' ? 'text-fluent-gold border-b-2 border-fluent-gold' : 'text-white/40 hover:text-white'}`}
+                       >
+                         Progress Report
+                       </button>
                     </div>
                   </div>
 
@@ -1382,110 +1442,121 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                               </div>
                            </div>
                          </section>
-
-                         <section>
-                           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Scholar Feedback (Visible to Student)</h3>
-                           <div className="space-y-4">
-                              <div className="flex flex-col gap-4">
-                                 <div className="flex flex-col sm:flex-row gap-4 items-start">
-                                   <div className="w-full sm:w-64">
-                                     <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block px-1">Evaluation Category</label>
-                                     <select 
-                                       value={feedbackCategory}
-                                       onChange={(e) => setFeedbackCategory(e.target.value)}
-                                       className="w-full p-3 bg-gray-50 border border-black/5 rounded-xl text-xs font-bold text-fluent-navy outline-none focus:ring-2 focus:ring-fluent-teal/10 transition-all"
-                                     >
-                                       <option value="Academic Improvement">Academic Improvement</option>
-                                       <option value="Behavioral Analysis">Behavioral Analysis</option>
-                                       <option value="Engagement Level">Engagement Level</option>
-                                       <option value="Technical Synthesis">Technical Synthesis</option>
-                                       <option value="Executive Function">Executive Function</option>
-                                     </select>
-                                   </div>
-                                 </div>
-                                 
-                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block px-1">Scholar-Facing Feedback</label>
-                                    <textarea 
-                                      placeholder="Provide instructional guidance, synthesis goals, or academic praise for the scholar..."
-                                      className="w-full p-4 bg-gray-50 border border-black/5 rounded-2xl text-sm min-h-[120px] outline-none focus:bg-white focus:ring-4 focus:ring-fluent-teal/5 focus:border-fluent-teal/20 transition-all"
-                                      value={feedbackText}
-                                      onChange={(e) => setFeedbackText(e.target.value)}
-                                    />
-                                 </div>
-                                 
-                                 <div className="flex justify-end">
-                                    <Btn 
-                                      variant="primary" 
-                                      size="sm" 
-                                      disabled={isSubmittingFeedback || !feedbackText.trim()}
-                                      onClick={async () => {
-                                        if (!feedbackText.trim() || isSubmittingFeedback) return;
-                                        
-                                        setIsSubmittingFeedback(true);
-                                        try {
-                                          // 1. Log to global progress collection for cross-node tracking
-                                          await addDoc(collection(db, 'progress'), {
-                                            studentId: viewingStudentDetail.id,
-                                            studentName: viewingStudentDetail.name,
-                                            teacherId: auth.currentUser?.uid,
-                                            teacherName: teacherName,
-                                            topic: feedbackCategory,
-                                            feedback: feedbackText.trim(),
-                                            marks: 0,
-                                            category: "Faculty Feedback",
-                                            createdAt: serverTimestamp()
-                                          });
-
-                                          // 2. Generate Critical Alert if assessment marks are included (placeholder check)
-                                          // Note: In this view we are logging 'feedback', if we want to log 'marks' we'd use a different flow, 
-                                          // but let's add a generic behavioral alert trigger here for certain phrases.
-                                          if (feedbackText.toLowerCase().includes("at risk") || feedbackText.toLowerCase().includes("urgent")) {
-                                            await addDoc(collection(db, "alerts"), {
-                                              type: "FACULTY_NOTE",
-                                              level: "critical",
-                                              message: `Urgent Faculty Note for ${viewingStudentDetail.name}: ${feedbackText.substring(0, 50)}...`,
-                                              studentId: viewingStudentDetail.id,
-                                              schoolId: profile?.schoolId || "",
-                                              status: "active",
-                                              date: serverTimestamp()
-                                            });
-                                          }
-  
-                                          // 2. Update the specific student document in the class subcollection if possible
-                                          if (selectedClassForStudents?.id) {
-                                            const studentRef = doc(db, 'cohorts', selectedClassForStudents.id, 'students', viewingStudentDetail.id);
-                                            const newFeedback = {
-                                              id: Date.now().toString(),
-                                              text: feedbackText.trim(),
-                                              category: feedbackCategory,
-                                              date: new Date().toISOString(),
-                                              authorName: teacherName
-                                            };
-                                            const existing = viewingStudentDetail.privateFeedback || [];
-                                            await updateDoc(studentRef, { privateFeedback: [newFeedback, ...existing] });
-                                          }
-                                          
-                                          setFeedbackText("");
-                                          alert("Faculty assessment synchronised successfully.");
-                                        } catch (e) {
-                                           handleFirestoreError(e, OperationType.WRITE, `progress`);
-                                        } finally {
-                                          setIsSubmittingFeedback(false);
-                                        }
-                                     }}>
-                                      {isSubmittingFeedback ? "Synchronising..." : "Log Assessment"}
-                                     </Btn>
-                                 </div>
-                              </div>
-                           </div>
-                        </section>
                       </>
+                    ) : studentModalTab === 'report' ? (
+                       <section className="animate-in fade-in slide-in-from-right-4 duration-500">
+                          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Create Progress Report</h3>
+                          <form 
+                            onSubmit={async (e) => {
+                              e.preventDefault();
+                              if (isSubmittingFeedback || !selectedClassForStudents?.id) return;
+                              setIsSubmittingFeedback(true);
+                              const formData = new FormData(e.currentTarget);
+                              
+                              const report = {
+                                studentId: viewingStudentDetail.id,
+                                cohortId: selectedClassForStudents.id,
+                                topic: formData.get('topic') as string,
+                                marks: Number(formData.get('marks')),
+                                confidenceScore: Number(formData.get('confidenceScore')),
+                                participationScore: Number(formData.get('participationScore')),
+                                feedback: formData.get('feedback') as string,
+                                createdAt: serverTimestamp(),
+                                teacherId: auth.currentUser?.uid,
+                                teacherName: teacherName
+                              };
+
+                              try {
+                                const progressRef = collection(db, 'cohorts', selectedClassForStudents.id, 'students', viewingStudentDetail.id, 'progress');
+                                await addDoc(progressRef, report);
+                                
+                                // Also log to global progress for redundancy/analytics if needed
+                                await addDoc(collection(db, 'progress'), {
+                                  ...report,
+                                  category: "Formal Progress Report"
+                                });
+
+                                alert("Progress report strictly synchronised.");
+                                setStudentModalTab('history');
+                              } catch (err) {
+                                handleFirestoreError(err, OperationType.WRITE, `cohorts/${selectedClassForStudents.id}/students/${viewingStudentDetail.id}/progress`);
+                              } finally {
+                                setIsSubmittingFeedback(false);
+                              }
+                            }}
+                            className="space-y-6"
+                          >
+                             <div className="grid grid-cols-2 gap-4">
+                               <div className="space-y-2">
+                                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block px-1">Concept Topic</label>
+                                  <input 
+                                    name="topic" 
+                                    required 
+                                    placeholder="e.g. Calculus: Limits & Continuity"
+                                    className="w-full p-3 bg-gray-50 border border-black/5 rounded-xl text-xs font-bold text-fluent-navy outline-none" 
+                                  />
+                               </div>
+                               <div className="space-y-2">
+                                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block px-1">Mastery Marks (0-100)</label>
+                                  <input 
+                                    name="marks" 
+                                    type="number" 
+                                    min="0" 
+                                    max="100" 
+                                    required 
+                                    placeholder="85"
+                                    className="w-full p-3 bg-gray-50 border border-black/5 rounded-xl text-xs font-bold text-fluent-navy outline-none" 
+                                  />
+                               </div>
+                             </div>
+
+                             <div className="grid grid-cols-2 gap-4">
+                               <div className="space-y-2">
+                                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block px-1">Confidence Score (1-10)</label>
+                                  <input 
+                                    name="confidenceScore" 
+                                    type="number" 
+                                    min="1" 
+                                    max="10" 
+                                    required 
+                                    placeholder="8"
+                                    className="w-full p-3 bg-gray-50 border border-black/5 rounded-xl text-xs font-bold text-fluent-navy outline-none" 
+                                  />
+                               </div>
+                               <div className="space-y-2">
+                                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block px-1">Participation Score (1-10)</label>
+                                  <input 
+                                    name="participationScore" 
+                                    type="number" 
+                                    min="1" 
+                                    max="10" 
+                                    required 
+                                    placeholder="9"
+                                    className="w-full p-3 bg-gray-50 border border-black/5 rounded-xl text-xs font-bold text-fluent-navy outline-none" 
+                                  />
+                               </div>
+                             </div>
+
+                             <div className="space-y-2">
+                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block px-1">Synthesis Feedback</label>
+                                <textarea 
+                                  name="feedback" 
+                                  required 
+                                  placeholder="Detailed analysis of the scholar's performance and areas for cognitive bridge building..."
+                                  className="w-full p-4 bg-gray-50 border border-black/5 rounded-2xl text-sm min-h-[120px] outline-none focus:bg-white transition-all"
+                                />
+                             </div>
+
+                             <Btn type="submit" variant="primary" className="w-full py-4 text-[10px] tracking-[0.2em]" disabled={isSubmittingFeedback}>
+                                {isSubmittingFeedback ? "SYNCHRONISING..." : "COMMIT PROGRESS REPORT"}
+                             </Btn>
+                          </form>
+                       </section>
                     ) : (
                       <section className="animate-in fade-in slide-in-from-right-4 duration-500">
                         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Performance & Feedback History</h3>
                         <div className="space-y-6">
-                           {studentHistory.length === 0 && (viewingStudentDetail.privateFeedback || []).length === 0 ? (
+                           {mergedStudentHistory.length === 0 && (viewingStudentDetail.privateFeedback || []).length === 0 ? (
                              <div className="p-20 text-center border-2 border-dashed border-black/5 rounded-[32px]">
                                 <div className="text-slate-300 mb-2"><ClipboardList size={40} className="mx-auto opacity-20" /></div>
                                 <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">No historical logs found</p>
@@ -1493,9 +1564,9 @@ export const FacultyHub = ({ profile, onBack }: { profile?: any, onBack: () => v
                            ) : (
                              <div className="space-y-4">
                                 {[
-                                  ...studentHistory.map(h => ({ 
+                                  ...mergedStudentHistory.map(h => ({ 
                                     ...h, 
-                                    type: h.marks > 0 ? 'report' : 'feedback',
+                                    type: (h.marks > 0 || (h as any).confidenceScore > 0) ? 'report' : 'feedback',
                                     sortDate: h.createdAt?.toDate ? h.createdAt.toDate() : new Date(h.createdAt || 0) 
                                   })),
                                   ...(viewingStudentDetail.privateFeedback || []).map((f: any) => ({ 

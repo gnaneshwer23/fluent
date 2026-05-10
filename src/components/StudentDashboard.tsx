@@ -393,7 +393,7 @@ export const StudentDashboard = ({ profile, onBack }: { profile?: any, onBack: (
         ) : activeNav === "ledger" ? (
           <MasteryLedger userProfile={profile} />
         ) : activeNav === "progress" ? (
-          <StudentProgress />
+          <StudentProgress profile={profile} />
         ) : activeNav === "forum" ? (
           <Forum userProfile={profile} />
         ) : activeNav === "confidence" ? (

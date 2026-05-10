@@ -141,7 +141,7 @@ function AppContent() {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         whileHover={{ scale: 1.1, rotate: 5 }}
         whileTap={{ scale: 0.9 }}
-        className="fixed bottom-8 right-8 z-[100] flex items-center justify-center w-14 h-14 bg-green-500 text-white rounded-full shadow-2xl shadow-green-500/40 border-4 border-white group"
+        className="fixed bottom-24 md:bottom-8 right-6 md:right-8 z-[90] flex items-center justify-center w-14 h-14 bg-green-500 text-white rounded-full shadow-2xl shadow-green-500/40 border-4 border-white group"
         title="WhatsApp Support"
       >
         <svg 

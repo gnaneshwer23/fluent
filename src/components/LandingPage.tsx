@@ -24,8 +24,18 @@ export const LandingPage = () => {
   React.useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    
+    if (showLeadModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      document.body.style.overflow = 'unset';
+    };
+  }, [showLeadModal]);
 
   const [leadData, setLeadData] = useState({
     schoolName: "",
@@ -257,17 +267,17 @@ export const LandingPage = () => {
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-12 gap-12 md:gap-16 items-start">
             <div className="lg:col-span-5 lg:sticky top-40 mb-12 lg:mb-0">
-              <Badge color="red" className="mb-10">Audit: Instructional Decay</Badge>
-              <h2 className="text-4xl font-serif font-black text-fluent-navy leading-[1.1] tracking-tighter mb-12">
+              <Badge color="red" className="mb-6 md:mb-10">Audit: Instructional Decay</Badge>
+              <h2 className="text-3xl md:text-4xl font-serif font-black text-fluent-navy leading-[1.1] tracking-tighter mb-8 md:mb-12 text-balance">
                 The Blind <br /><span className="font-light text-red-700">Spots.</span>
               </h2>
-              <p className="text-xl md:text-2xl text-slate-700 leading-relaxed font-serif mb-16">
+              <p className="text-lg md:text-2xl text-slate-700 leading-relaxed font-serif mb-10 md:mb-16">
                  "Conventional tuition prioritises throughput over mastery. In large batches, concept gaps are invisible until the strategic failure occurs."
               </p>
-              <div className="p-8 md:p-12 bg-fluent-navy text-white shadow-2xl relative overflow-hidden">
-                 <div className="absolute top-0 right-0 w-1 h-full bg-red-600" />
-                 <div className="text-[10px] font-black uppercase tracking-[0.4em] text-fluent-gold mb-6">The Structural Crisis</div>
-                 <p className="text-white/80 text-sm md:text-base leading-relaxed">Weak foundations combined with high investment leads to a critical loss of scholar confidence and ROI.</p>
+              <div className="p-6 md:p-12 bg-fluent-navy text-white shadow-2xl relative overflow-hidden rounded-r-xl md:rounded-none">
+                 <div className="absolute top-0 right-0 w-1 md:w-2 h-full bg-red-600" />
+                 <div className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.4em] text-fluent-gold mb-4 md:mb-6">The Structural Crisis</div>
+                 <p className="text-white/80 text-xs md:text-base leading-relaxed">Weak foundations combined with high investment leads to a critical loss of scholar confidence and ROI.</p>
               </div>
             </div>
             
@@ -770,19 +780,17 @@ export const LandingPage = () => {
       {/* Lead Generation Modal */}
       <AnimatePresence>
         {showLeadModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowLeadModal(false)} className="absolute inset-0 bg-fluent-navy/60 backdrop-blur-md" />
-             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-white w-full max-w-xl rounded-[40px] shadow-2xl overflow-hidden p-10 md:p-12">
-                <div className="flex justify-between items-start mb-8">
-                   <div>
-                      <Badge color="gold" className="mb-2">Admissions Open</Badge>
-                      <h3 className="text-3xl font-serif font-bold text-fluent-navy tracking-tight">Secure Scholar Slot</h3>
-                   </div>
-                   <button onClick={() => setShowLeadModal(false)} className="p-2 hover:bg-slate-50 rounded-full transition-colors text-slate-400"><X size={20}/></button>
+          <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 md:p-6 overflow-y-auto">
+             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowLeadModal(false)} className="fixed inset-0 bg-fluent-navy/70 backdrop-blur-md" />
+             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-white w-full max-w-xl rounded-[32px] md:rounded-[40px] shadow-2xl overflow-hidden p-6 md:p-12 my-auto">
+                <button onClick={() => setShowLeadModal(false)} className="absolute top-4 right-4 md:top-8 md:right-8 p-3 hover:bg-slate-100 rounded-full transition-colors text-slate-400 z-10"><X size={20}/></button>
+                <div className="mb-6 md:mb-8">
+                   <Badge color="gold" className="mb-2">Admissions Open</Badge>
+                   <h3 className="text-2xl md:text-3xl font-serif font-bold text-fluent-navy tracking-tight pr-10">Secure Scholar Slot</h3>
                 </div>
 
-                <form onSubmit={handleLeadSubmit} className="space-y-6">
-                   <div className="grid grid-cols-2 gap-4">
+                <form onSubmit={handleLeadSubmit} className="space-y-4 md:space-y-6 max-h-[60vh] overflow-y-auto px-1">
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1">
                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Academy/School Name</label>
                          <input required value={leadData.schoolName} onChange={e => setLeadData(d => ({...d, schoolName: e.target.value}))} className="w-full p-4 bg-slate-50 border border-black/5 rounded-xl text-sm" placeholder="Global Academy..." />
@@ -793,7 +801,7 @@ export const LandingPage = () => {
                       </div>
                    </div>
 
-                   <div className="grid grid-cols-2 gap-4">
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1">
                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Role</label>
                          <select value={leadData.designation} onChange={e => setLeadData(d => ({...d, designation: e.target.value}))} className="w-full p-4 bg-slate-50 border border-black/5 rounded-xl text-sm">
@@ -814,7 +822,7 @@ export const LandingPage = () => {
                       <input required type="email" value={leadData.email} onChange={e => setLeadData(d => ({...d, email: e.target.value}))} className="w-full p-4 bg-slate-50 border border-black/5 rounded-xl text-sm" placeholder="scholar@academy.edu" />
                    </div>
 
-                   <div className="grid grid-cols-2 gap-4">
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1">
                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Student Count</label>
                          <input required value={leadData.studentCount} onChange={e => setLeadData(d => ({...d, studentCount: e.target.value}))} className="w-full p-4 bg-slate-50 border border-black/5 rounded-xl text-sm" placeholder="e.g. 1" />
@@ -852,20 +860,32 @@ export const LandingPage = () => {
       </AnimatePresence>
       
       {/* Success Notification */}
-      {waitlistSuccess && (
-        <div className="fixed bottom-10 right-10 z-[200] animate-in slide-in-from-right-10 duration-700">
-           <div className="bg-fluent-navy text-white p-12 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] border-l-4 border-fluent-gold">
-              <div className="flex items-center gap-10">
-                 <div className="text-[10px] font-black tracking-[0.5em] text-fluent-gold font-mono">SUCCESS</div>
-                 <div>
-                    <h4 className="text-2xl font-serif font-black">Request Logged.</h4>
-                    <p className="text-white/80 text-sm font-serif">Institutional board will reach out for audit.</p>
-                 </div>
-                 <button onClick={() => setWaitlistSuccess(false)} className="opacity-40 hover:opacity-100 transition-opacity uppercase text-[9px] font-black tracking-widest border-b border-white/20">Close</button>
-              </div>
-           </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {waitlistSuccess && (
+          <motion.div 
+            initial={{ opacity: 0, x: 20, y: 0 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed bottom-4 inset-x-4 md:bottom-10 md:right-10 md:left-auto z-[200]"
+          >
+             <div className="bg-fluent-navy text-white p-6 md:p-10 shadow-2xl border-l-4 border-fluent-gold max-w-lg mx-auto md:mx-0 overflow-hidden">
+                <div className="flex flex-col sm:flex-row items-baseline sm:items-center gap-4 md:gap-10">
+                   <div className="text-[9px] md:text-[10px] font-black tracking-[0.5em] text-fluent-gold font-mono shrink-0">SUCCESS</div>
+                   <div className="flex-1">
+                      <h4 className="text-lg md:text-2xl font-serif font-black mb-1">Request Logged.</h4>
+                      <p className="text-white/70 text-xs md:text-sm font-serif">Institutional board will reach out for audit.</p>
+                   </div>
+                   <button 
+                     onClick={() => setWaitlistSuccess(false)} 
+                     className="opacity-40 hover:opacity-100 transition-opacity uppercase text-[9px] font-black tracking-widest border-b border-white/20 whitespace-nowrap mt-2 sm:mt-0 self-end sm:self-auto"
+                   >
+                     Close
+                   </button>
+                </div>
+             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -164,7 +164,7 @@ export function AITutor({ profile }: { profile: any }) {
 
       // 3. Generation Step: Call Gemini directly in frontend with tailored prompt
       const prompt = `
-        System: You are an elite AI Personal Mastery Tutor for FLUENT   ACADEMY. 
+        System: You are an elite AI Personal Mastery Tutor for FLUENT   INSTITUTE. 
         Your tone is patient, encouraging, and pedagogically sound, following British scaffolding standards.
         Target Student: ${profile?.name || 'Scholar'}, Grade: ${profile?.grade || '10'}.
         Subject: ${profile?.subject || 'General'}.

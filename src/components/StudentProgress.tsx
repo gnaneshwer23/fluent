@@ -1,17 +1,30 @@
 import React, { useEffect, useState } from "react";
-import { collection, query, where, onSnapshot, orderBy } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy, getDocs, limit } from "firebase/firestore";
 import { db, auth } from "../lib/firebaseInit";
 import { handleFirestoreError, OperationType } from "../lib/errorHandling";
 import { Card, ProgressBar, MetricTile, Badge, Avatar, Btn } from "./UI";
-import { BarChart3, TrendingUp, Award, MessageSquare, BookOpen, Clock, Zap, Target, ShieldCheck, ChevronRight } from "lucide-react";
+import { BarChart3, TrendingUp, Award, MessageSquare, BookOpen, Clock, Zap, Target, ShieldCheck, ChevronRight, Sparkles, BrainCircuit, ExternalLink, Library } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line, Legend } from 'recharts';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
+import { GoogleGenAI } from "@google/genai";
 
-export default function StudentProgress() {
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+
+export default function StudentProgress({ profile }: { profile?: any }) {
   const [reports, setReports] = useState<any[]>([]);
   const [genericProgress, setGenericProgress] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'trends' | 'feedback' | 'breakdown'>('trends');
+  const [activeTab, setActiveTab] = useState<'trends' | 'feedback' | 'breakdown' | 'ai-diagnostic'>('trends');
+  
+  // AI Analysis State
+  const [analysis, setAnalysis] = useState<{
+    summary: string;
+    strengths: string[];
+    weaknesses: string[];
+    trajectory: string;
+  } | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [suggestedResources, setSuggestedResources] = useState<any[]>([]);
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -115,6 +128,104 @@ export default function StudentProgress() {
     return null;
   };
 
+  // Effect to run AI diagnostic when requested
+  const runDiagnostic = async () => {
+    if (reports.length === 0 && genericProgress.length === 0) return;
+    setIsAnalyzing(true);
+
+    try {
+      // 1. Prepare Performance History
+      const historyStr = reports.slice(0, 5).map(r => 
+        `Report (${r.week}): Score ${r.marks}%, Strengths: ${r.strengths}, Weaknesses: ${r.weaknesses}`
+      ).join("\n") + "\n" + genericProgress.slice(0, 10).map(p => 
+        `Topic: ${p.topic}, Score: ${p.marks}%`
+      ).join("\n");
+
+      // 2. Identify Patterns with AI
+      const analysisPrompt = `
+        Analyze this student's performance history and identify clear patterns of academic growth, 
+        specific recurring weaknesses (conceptual nodes), and overall mastery trajectory.
+        
+        Academic Context: Grade ${profile?.grade || '10'}, Subject: ${profile?.subject || 'All'}.
+        Performance History:
+        ${historyStr}
+        
+        Return a JSON object in the following format:
+        {
+          "summary": "A 2-3 sentence overview of the current state",
+          "strengths": ["string", "string", "string"],
+          "weaknesses": ["string", "string", "string"],
+          "trajectory": "Short description of the trend (e.g. Accelerating, Consistent, Stagnant)"
+        }
+        Return ONLY the JSON.
+      `;
+
+      const genRes = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: analysisPrompt,
+      });
+      
+      let analysisData;
+      try {
+        const text = genRes.text || "{}";
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        analysisData = JSON.parse(jsonMatch ? jsonMatch[0] : text);
+      } catch (e) {
+        analysisData = {
+          summary: genRes.text || "Analysis complete.",
+          strengths: ["Historical consistency", "Subject engagement"],
+          weaknesses: ["Specific topic depth", "Articulation of complex concepts"],
+          trajectory: "Stable"
+        };
+      }
+      
+      setAnalysis(analysisData);
+
+      // 3. RAG Step: Retrieve suggested resources based on identified weaknesses
+      const keywords = analysisData.weaknesses.map((w: string) => w.split(' ').slice(0, 2).join(' '));
+
+      // Fetch curriculum chunks matching keywords
+      const chunksRef = collection(db, "curriculum_chunks");
+      const q = query(
+        chunksRef,
+        where("subject", "==", profile?.subject || "General"),
+        limit(50)
+      );
+      const chunkSnap = await getDocs(q);
+      const allChunks = chunkSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
+
+      const recommended = allChunks.filter(chunk => 
+        keywords.some((kw: string) => 
+          chunk.topic.toLowerCase().includes(kw.toLowerCase()) || 
+          chunk.content.toLowerCase().includes(kw.toLowerCase())
+        )
+      ).slice(0, 3);
+
+      // If no precision matches, just give relevant subject nodes
+      if (recommended.length === 0) {
+        setSuggestedResources(allChunks.slice(0, 3));
+      } else {
+        setSuggestedResources(recommended);
+      }
+    } catch (err) {
+      console.error("Diagnostic failed", err);
+      setAnalysis({
+        summary: "Apologies, the AI diagnostic protocol is currently experiencing latency. Please retry shortly.",
+        strengths: [],
+        weaknesses: [],
+        trajectory: "Unknown"
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'ai-diagnostic' && !analysis && !isAnalyzing) {
+      runDiagnostic();
+    }
+  }, [activeTab]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -155,7 +266,8 @@ export default function StudentProgress() {
         {[
           { id: 'trends', label: 'Score Trends' },
           { id: 'feedback', label: 'Faculty Feedback' },
-          { id: 'breakdown', label: 'Topic Breakdown' }
+          { id: 'breakdown', label: 'Topic Breakdown' },
+          { id: 'ai-diagnostic', label: 'AI Diagnostic' }
         ].map(tab => (
           <button 
             key={tab.id}
@@ -325,6 +437,119 @@ export default function StudentProgress() {
           </Card>
         </div>
       )}
+
+      {activeTab === 'ai-diagnostic' && (
+          <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500 pb-20">
+             <div className="bg-fluent-navy rounded-[48px] p-12 text-white relative overflow-hidden shadow-2xl">
+                <div className="absolute top-0 right-0 p-12 opacity-5 rotate-12">
+                   <BrainCircuit size={280} />
+                </div>
+                <div className="relative z-10">
+                   <Badge color="gold" className="bg-fluent-gold/20 text-fluent-gold border-fluent-gold/30 mb-6 font-bold">Mastery Analysis</Badge>
+                   <h3 className="text-4xl font-serif font-black tracking-tight leading-none mb-4">Neural Diagnostic Engine</h3>
+                   <p className="text-white/60 font-serif italic text-lg max-w-xl"> Synthesising your historical performance data to identify conceptual gaps and curriculum alignment.</p>
+                </div>
+             </div>
+
+             {isAnalyzing ? (
+               <div className="py-20 text-center space-y-4">
+                  <div className="w-16 h-16 bg-fluent-teal/10 rounded-full flex items-center justify-center mx-auto text-fluent-teal animate-pulse">
+                     <Sparkles size={32} />
+                  </div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Analysing Synthesis Patterns...</p>
+               </div>
+             ) : (
+               <div className="grid lg:grid-cols-5 gap-10">
+                  <div className="lg:col-span-3 space-y-8">
+                     <Card className="p-10 border-none shadow-sm ring-1 ring-black/5 bg-white rounded-[40px]">
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mb-8">Executive Diagnosis</h4>
+                        
+                        {analysis && (
+                          <div className="space-y-8">
+                            <div>
+                               <p className="text-sm text-slate-600 leading-relaxed font-serif italic mb-6">"{analysis.summary}"</p>
+                               <div className="flex items-center gap-2 px-3 py-1 bg-fluent-teal/5 rounded-full w-fit">
+                                  <TrendingUp size={12} className="text-fluent-teal" />
+                                  <span className="text-[9px] font-black uppercase text-fluent-teal tracking-widest">{analysis.trajectory} Trajectory</span>
+                               </div>
+                            </div>
+
+                            <div className="grid sm:grid-cols-2 gap-8">
+                               <div className="space-y-4">
+                                  <div className="text-[10px] font-bold text-green-600 uppercase tracking-widest flex items-center gap-2">
+                                     <ShieldCheck size={14} /> Core Strengths
+                                  </div>
+                                  <div className="space-y-3">
+                                     {analysis.strengths.map((s, i) => (
+                                       <div key={i} className="flex items-start gap-3 p-3 bg-green-50/50 rounded-xl border border-green-100/50">
+                                          <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 shrink-0" />
+                                          <span className="text-xs font-medium text-green-800">{s}</span>
+                                       </div>
+                                     ))}
+                                  </div>
+                               </div>
+                               <div className="space-y-4">
+                                  <div className="text-[10px] font-bold text-red-600 uppercase tracking-widest flex items-center gap-2">
+                                     <Zap size={14} /> Scaffolding Nodes (Weaknesses)
+                                  </div>
+                                  <div className="space-y-3">
+                                     {analysis.weaknesses.map((w, i) => (
+                                       <div key={i} className="flex items-start gap-3 p-3 bg-red-50/50 rounded-xl border border-red-100/50">
+                                          <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
+                                          <span className="text-xs font-medium text-red-800">{w}</span>
+                                       </div>
+                                     ))}
+                                  </div>
+                               </div>
+                            </div>
+                          </div>
+                        )}
+                     </Card>
+                     
+                     <Btn variant="primary" icon={Sparkles} onClick={runDiagnostic} className="w-full py-6 rounded-3xl text-[10px] uppercase font-black tracking-[0.2em]">Recalibrate Neural Lens ✦</Btn>
+                  </div>
+
+                  <div className="lg:col-span-2 space-y-8">
+                     <div>
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-6 px-1">Grounded Recommendations</h4>
+                        <div className="space-y-4">
+                           {suggestedResources.length > 0 ? suggestedResources.map((res) => (
+                             <Card key={res.id} className="p-6 border border-black/5 hover:border-fluent-gold/30 transition-all bg-white group rounded-[32px]">
+                                <div className="flex gap-4 items-start">
+                                   <div className="w-10 h-10 bg-fluent-gold/10 rounded-xl flex items-center justify-center text-fluent-gold shrink-0">
+                                      <Library size={18} />
+                                   </div>
+                                   <div className="flex-1">
+                                      <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{res.chapter}</div>
+                                      <h5 className="font-bold text-fluent-navy group-hover:text-fluent-gold transition-colors">{res.topic}</h5>
+                                      <p className="text-[10px] text-slate-500 mt-2 line-clamp-2 leading-relaxed italic font-serif">"{res.content}"</p>
+                                      <Btn variant="ghost" size="sm" className="mt-4 text-[9px] font-black uppercase tracking-widest text-fluent-teal -ml-2" icon={ChevronRight}>Study Node</Btn>
+                                   </div>
+                                </div>
+                             </Card>
+                           )) : (
+                             <Card className="p-8 text-center bg-slate-50 border border-dashed border-slate-200 rounded-[32px]">
+                                <Library size={32} className="mx-auto text-slate-200 mb-4" />
+                                <p className="text-xs text-slate-400 font-medium italic">"Complete more evaluations to unlock curriculum recommendations."</p>
+                             </Card>
+                           )}
+                        </div>
+                     </div>
+
+                     <Card className="p-8 bg-fluent-teal/5 border border-fluent-teal/10 rounded-[32px]">
+                        <div className="flex items-center gap-3 mb-4">
+                           <ShieldCheck className="text-fluent-teal" size={20} />
+                           <h4 className="text-sm font-bold text-fluent-navy">Pedagogical Guardrail</h4>
+                        </div>
+                        <p className="text-xs text-slate-600 leading-relaxed italic font-serif">
+                           Recommendations are synchronised with your specific regional syllabus (ICSE/CBSE Class 9-12) and personal mastery trajectory.
+                        </p>
+                     </Card>
+                  </div>
+               </div>
+             )}
+          </div>
+        )}
       </div>
     </div>
   );

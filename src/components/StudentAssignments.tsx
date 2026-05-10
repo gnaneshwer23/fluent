@@ -9,6 +9,9 @@ export default function StudentAssignments() {
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAssignment, setSelectedAssignment] = useState<any | null>(null);
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterBatch, setFilterBatch] = useState<string>("all");
+  const [sortOrder, setSortOrder] = useState<string>("due-soon");
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -25,6 +28,41 @@ export default function StudentAssignments() {
     return () => unsub();
   }, []);
 
+  const filteredAndSortedAssignments = React.useMemo(() => {
+    let result = [...assignments];
+
+    // Status Filter
+    if (filterStatus !== "all") {
+      result = result.filter(a => (a.status || 'active') === filterStatus);
+    }
+
+    // Batch Filter
+    if (filterBatch !== "all") {
+      result = result.filter(a => a.batch === filterBatch || a.cohortId === filterBatch);
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      if (sortOrder === "due-soon") {
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      }
+      if (sortOrder === "due-far") {
+        return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
+      }
+      if (sortOrder === "title") {
+        return a.title.localeCompare(b.title);
+      }
+      return 0;
+    });
+
+    return result;
+  }, [assignments, filterStatus, filterBatch, sortOrder]);
+
+  const uniqueBatches = React.useMemo(() => {
+    const batches = assignments.map(a => a.batch || a.cohortId).filter(Boolean);
+    return Array.from(new Set(batches));
+  }, [assignments]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -37,12 +75,54 @@ export default function StudentAssignments() {
     <div className="space-y-8">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-serif font-bold text-fluent-navy">My Assignments</h2>
-        <Badge color="teal" className="px-4 py-1">{assignments.length} Total</Badge>
+        <Badge color="teal" className="px-4 py-1">{filteredAndSortedAssignments.length} Total</Badge>
+      </div>
+
+      <div className="flex flex-wrap gap-4 items-center bg-slate-50 p-6 rounded-[32px] border border-black/5">
+        <div className="flex-1 min-w-[150px]">
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2 px-1">Status</label>
+          <select 
+            value={filterStatus} 
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="w-full bg-white border border-black/5 rounded-2xl px-5 py-3 text-xs font-bold text-fluent-navy outline-none focus:ring-2 focus:ring-fluent-teal/20 transition-all shadow-sm"
+          >
+            <option value="all">Every State</option>
+            <option value="active">Active Challenges</option>
+            <option value="completed">Completed Protocols</option>
+          </select>
+        </div>
+
+        <div className="flex-1 min-w-[150px]">
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2 px-1">Cohort</label>
+          <select 
+            value={filterBatch} 
+            onChange={(e) => setFilterBatch(e.target.value)}
+            className="w-full bg-white border border-black/5 rounded-2xl px-5 py-3 text-xs font-bold text-fluent-navy outline-none focus:ring-2 focus:ring-fluent-teal/20 transition-all shadow-sm"
+          >
+            <option value="all">All Groups</option>
+            {uniqueBatches.map(b => (
+              <option key={b} value={b}>{b}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex-1 min-w-[150px]">
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2 px-1">Priority</label>
+          <select 
+            value={sortOrder} 
+            onChange={(e) => setSortOrder(e.target.value)}
+            className="w-full bg-white border border-black/5 rounded-2xl px-5 py-3 text-xs font-bold text-fluent-navy outline-none focus:ring-2 focus:ring-fluent-teal/20 transition-all shadow-sm"
+          >
+            <option value="due-soon">Urgent First</option>
+            <option value="due-far">Distant First</option>
+            <option value="title">Lexographical</option>
+          </select>
+        </div>
       </div>
 
       <div className="grid gap-6">
-        {assignments.length > 0 ? (
-          assignments.map((a, i) => (
+        {filteredAndSortedAssignments.length > 0 ? (
+          filteredAndSortedAssignments.map((a, i) => (
             <Card key={a.id || i} className="p-10 group hover:border-fluent-teal/30 transition-all duration-500 bg-white shadow-sm border-black/5 rounded-[40px] relative overflow-hidden cursor-pointer" onClick={() => setSelectedAssignment(a)}>
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative z-10">
                 <div className="flex gap-8 items-center">

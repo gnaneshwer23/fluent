@@ -208,7 +208,7 @@ export function TeacherDashboard() {
       <div style={{ background:"#fff", borderBottom:"1px solid #E5E7EB", padding:"0 32px" }}>
         <div style={{ maxWidth:1280, margin:"0 auto", display:"flex", alignItems:"center", justifyContent:"space-between", height:64 }}>
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-            <span style={{ fontFamily: "serif", fontWeight: 900, fontSize: 18, color: "#0D1B2A", letterSpacing: "-0.05em" }}>FLUENT&nbsp;&nbsp;&nbsp;ACADEMY.</span>
+            <span style={{ fontFamily: "serif", fontWeight: 900, fontSize: 18, color: "#0D1B2A", letterSpacing: "-0.05em" }}>FLUENT&nbsp;&nbsp;&nbsp;INSTITUTE.</span>
             <span style={{ background:"#F1F5F9", color:"#1B4F5E", fontSize:10, fontWeight:900, padding:"3px 10px", borderRadius:100, textTransform: "uppercase" }}>Faculty Node</span>
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:16 }}>

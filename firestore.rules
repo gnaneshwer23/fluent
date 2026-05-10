@@ -108,6 +108,11 @@ service cloud.firestore {
       match /internal_notes/{noteId} {
         allow read, write: if isTeacher() || isAdmin();
       }
+
+      match /progress/{reportId} {
+        allow read: if isSignedIn() && (resource.data.studentId == request.auth.uid || isTeacher() || isAdmin());
+        allow write: if isTeacher() || isAdmin();
+      }
     }
 
     // --- Bookings (Hardened) ---
