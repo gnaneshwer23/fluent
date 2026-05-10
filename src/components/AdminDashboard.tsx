@@ -72,7 +72,7 @@ export function AdminDashboard(){const [tab,setTab]=useState<Tab>("overview");co
                     <Card>
                         <h2 className="text-xl font-bold mb-6">Schools</h2>
                         <table className="w-full text-sm">
-                            <thead className="text-left text-stone-600 uppercase text-[10px] tracking-widest">
+                            <thead className="text-left text-stone-800 uppercase text-[10px] tracking-widest font-black">
                                 <tr><th className="pb-4">Name</th><th className="pb-4">Status</th><th className="pb-4">Students</th><th className="pb-4">Teachers</th><th className="pb-4">Avg Score</th></tr>
                             </thead>
                             <tbody>
@@ -93,7 +93,7 @@ export function AdminDashboard(){const [tab,setTab]=useState<Tab>("overview");co
                     <Card>
                         <h2 className="text-xl font-bold mb-6">Top Performing Teachers</h2>
                         <table className="w-full text-sm">
-                            <thead className="text-left text-stone-600 uppercase text-[10px] tracking-widest">
+                            <thead className="text-left text-stone-800 uppercase text-[10px] tracking-widest font-black">
                                 <tr><th className="pb-4">Name</th><th className="pb-4">School</th><th className="pb-4">Avg Marks</th><th className="pb-4">Attendance</th><th className="pb-4">Rating</th></tr>
                             </thead>
                             <tbody>
@@ -120,7 +120,7 @@ export function AdminDashboard(){const [tab,setTab]=useState<Tab>("overview");co
                                         <AlertTriangle className={a.severity==="high" ? "text-red-500" : "text-amber-500"} />
                                         <div>
                                             <div className="font-bold">{a.schoolName} — {a.studentName}</div>
-                                            <div className="text-xs text-stone-600">{a.message}</div>
+                                            <div className="text-xs text-stone-800 font-medium">{a.message}</div>
                                         </div>
                                     </div>
                                     <Btn variant={a.status==="active"?"danger":"success"} size="sm" onClick={()=>setAlertMap(prev=>({...prev,[a.id]:a.status==="active"?"resolved":"active"}))}>

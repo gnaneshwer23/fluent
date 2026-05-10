@@ -105,9 +105,9 @@ export default function AdminOverview({ schoolId }: { schoolId?: string }) {
         <div className="flex justify-between items-end mb-6">
           <div>
             <h3 className="text-xl font-serif font-bold text-fluent-navy">Critical Interventions</h3>
-            <p className="text-sm text-stone-700 font-medium">Immediate institutional actions required based on live data.</p>
+            <p className="text-sm text-stone-800 font-bold leading-relaxed">Immediate institutional actions required based on live data.</p>
           </div>
-          <Btn variant="ghost" size="sm" className="text-[10px] font-black uppercase tracking-widest text-stone-600">View All {alerts.length}</Btn>
+          <Btn variant="ghost" size="sm" className="text-[10px] font-black uppercase tracking-widest text-stone-800">View All {alerts.length}</Btn>
         </div>
         
         <div className="space-y-3">
@@ -143,18 +143,18 @@ export default function AdminOverview({ schoolId }: { schoolId?: string }) {
         <section>
           <div className="flex justify-between items-end mb-6">
             <h3 className="text-xl font-serif font-bold text-fluent-navy">Scholar Insights</h3>
-            <Btn variant="ghost" size="sm" icon={Search} className="text-stone-600">Filter Cohort</Btn>
+            <Btn variant="ghost" size="sm" icon={Search} className="text-stone-800 font-bold">Filter Cohort</Btn>
           </div>
           <div className="grid sm:grid-cols-3 gap-4">
             {[
-              { label: "Elite Performers", value: `${eliteScholarsCount} Scholars`, desc: "Above 85% mastery avg.", color: "text-fluent-teal" },
-              { label: "At Risk Scholars", value: `${atRiskScholarsCount} Scholars`, desc: "Below 60% intervention zone.", color: "text-red-500" },
-              { label: "Participation Gap", value: `${lowConfidenceCount} Scholars`, desc: "Requires faculty support.", color: "text-fluent-gold" },
+              { label: "Elite Performers", value: `${eliteScholarsCount} Scholars`, desc: "Above 85% mastery avg.", color: "text-green-700 font-bold" },
+              { label: "At Risk Scholars", value: `${atRiskScholarsCount} Scholars`, desc: "Below 60% intervention zone.", color: "text-red-700 font-bold" },
+              { label: "Participation Gap", value: `${lowConfidenceCount} Scholars`, desc: "Requires faculty support.", color: "text-stone-800 font-bold" },
             ].map((seg, i) => (
               <Card key={i} className="p-6 border-black/5 bg-white shadow-xl shadow-slate-200/50">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-600 mb-4">{seg.label}</h4>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-800 mb-4">{seg.label}</h4>
                 <div className={`text-xl font-serif font-bold mb-1 ${seg.color}`}>{seg.value}</div>
-                <p className="text-[10px] text-stone-700 font-bold">{seg.desc}</p>
+                <p className="text-[10px] text-stone-800 font-black">{seg.desc}</p>
               </Card>
             ))}
           </div>
