@@ -174,9 +174,6 @@ export default function TeacherAnalytics({ teacherId }: { teacherId: string }) {
                   <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
                     <div className="w-3 h-3 rounded-full bg-fluent-teal" /> Scholar Fluency
                   </div>
-                  <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
-                    <div className="w-3 h-3 rounded-full bg-slate-200" /> Previous Cohort
-                  </div>
                 </div>
               </div>
               
@@ -214,6 +211,91 @@ export default function TeacherAnalytics({ teacherId }: { teacherId: string }) {
                       fill="url(#colorMarks)" 
                     />
                   </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+
+            {/* NEW: UNIFIED PERFORMANCE TRAJECTORY */}
+            <Card className="lg:col-span-3 p-10 bg-white border-black/5 shadow-xl">
+              <div className="flex justify-between items-center mb-10">
+                <div>
+                  <h3 className="text-xl font-serif font-bold text-fluent-navy">Unified Performance Trajectory</h3>
+                  <p className="text-xs text-slate-400 mt-1 italic font-medium">Historical audit of scholar evolution across three primary quality nodes.</p>
+                </div>
+                <div className="flex gap-6">
+                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-fluent-teal">
+                    <div className="w-2 h-2 rounded-full bg-fluent-teal" /> Avg Marks (%)
+                  </div>
+                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-fluent-gold">
+                    <div className="w-2 h-2 rounded-full bg-fluent-gold" /> Confidence Quotient
+                  </div>
+                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-500">
+                    <div className="w-2 h-2 rounded-full bg-blue-500" /> Participation Rate
+                  </div>
+                </div>
+              </div>
+              
+              <div className="h-96 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={data.history}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis 
+                      dataKey="month" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} 
+                      dy={10}
+                    />
+                    <YAxis 
+                      yId="percent"
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} 
+                      domain={[0, 100]}
+                    />
+                    <YAxis 
+                      yId="score"
+                      orientation="right"
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} 
+                      domain={[0, 10]}
+                    />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.15)', padding: '20px' }}
+                      itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                    />
+                    <Line 
+                      yId="percent"
+                      type="monotone" 
+                      dataKey="marks" 
+                      stroke="#1B4F5E" 
+                      strokeWidth={4}
+                      dot={{ r: 6, fill: '#1B4F5E', strokeWidth: 0 }}
+                      activeDot={{ r: 8, strokeWidth: 0 }}
+                      name="Average Marks"
+                    />
+                    <Line 
+                      yId="score"
+                      type="monotone" 
+                      dataKey="confidence" 
+                      stroke="#C9A84C" 
+                      strokeWidth={4}
+                      dot={{ r: 6, fill: '#C9A84C', strokeWidth: 0 }}
+                      activeDot={{ r: 8, strokeWidth: 0 }}
+                      name="Confidence Score"
+                    />
+                    <Line 
+                      yId="percent"
+                      type="monotone" 
+                      dataKey="participation" 
+                      stroke="#3B82F6" 
+                      strokeWidth={4}
+                      dot={{ r: 6, fill: '#3B82F6', strokeWidth: 0 }}
+                      activeDot={{ r: 8, strokeWidth: 0 }}
+                      name="Participation Rate"
+                    />
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
             </Card>

@@ -8,6 +8,7 @@ import {
   MessageCircle,
   CheckCircle2,
   X,
+  Menu,
   Database,
   Users,
   Award,
@@ -28,6 +29,7 @@ export const LandingPage = () => {
   const [waitlistSuccess, setWaitlistSuccess] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [isSubmittingLead, setIsSubmittingLead] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [leadData, setLeadData] = useState({
     schoolName: "",
@@ -129,7 +131,7 @@ export const LandingPage = () => {
             </a>
           ))}
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center">
           <button
             onClick={handleLogin}
             className="hidden sm:inline-block text-[10px] tracking-[0.2em] uppercase font-bold text-fluent-ink hover:text-fluent-gold transition-colors"
@@ -138,12 +140,72 @@ export const LandingPage = () => {
           </button>
           <button
             onClick={() => setShowLeadModal(true)}
-            className="bg-fluent-midnight text-fluent-cream px-7 py-3 font-display text-[10px] tracking-[0.2em] uppercase hover:bg-fluent-gold hover:text-fluent-midnight transition-all"
+            className="hidden xs:block bg-fluent-midnight text-fluent-cream px-7 py-3 font-display text-[10px] tracking-[0.2em] uppercase hover:bg-fluent-gold hover:text-fluent-midnight transition-all"
           >
-            Signup / Enrollment
+            Signup
+          </button>
+          <button 
+            className="md:hidden p-2 text-fluent-ink"
+            onClick={() => setMobileMenuOpen(true)}
+          >
+            <Menu size={24} />
           </button>
         </div>
       </nav>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, x: "100%" }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="fixed inset-0 z-[200] bg-fluent-ivory flex flex-col p-8"
+          >
+            <div className="flex justify-between items-center mb-12">
+              <Logo />
+              <button onClick={() => setMobileMenuOpen(false)} className="p-2">
+                <X size={28} />
+              </button>
+            </div>
+            
+            <div className="flex flex-col gap-8 mb-12">
+              {["thesystem", "aigrounding", "outcomeaudit"].map((id) => (
+                <a
+                  key={id}
+                  href={`#${id}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-2xl font-serif font-bold text-fluent-ink"
+                >
+                  {id.replace("audit", " Audit").replace("grounding", " Grounding").replace("the", "The ")}
+                </a>
+              ))}
+            </div>
+
+            <div className="mt-auto space-y-4">
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  handleLogin();
+                }}
+                className="w-full bg-transparent border-2 border-fluent-midnight text-fluent-midnight py-4 font-display text-[11px] tracking-[0.2em] uppercase font-bold"
+              >
+                Login
+              </button>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setShowLeadModal(true);
+                }}
+                className="w-full bg-fluent-midnight text-fluent-cream py-4 font-display text-[11px] tracking-[0.2em] uppercase font-bold"
+              >
+                Signup / Enrollment
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {loginError && (

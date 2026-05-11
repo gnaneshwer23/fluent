@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Logo, Avatar, Badge, Btn } from './UI';
-import { LogOut, Sparkles, X, MessageCircle, Bell } from 'lucide-react';
+import { LogOut, Sparkles, X, MessageCircle, Bell, Menu as MenuIcon } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebaseInit';
 import { NotificationBell } from './NotificationBell';
@@ -9,6 +9,7 @@ import { NotificationBell } from './NotificationBell';
 export const DashboardShell = ({ role, title, children, navItems, activeNav, setActiveNav, onBack }: { role: string, title: string, children: React.ReactNode, navItems: any[], activeNav: string, setActiveNav: (v: string) => void, onBack: () => void }) => {
   const [directive, setDirective] = useState<string>("");
   const [showDirective, setShowDirective] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'platform', 'config'), (snap) => {
@@ -27,15 +28,33 @@ export const DashboardShell = ({ role, title, children, navItems, activeNav, set
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-fluent-ivory selection:bg-fluent-gold/20">
+    <div className="flex min-h-screen bg-fluent-ivory selection:bg-fluent-gold/20 relative overflow-x-hidden">
+      {/* Sidebar Mobile Overlay */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] lg:hidden"
+          />
+        )}
+      </AnimatePresence>
+
       {/* Sidebar - Precision Rail */}
-      <aside className="w-72 bg-fluent-midnight flex flex-col fixed top-0 left-0 h-screen z-50 border-r border-white/5 overflow-y-auto custom-scrollbar shadow-2xl shadow-black/50">
-        <div className="p-8 border-b border-white/5">
-          <div className="flex items-center gap-3 mb-8 font-display text-[10px] tracking-[0.3em] text-fluent-gold uppercase">
+      <aside className={`w-72 bg-fluent-midnight flex flex-col fixed top-0 left-0 h-screen z-50 border-r border-white/5 overflow-y-auto custom-scrollbar shadow-2xl shadow-black/50 transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        <div className="p-8 border-b border-white/5 flex justify-between items-center lg:block">
+          <div className="flex items-center gap-3 font-display text-[10px] tracking-[0.3em] text-fluent-gold uppercase">
             <div className="w-8 h-8 bg-fluent-gold/10 border border-fluent-gold/20 flex items-center justify-center text-xs text-fluent-gold rounded shadow-[0_0_15px_rgba(184,151,58,0.15)]">📖</div>
             Scholars Studio
           </div>
-          
+          <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-2 text-white/50 hover:text-white">
+            <X size={20} />
+          </button>
+        </div>
+        
+        <div className="p-8 pb-0">
           <div className="flex items-center gap-4 p-4 bg-white/5 rounded border border-fluent-gold/10 transition-all hover:bg-white/10 group">
             <div className="flex items-center gap-4 flex-1 min-w-0">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-fluent-gold to-[#8b6914] flex items-center justify-center font-display text-sm font-semibold text-fluent-midnight shrink-0 shadow-lg group-hover:scale-105 transition-transform">
@@ -64,7 +83,10 @@ export const DashboardShell = ({ role, title, children, navItems, activeNav, set
           {navItems.map(item => (
             <button
                key={item.id}
-               onClick={() => setActiveNav(item.id)}
+               onClick={() => {
+                 setActiveNav(item.id);
+                 setIsSidebarOpen(false);
+               }}
                className={`w-full flex items-center gap-4 px-4 py-3.5 transition-all text-[11px] relative rounded ${
                  activeNav === item.id 
                    ? 'bg-fluent-gold/10 text-fluent-gold font-bold shadow-[inset_0_0_20px_rgba(184,151,58,0.05)] border border-fluent-gold/20' 
@@ -102,7 +124,7 @@ export const DashboardShell = ({ role, title, children, navItems, activeNav, set
       </aside>
       
       {/* Content Area */}
-      <main className="flex-1 ml-72 min-h-screen flex flex-col">
+      <main className="flex-1 lg:ml-72 min-h-screen flex flex-col max-w-full">
         {showDirective && (
            <motion.div 
              initial={{ height: 0, opacity: 0 }}
@@ -120,14 +142,20 @@ export const DashboardShell = ({ role, title, children, navItems, activeNav, set
         )}
         
         {/* Topbar */}
-         <header className="h-20 sticky top-0 bg-fluent-ivory/80 backdrop-blur-2xl border-b border-black/5 z-[100] flex items-center justify-between px-10 gap-8">
+         <header className="h-20 sticky top-0 bg-fluent-ivory/80 backdrop-blur-2xl border-b border-black/5 z-[40] flex items-center justify-between px-6 lg:px-10 gap-4 sm:gap-8">
+            <button 
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden p-2 text-fluent-midnight mr-2 hover:bg-black/5 rounded"
+            >
+              <MenuIcon size={24} />
+            </button>
             <div className="flex-1 min-w-0">
-              <div className="font-display text-[10px] tracking-[0.3em] text-stone-800 uppercase mb-1">
-                Locus <span className="text-fluent-gold opacity-70 mx-2">›</span> <span className="text-fluent-midnight font-black">{navItems.find(i => i.id === activeNav)?.label?.toUpperCase() || activeNav.toUpperCase()}</span>
+              <div className="font-display text-[9px] tracking-[0.2em] text-stone-800 uppercase mb-1 hidden sm:block">
+                Locus <span className="text-fluent-gold opacity-70 mx-1">›</span> <span className="text-fluent-midnight font-black">{navItems.find(i => i.id === activeNav)?.label?.toUpperCase() || activeNav.toUpperCase()}</span>
               </div>
-             <div className="font-serif text-3xl font-black text-fluent-midnight flex items-center gap-3 leading-none">
-               Protocol: <em className="not-italic text-fluent-gold italic font-normal">{navItems.find(i => i.id === activeNav)?.label || activeNav}</em>
-               <Sparkles size={20} className="text-fluent-gold animate-pulse" />
+             <div className="font-serif text-xl sm:text-3xl font-black text-fluent-midnight flex items-center gap-2 sm:gap-3 leading-none truncate">
+               <span className="hidden xs:inline">Protocol:</span> <em className="not-italic text-fluent-gold italic font-normal truncate">{navItems.find(i => i.id === activeNav)?.label || activeNav}</em>
+               <Sparkles size={18} className="text-fluent-gold animate-pulse shrink-0 hidden sm:block" />
              </div>
            </div>
 
@@ -141,10 +169,10 @@ export const DashboardShell = ({ role, title, children, navItems, activeNav, set
               </div>
            </div>
 
-           <div className="flex items-center gap-3 shrink-0">
+           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
              <NotificationBell />
-             <Btn variant="gold" size="sm" icon={MessageCircle} className="uppercase text-[9px] tracking-widest font-black px-6 shadow-xl shadow-fluent-gold/10">
-               Live Support
+             <Btn variant="gold" size="sm" icon={MessageCircle} className="uppercase text-[8px] sm:text-[9px] tracking-widest font-black px-3 sm:px-6 shadow-xl shadow-fluent-gold/10">
+               <span className="hidden xs:inline">Live Support</span>
              </Btn>
            </div>
         </header>
@@ -156,7 +184,7 @@ export const DashboardShell = ({ role, title, children, navItems, activeNav, set
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="flex-1 p-10"
+            className="flex-1 p-6 lg:p-10"
           >
             {children}
           </motion.div>

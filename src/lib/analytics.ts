@@ -1,4 +1,4 @@
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { db } from "./firebaseInit";
 
 export interface AnalyticsData {
@@ -8,14 +8,42 @@ export interface AnalyticsData {
   attendanceRate: number;
   rating: number;
   teacherScore: number;
-  history: { month: string; marks: number; confidence: number }[];
+  history: { 
+    month: string; 
+    marks: number; 
+    confidence: number; 
+    participation: number;
+  }[];
 }
 
 export const fetchTeacherAnalytics = async (teacherId: string): Promise<AnalyticsData> => {
-  // In a real app, this might be a pre-calculated collection
-  // For this demo, we'll aggregate on the fly from weeklyReports
+  // Try to fetch historical growth data from teacherGrowth collection
+  const growthQ = query(
+    collection(db, "teacherGrowth"), 
+    where("teacherId", "==", teacherId),
+    orderBy("date", "asc")
+  );
   
-  // CRITICAL: Must filter by teacherId for rule compliance and correct context
+  const growthSnap = await getDocs(growthQ).catch(err => {
+    console.warn("Failed to fetch growth metrics directly", err);
+    return null;
+  });
+
+  let history: AnalyticsData['history'] = [];
+
+  if (growthSnap && !growthSnap.empty) {
+    history = growthSnap.docs.map(doc => {
+      const d = doc.data();
+      return {
+        month: d.month,
+        marks: d.avgMarks || 0,
+        confidence: d.avgConfidence || 0,
+        participation: d.avgParticipation || 0
+      };
+    });
+  }
+
+  // Aggregate current stats from weeklyReports for the main metrics
   const reportsQ = query(collection(db, "weeklyReports"), where("teacherId", "==", teacherId)); 
   const reportsSnap = await getDocs(reportsQ);
   
@@ -24,7 +52,7 @@ export const fetchTeacherAnalytics = async (teacherId: string): Promise<Analytic
   let totalParticipation = 0;
   let count = 0;
 
-  const monthStats: Record<string, { marks: number; confidence: number; count: number }> = {};
+  const monthStats: Record<string, { marks: number; confidence: number; participation: number; count: number }> = {};
 
   reportsSnap.docs.forEach(doc => {
     const data = doc.data();
@@ -35,22 +63,38 @@ export const fetchTeacherAnalytics = async (teacherId: string): Promise<Analytic
 
     const date = new Date(data.date || Date.now());
     const month = date.toLocaleString('default', { month: 'short' });
-    if (!monthStats[month]) monthStats[month] = { marks: 0, confidence: 0, count: 0 };
+    if (!monthStats[month]) monthStats[month] = { marks: 0, confidence: 0, participation: 0, count: 0 };
     monthStats[month].marks += Number(data.marks || 0);
     monthStats[month].confidence += Number(data.confidenceScore || 0);
+    monthStats[month].participation += Number(data.participationScore || 0);
     monthStats[month].count++;
   });
+
+  // If growth history was empty, build from reports
+  if (history.length === 0) {
+    history = Object.entries(monthStats).map(([month, stats]) => ({
+      month,
+      marks: Math.round(stats.marks / stats.count),
+      confidence: Number((stats.confidence / stats.count).toFixed(1)),
+      participation: Math.round(stats.participation / stats.count)
+    }));
+  }
+
+  // Ensure some default history for UX if absolutely nothing exists
+  if (history.length === 0) {
+    history = [
+      { month: "Mar", marks: 65, confidence: 6.2, participation: 70 },
+      { month: "Apr", marks: 72, confidence: 7.1, participation: 78 },
+      { month: "May", marks: 75, confidence: 7.5, participation: 82 }
+    ];
+  }
 
   const avgMarks = count > 0 ? totalMarks / count : 0;
   const avgConfidence = count > 0 ? totalConfidence / count : 0;
   const avgParticipation = count > 0 ? totalParticipation / count : 0;
   
-  // Attendance aggregation
-  // If attendance logs don't have teacherId, we fetch all (admins see all, teachers see based on rule if they own the student nodes)
-  // For now, we'll keep it as is but add a filter if possible
   const attendanceQ = query(collection(db, "attendance"), where("teacherId", "==", teacherId));
   const attendanceSnap = await getDocs(attendanceQ).catch(() => {
-    // Fallback if attendance doesn't have teacherId yet
     return getDocs(query(collection(db, "attendance")));
   });
   let present = 0;
@@ -60,10 +104,8 @@ export const fetchTeacherAnalytics = async (teacherId: string): Promise<Analytic
   });
   const attendanceRate = totalLogs > 0 ? (present / totalLogs) * 100 : 0;
 
-  // Placeholder rating (could be from a separate parent feedback collection)
   const rating = 4.8;
 
-  // Formula: 40% Marks + 20% Confidence + 20% Participation + 10% Attendance + 10% Rating
   const teacherScore = 
     (avgMarks * 0.4) + 
     (avgConfidence * 10 * 0.2) + 
@@ -71,24 +113,14 @@ export const fetchTeacherAnalytics = async (teacherId: string): Promise<Analytic
     (attendanceRate * 0.1) + 
     (rating * 20 * 0.1);
 
-  const history = Object.entries(monthStats).map(([month, stats]) => ({
-    month,
-    marks: Math.round(stats.marks / stats.count),
-    confidence: Number((stats.confidence / stats.count).toFixed(1))
-  }));
-
   return {
     avgMarks: Math.round(avgMarks),
     avgConfidence: Number(avgConfidence.toFixed(1)),
-    avgParticipation: Number(avgParticipation.toFixed(1)),
+    avgParticipation: Math.round(avgParticipation),
     attendanceRate: Math.round(attendanceRate),
     rating,
     teacherScore: Math.round(teacherScore),
-    history: history.length > 0 ? history : [
-      { month: "Mar", marks: 65, confidence: 6.2 },
-      { month: "Apr", marks: 72, confidence: 7.1 },
-      { month: "May", marks: Math.round(avgMarks) || 75, confidence: Number(avgConfidence.toFixed(1)) || 7.5 }
-    ]
+    history
   };
 };
 
